@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.1 (18/11/2026) |
+| Versión | 1.2 (18/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -182,7 +182,9 @@ src/
       repository.ts              # StaffMember
       __tests__/
   lib/
-    env.ts                       # Zod: valida y exporta env (server y public separados)
+    env.ts                       # server-only: exporta env (públicas + privadas validadas); entrada para código de servidor
+    env.public.ts                # solo NEXT_PUBLIC_*, seguro para componentes cliente
+    env.schema.ts                # schemas Zod puros; next.config.ts lo usa para fallar dev/build/start
     db.ts                        # Prisma client singleton
     supabase/server.ts           # cliente SSR (cookies)
     supabase/client.ts           # cliente browser (solo si hace falta)
@@ -549,3 +551,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 |---|---|---|---|
 | 18/11/2026 | 1.0 | Versión inicial | [tu nombre] |
 | 18/11/2026 | 1.1 | §14 y NFR-MANT-02: se agrega la rama `dev` de integración; las ramas de tarea salen de `dev` y entran por PR a `dev`, y `dev` pasa a `main` por PR. | [tu nombre] |
+| 18/11/2026 | 1.2 | §6.2: `lib/env.ts` se acompaña de `env.public.ts` (variables públicas para el cliente) y `env.schema.ts` (schemas puros que valida `next.config.ts`). | [tu nombre] |
