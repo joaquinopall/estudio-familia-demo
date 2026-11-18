@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
@@ -6,6 +8,9 @@ export default defineConfig({
   resolve: {
     // Resolves the "@/*" alias from tsconfig.json (native since Vite 8).
     tsconfigPaths: true,
+    alias: {
+      "server-only": fileURLToPath(new URL("./tests/stubs/server-only.ts", import.meta.url)),
+    },
   },
   test: {
     environment: "jsdom",

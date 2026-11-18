@@ -20,6 +20,14 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Variables de entorno
+
+1. Copiá `.env.example` a `.env.local` (no se commitea). Con los valores del ejemplo ya alcanza para correr el proyecto en local durante la Fase 1.
+2. Las variables se validan con Zod al arrancar (`dev`, `build`, `start`). Si falta una obligatoria o tiene un formato inválido, el comando falla y el mensaje dice cuál es.
+3. En el código, las variables se leen **solo** desde `src/lib/env.ts` (servidor) o `src/lib/env.public.ts` (componentes cliente). Nunca `process.env.X` suelto.
+
+Hoy la única obligatoria es `NEXT_PUBLIC_SITE_URL`; el resto se vuelve obligatoria en su fase (ver comentarios en `.env.example` y SPEC §9). En Vercel hay que cargarla en Preview y Production.
+
 ## Scripts
 
 > El README completo (descripción, variables de entorno, estructura y deploy) se escribe en la tarea F1-08.
