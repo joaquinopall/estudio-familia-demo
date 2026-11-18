@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Scripts
+
+> El README completo (descripción, variables de entorno, estructura y deploy) se escribe en la tarea F1-08.
+
+| Script                  | Qué hace                                                                          |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `npm run dev`           | Servidor de desarrollo en `http://localhost:3000`                                 |
+| `npm run build`         | Build de producción                                                               |
+| `npm run start`         | Sirve el build de producción                                                      |
+| `npm run lint`          | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                    |
+| `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                 |
+| `npm run format`        | Formatea el código con Prettier (incluye orden de clases de Tailwind)             |
+| `npm run format:check`  | Verifica el formato sin modificar archivos                                        |
+| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida)                         |
+| `npm run test:watch`    | Vitest en modo watch                                                              |
+| `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                    |
+| `npm run test:e2e`      | Tests e2e con Playwright contra el build de producción (levanta el servidor solo) |
+
+Antes del primer `test:e2e` hay que instalar el navegador: `npx playwright install chromium`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
