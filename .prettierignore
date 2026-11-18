@@ -1,0 +1,18 @@
+# Build and dependency output
+.next/
+out/
+build/
+node_modules/
+package-lock.json
+next-env.d.ts
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Owner-maintained working documents (formatted by hand)
+CLAUDE.md
+AGENTS.md
+docs/
