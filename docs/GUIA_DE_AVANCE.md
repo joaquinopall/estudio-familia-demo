@@ -20,7 +20,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 
 | Fase | Peso | Avance | Estado |
 |---|---|---|---|
-| F1 — Fundaciones | 0–20% | 3 / 9 | 🟨 |
+| F1 — Fundaciones | 0–20% | 5 / 9 | 🟨 |
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 0 / 8 | ⬜ |
@@ -54,21 +54,21 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
   - [X] `.gitignore` cubre `.env*` (excepto `.env.example`), `coverage/` y los reportes de Playwright.
   - Verificás: corrés todos los scripts y ninguno falla.
 
-- [ ] **F1-04 · Estructura y configuración de entorno** (IA) · SPEC §6.2, §9
+- [X] **F1-04 · Estructura y configuración de entorno** (IA) · SPEC §6.2, §9
   Terminada cuando:
-  - [ ] Carpetas de §6.2 creadas (con un `README` o `index.ts` mínimo donde haga falta, sin código muerto).
-  - [ ] `src/lib/env.ts` valida con Zod, separando variables públicas y privadas. El build falla si falta una obligatoria (solo las que se usan en esta fase; el resto opcionales hasta su fase).
-  - [ ] `.env.example` completo con todas las variables del SPEC §9, comentadas y sin valores reales.
-  - [ ] Paquete `server-only` instalado y usado en `env.ts` privado.
-  - [ ] `src/lib/action-result.ts` con el tipo `ActionResult` y sus helpers, con tests.
-  - [ ] `src/lib/logger.ts` (JSON, sin PII) con tests.
+  - [X] Carpetas de §6.2 creadas (con un `README` o `index.ts` mínimo donde haga falta, sin código muerto).
+  - [X] `src/lib/env.ts` valida con Zod, separando variables públicas y privadas. El build falla si falta una obligatoria (solo las que se usan en esta fase; el resto opcionales hasta su fase).
+  - [X] `.env.example` completo con todas las variables del SPEC §9, comentadas y sin valores reales.
+  - [X] Paquete `server-only` instalado y usado en `env.ts` privado.
+  - [X] `src/lib/action-result.ts` con el tipo `ActionResult` y sus helpers, con tests.
+  - [X] `src/lib/logger.ts` (JSON, sin PII) con tests.
   - Verificás: borrás una variable obligatoria de `.env.local` y el build falla con un mensaje claro.
 
-- [ ] **F1-05 · CI en GitHub Actions** (IA + Vos)
+- [X] **F1-05 · CI en GitHub Actions** (IA + Vos)
   Terminada cuando:
-  - [ ] Workflow en PR y push a `main`: install (`npm ci`) → lint → typecheck → test → build → `npm audit --audit-level=high`.
-  - [ ] Dependabot configurado (npm y GitHub Actions, semanal).
-  - [ ] (Vos) Protección de `main` en GitHub: PR obligatorio y check de CI requerido.
+  - [X] Workflow en PR y push a `main`: install (`npm ci`) → lint → typecheck → test → build → `npm audit --audit-level=high`.
+  - [X] Dependabot configurado (npm y GitHub Actions, semanal).
+  - [X] (Vos) Protección de `main` en GitHub: PR obligatorio y check de CI requerido.
   - Verificás: abrís un PR de prueba y aparece el check en verde.
 
 - [ ] **F1-06 · Headers de seguridad** (IA) · NFR-SEC-04, NFR-SEC-05
