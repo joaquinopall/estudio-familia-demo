@@ -48,6 +48,14 @@ Hoy la única obligatoria es `NEXT_PUBLIC_SITE_URL`; el resto se vuelve obligato
 
 Antes del primer `test:e2e` hay que instalar el navegador: `npx playwright install chromium`.
 
+## Headers de seguridad
+
+Todas las rutas responden con HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` y una Content Security Policy en modo **report-only** (SPEC NFR-SEC-04 y NFR-SEC-05). Se definen en `src/lib/security/headers.ts` y se aplican desde `next.config.ts`.
+
+- **Verlos:** `npm run build && npm run start`, DevTools → Network → documento → Response Headers (o `curl -I <url>`).
+- **CSP report-only:** no bloquea nada; las violaciones aparecen en la consola del navegador como `[Report Only]`. En los previews de Vercel son esperables las de `vercel.live` (barra de comentarios); se resuelven al aplicar la CSP en F5-01.
+- **Cambiar la política:** editar las directivas en `buildContentSecurityPolicy`. El e2e `tests/e2e/security-headers.spec.ts` falla si el inicio genera violaciones.
+
 ## CI y dependencias
 
 - **CI (GitHub Actions, `.github/workflows/ci.yml`):** corre en cada PR hacia `main` y en cada push a `main`. Pasos: `npm ci` → lint → typecheck → format:check → test → build → `npm audit`. El check se llama `CI / verify` y es obligatorio para mergear.
