@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.2 (18/11/2026) |
+| Versión | 1.3 (18/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -402,7 +402,7 @@ Etiquetas de interfaz:
 | NFR-SEC-05 | Content Security Policy: primero en modo report-only (Fase 1); en Fase 5 se aplica permitiendo solo self, Turnstile, Supabase y Vercel. |
 | NFR-SEC-06 | Sin PII en logs. IP guardada solo como HMAC. |
 | NFR-SEC-07 | Cookies de sesión httpOnly, Secure y SameSite=Lax (manejadas por `@supabase/ssr`). |
-| NFR-SEC-08 | Dependencias: Dependabot activo y `npm audit --audit-level=high` en CI. |
+| NFR-SEC-08 | Dependencias: Dependabot activo (npm y GitHub Actions, semanal). En CI, `npm audit --omit=dev --audit-level=high` bloquea (dependencias que van a producción) y `npm audit --audit-level=high` completo corre como paso informativo, sin bloquear. |
 | NFR-SEC-09 | Secretos solo en Vercel y en `.env.local` (en `.gitignore`). `.env.example` sin valores reales. |
 | NFR-SEC-10 | Registro público deshabilitado en Supabase Auth; contraseña de staff de al menos 12 caracteres. |
 
@@ -462,7 +462,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | NFR-A11Y-01 | Accesibilidad | WCAG 2.2 AA: navegación por teclado, foco visible, labels, `aria-live` en errores y confirmación, link para saltar al contenido. |
 | NFR-SEO-01 | SEO | Metadata única por página, `lang="es-AR"`, URLs en español, canonical, OG. |
 | NFR-MANT-01 | Mantenibilidad | Capas de §6, archivos chicos, sin duplicar validaciones, configuración y contenido fuera de componentes. |
-| NFR-MANT-02 | Mantenibilidad | Lint, typecheck, tests y build en CI obligatorios para mergear a `dev` y a `main`. |
+| NFR-MANT-02 | Mantenibilidad | Lint, typecheck, tests y build en CI obligatorios para mergear a `main`. |
 | NFR-ESC-01 | Escalabilidad | Índices de §7; listado paginado en el servidor; conexión por pooler; sin estado en memoria entre requests. |
 | NFR-ESC-02 | Escalabilidad | Ports y adapters para cambiar de proveedor (mail, captcha, rate limit) sin tocar services. |
 | NFR-OBS-01 | Observabilidad | Logger estructurado (JSON) con `level`, `event`, `inquiryId` y `errorCode`. Errores de mail y captcha logueados. Sentry opcional en Fase 5. |
@@ -507,7 +507,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 ---
 
 ## 14. Operación
-- **Ramas:** `main` (producción), `dev` (integración) y `feat/<tarea>-<descripcion>` por tarea, creada desde `dev`. Cada tarea entra a `dev` por PR con CI en verde (squash merge). `dev` pasa a `main` por PR cuando se quiere publicar en producción (por ejemplo, al cerrar una fase).
+- **Ramas:** `main` (producción) y `feat/<tarea>-<descripcion>` por tarea, creada desde `main`. PR obligatorio con CI en verde. Squash merge.
 - **Deploy:** Vercel (preview por PR y producción desde `main`). Las migraciones de producción se aplican manualmente (`prisma migrate deploy`), con aprobación, antes de mergear cambios de schema.
 - **Backups:** los de Supabase (plan gratuito: verificar la política vigente) y un export manual antes de cada migración en producción.
 
@@ -552,3 +552,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 18/11/2026 | 1.0 | Versión inicial | [tu nombre] |
 | 18/11/2026 | 1.1 | §14 y NFR-MANT-02: se agrega la rama `dev` de integración; las ramas de tarea salen de `dev` y entran por PR a `dev`, y `dev` pasa a `main` por PR. | [tu nombre] |
 | 18/11/2026 | 1.2 | §6.2: `lib/env.ts` se acompaña de `env.public.ts` (variables públicas para el cliente) y `env.schema.ts` (schemas puros que valida `next.config.ts`). | [tu nombre] |
+| 18/11/2026 | 1.3 | §14 y NFR-MANT-02: se deja sin efecto la rama `dev` de la v1.1; las ramas de tarea salen de `main` y entran a `main` por PR. NFR-SEC-08: el audit bloqueante cubre solo dependencias de producción (`--omit=dev`) y el completo es informativo, porque GHSA-fc5q-39xc-vjpf (`picomatch`, solo en herramientas de desarrollo) no tiene versión corregida. | [tu nombre] |

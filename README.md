@@ -48,6 +48,14 @@ Hoy la única obligatoria es `NEXT_PUBLIC_SITE_URL`; el resto se vuelve obligato
 
 Antes del primer `test:e2e` hay que instalar el navegador: `npx playwright install chromium`.
 
+## CI y dependencias
+
+- **CI (GitHub Actions, `.github/workflows/ci.yml`):** corre en cada PR hacia `main` y en cada push a `main`. Pasos: `npm ci` → lint → typecheck → format:check → test → build → `npm audit`. El check se llama `CI / verify` y es obligatorio para mergear.
+- **Audit:** bloquea solo si hay vulnerabilidades altas en dependencias de producción (`npm audit --omit=dev`). El audit completo corre también pero es informativo (ver SPEC NFR-SEC-08).
+- **Node:** versión 24 (`.nvmrc` y `engines` en `package.json`). Con nvm: `nvm use`.
+- **Dependabot (`.github/dependabot.yml`):** los lunes revisa npm y GitHub Actions. Las actualizaciones minor/patch llegan agrupadas en un PR; las major, por separado.
+- Los e2e (Playwright) todavía no corren en CI (tarea F5-06): correlos en local con `npm run test:e2e`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
