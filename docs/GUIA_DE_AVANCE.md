@@ -20,7 +20,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 
 | Fase | Peso | Avance | Estado |
 |---|---|---|---|
-| F1 — Fundaciones | 0–20% | 0 / 9 | ⬜ |
+| F1 — Fundaciones | 0–20% | 3 / 9 | 🟨 |
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 0 / 8 | ⬜ |
@@ -34,24 +34,24 @@ Estados: ⬜ sin empezar · 🟨 en curso · ✅ cerrada.
 
 Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la seguridad base y la documentación listas. Todavía no hay contenido real, pero todo lo que venga después se apoya acá.
 
-- [ ] **F1-01 · Proyecto base desplegado** (Vos)
+- [X] **F1-01 · Proyecto base desplegado** (Vos)
   Terminada cuando:
-  - [ ] Proyecto Next.js con TypeScript, Tailwind, App Router, ESLint y carpeta `src/`.
-  - [ ] Repo en GitHub y primer deploy en Vercel funcionando (abrís la URL y carga).
+  - [X] Proyecto Next.js con TypeScript, Tailwind, App Router, ESLint y carpeta `src/`.
+  - [X] Repo en GitHub y primer deploy en Vercel funcionando (abrís la URL y carga).
 
-- [ ] **F1-02 · Documentos de trabajo en el repo** (Vos)
+- [X] **F1-02 · Documentos de trabajo en el repo** (Vos)
   Terminada cuando:
-  - [ ] `CLAUDE.md` en la raíz; `docs/SPEC.md` y `docs/GUIA_DE_AVANCE.md` en `docs/`.
-  - [ ] Completaste tu nombre en el SPEC (encabezado y §17).
-  - [ ] Commit `docs: add CLAUDE.md, spec and progress guide` en `main`.
+  - [X] `CLAUDE.md` en la raíz; `docs/SPEC.md` y `docs/GUIA_DE_AVANCE.md` en `docs/`.
+  - [X] Completaste tu nombre en el SPEC (encabezado y §17).
+  - [X] Commit `docs: add CLAUDE.md, spec and progress guide` en `main`.
 
-- [ ] **F1-03 · Tooling y scripts** (IA)
+- [X] **F1-03 · Tooling y scripts** (IA)
   Terminada cuando:
-  - [ ] TypeScript estricto (incluye `noUncheckedIndexedAccess`), ESLint y Prettier configurados y consistentes entre sí.
-  - [ ] Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`, `test:coverage`, `test:e2e`.
-  - [ ] Vitest + Testing Library con **1 test de ejemplo** que pasa.
-  - [ ] Playwright con **1 smoke test** (el inicio carga y tiene `<h1>`) que pasa en local.
-  - [ ] `.gitignore` cubre `.env*` (excepto `.env.example`), `coverage/` y los reportes de Playwright.
+  - [X] TypeScript estricto (incluye `noUncheckedIndexedAccess`), ESLint y Prettier configurados y consistentes entre sí.
+  - [X] Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`, `test:coverage`, `test:e2e`.
+  - [X] Vitest + Testing Library con **1 test de ejemplo** que pasa.
+  - [X] Playwright con **1 smoke test** (el inicio carga y tiene `<h1>`) que pasa en local.
+  - [X] `.gitignore` cubre `.env*` (excepto `.env.example`), `coverage/` y los reportes de Playwright.
   - Verificás: corrés todos los scripts y ninguno falla.
 
 - [ ] **F1-04 · Estructura y configuración de entorno** (IA) · SPEC §6.2, §9
