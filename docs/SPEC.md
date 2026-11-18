@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.0 (18/11/2026) |
+| Versión | 1.1 (18/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -460,7 +460,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | NFR-A11Y-01 | Accesibilidad | WCAG 2.2 AA: navegación por teclado, foco visible, labels, `aria-live` en errores y confirmación, link para saltar al contenido. |
 | NFR-SEO-01 | SEO | Metadata única por página, `lang="es-AR"`, URLs en español, canonical, OG. |
 | NFR-MANT-01 | Mantenibilidad | Capas de §6, archivos chicos, sin duplicar validaciones, configuración y contenido fuera de componentes. |
-| NFR-MANT-02 | Mantenibilidad | Lint, typecheck, tests y build en CI obligatorios para mergear a `main`. |
+| NFR-MANT-02 | Mantenibilidad | Lint, typecheck, tests y build en CI obligatorios para mergear a `dev` y a `main`. |
 | NFR-ESC-01 | Escalabilidad | Índices de §7; listado paginado en el servidor; conexión por pooler; sin estado en memoria entre requests. |
 | NFR-ESC-02 | Escalabilidad | Ports y adapters para cambiar de proveedor (mail, captcha, rate limit) sin tocar services. |
 | NFR-OBS-01 | Observabilidad | Logger estructurado (JSON) con `level`, `event`, `inquiryId` y `errorCode`. Errores de mail y captcha logueados. Sentry opcional en Fase 5. |
@@ -505,7 +505,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 ---
 
 ## 14. Operación
-- **Ramas:** `main` (producción) y `feat/<tarea>-<descripcion>` por tarea. PR obligatorio con CI en verde. Squash merge.
+- **Ramas:** `main` (producción), `dev` (integración) y `feat/<tarea>-<descripcion>` por tarea, creada desde `dev`. Cada tarea entra a `dev` por PR con CI en verde (squash merge). `dev` pasa a `main` por PR cuando se quiere publicar en producción (por ejemplo, al cerrar una fase).
 - **Deploy:** Vercel (preview por PR y producción desde `main`). Las migraciones de producción se aplican manualmente (`prisma migrate deploy`), con aprobación, antes de mergear cambios de schema.
 - **Backups:** los de Supabase (plan gratuito: verificar la política vigente) y un export manual antes de cada migración en producción.
 
@@ -548,3 +548,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | Fecha | Versión | Cambio | Aprobado por |
 |---|---|---|---|
 | 18/11/2026 | 1.0 | Versión inicial | [tu nombre] |
+| 18/11/2026 | 1.1 | §14 y NFR-MANT-02: se agrega la rama `dev` de integración; las ramas de tarea salen de `dev` y entran por PR a `dev`, y `dev` pasa a `main` por PR. | [tu nombre] |
