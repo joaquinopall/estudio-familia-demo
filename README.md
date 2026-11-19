@@ -11,7 +11,7 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 - Aviso por mail al estudio y acuse de recibo a quien consulta.
 - Panel de administración para gestionar las consultas.
 
-**Estado actual:** Fase 1 (fundaciones). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
+**Estado actual:** Fase 1 (fundaciones) completa; próxima: Fase 2 (sitio público y contenido). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Stack
 
