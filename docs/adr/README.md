@@ -1,0 +1,50 @@
+# Registro de decisiones de arquitectura (ADR)
+
+Cada decisión de arquitectura relevante queda en un documento corto: qué problema había, qué se decidió y qué consecuencias tiene. Así, quien llega al proyecto entiende **por qué** el código es como es.
+
+Reglas:
+
+- Una ADR por decisión, numerada en orden (`NNNN-titulo-en-kebab-case.md`).
+- Una ADR aceptada no se edita para cambiar la decisión: se escribe una nueva que la **reemplaza** y se marca la vieja como "Reemplazada por NNNN".
+- Si la decisión cambia el SPEC, se registra también en SPEC §17.
+
+## Índice
+
+| ADR                                                          | Título                                                         | Estado                         |
+| ------------------------------------------------------------ | -------------------------------------------------------------- | ------------------------------ |
+| [0001](0001-arquitectura-en-capas-por-feature.md)            | Arquitectura en capas con ports & adapters, por feature        | Aceptada                       |
+| [0002](0002-supabase-con-prisma-y-rls.md)                    | Supabase (Postgres + Auth) con Prisma, RLS sin políticas       | Aceptada (se implementa en F3) |
+| [0003](0003-un-tenant-por-instalacion.md)                    | Un tenant por instalación                                      | Aceptada                       |
+| [0004](0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (se implementa en F3) |
+| [0005](0005-mails-despues-de-responder.md)                   | Mails después de responder, sin el mensaje completo            | Aceptada (se implementa en F3) |
+| [0006](0006-validacion-de-variables-de-entorno.md)           | Validación de variables de entorno al arrancar                 | Aceptada                       |
+| [0007](0007-csp-report-only-sin-nonces.md)                   | CSP en report-only y sin nonces                                | Aceptada (se revisa en F5-01)  |
+| [0008](0008-politica-de-npm-audit-en-ci.md)                  | Política de `npm audit` en la CI                               | Aceptada                       |
+
+## Plantilla
+
+```markdown
+# NNNN. Título de la decisión
+
+- **Estado:** Propuesta | Aceptada | Reemplazada por NNNN
+- **Fecha:** DD/MM/AAAA
+- **Relacionado:** IDs del SPEC, tareas, otras ADR
+
+## Contexto
+
+Qué problema o fuerza obliga a decidir. Qué restricciones hay.
+
+## Decisión
+
+Qué se decidió, en una o dos frases claras. Detalles necesarios para aplicarla.
+
+## Alternativas consideradas
+
+- Alternativa: por qué no.
+
+## Consecuencias
+
+- Positivas.
+- Negativas o costos aceptados.
+- Qué hay que hacer o vigilar a partir de ahora.
+```
