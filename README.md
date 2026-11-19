@@ -16,10 +16,6 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
 ## Variables de entorno
 
 1. Copiá `.env.example` a `.env.local` (no se commitea). Con los valores del ejemplo ya alcanza para correr el proyecto en local durante la Fase 1.
@@ -47,6 +43,15 @@ Hoy la única obligatoria es `NEXT_PUBLIC_SITE_URL`; el resto se vuelve obligato
 | `npm run test:e2e`      | Tests e2e con Playwright contra el build de producción (levanta el servidor solo) |
 
 Antes del primer `test:e2e` hay que instalar el navegador: `npx playwright install chromium`.
+
+## Diseño y datos del estudio
+
+- **Tokens de diseño** (SPEC §11.1): colores, radios y fuentes en `src/app/globals.css`. Paleta cálida: base marfil, primario verde azulado y acento terracota (solo para llamados a la acción). Un solo tema claro.
+  - Los colores están en hex: el test `src/app/__tests__/design-tokens.test.ts` verifica contraste AA (texto 4.5:1; foco y bordes de campos 3:1). Si cambiás un color y el test falla, el contraste no alcanza.
+- **Tipografías** (`next/font`, en `src/app/layout.tsx`): Lora para títulos y Plus Jakarta Sans para texto.
+- **Componentes UI:** shadcn/ui (base Radix) en `src/components/ui`, generados con `npx shadcn@4.23.0 add <componente>`. No se editan salvo necesidad (excepción: `sonner.tsx` usa tema claro fijo, sin `next-themes`) y no los formatea Prettier.
+- **Layout público** (`src/app/(public)/layout.tsx`): link para saltar al contenido, banner de demo (`NEXT_PUBLIC_DEMO_MODE`), header con menú mobile, footer con datos y disclaimer, y botón de WhatsApp. Componentes en `src/components/layout`.
+- **Datos del estudio:** todos en `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, contacto, WhatsApp, navegación, disclaimer). Para convertir la demo en el sitio de un estudio real se edita ese archivo, no los componentes. Hoy son **ficticios**; el test `site-config.test.ts` lo verifica mientras `isFictitious` sea `true`.
 
 ## Headers de seguridad
 
