@@ -20,7 +20,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 
 | Fase | Peso | Avance | Estado |
 |---|---|---|---|
-| F1 — Fundaciones | 0–20% | 5 / 9 | 🟨 |
+| F1 — Fundaciones | 0–20% | 6 / 9 | 🟨 |
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 0 / 8 | ⬜ |
@@ -71,11 +71,11 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
   - [X] (Vos) Protección de `main` en GitHub: PR obligatorio y check de CI requerido.
   - Verificás: abrís un PR de prueba y aparece el check en verde.
 
-- [ ] **F1-06 · Headers de seguridad** (IA) · NFR-SEC-04, NFR-SEC-05
+- [X] **F1-06 · Headers de seguridad** (IA) · NFR-SEC-04, NFR-SEC-05
   Terminada cuando:
-  - [ ] Headers de NFR-SEC-04 configurados para todas las rutas.
-  - [ ] CSP en modo `Content-Security-Policy-Report-Only` con una política base documentada.
-  - [ ] Test (unit o e2e) que verifica que los headers están presentes.
+  - [X] Headers de NFR-SEC-04 configurados para todas las rutas.
+  - [X] CSP en modo `Content-Security-Policy-Report-Only` con una política base documentada.
+  - [X] Test (unit o e2e) que verifica que los headers están presentes.
   - Verificás: en el preview de Vercel, DevTools → Network → headers de la respuesta del documento.
 
 - [ ] **F1-07 · Sistema de diseño base y layout** (IA, después vos con `/claude-design`) · SPEC §11
