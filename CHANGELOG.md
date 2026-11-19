@@ -4,12 +4,20 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
-### F1-08 · Documentación inicial
+_Sin cambios todavía. Próxima: Fase 2 — Sitio público y contenido._
+
+## Fase 1 — Fundaciones
+
+### F1-09 · Cierre de fase — 19/11/2026
+
+- **Cambiado:** Dependabot ignora las versiones major de `@types/node` (debe coincidir con Node 24) y de `typescript` (typescript-eslint todavía no soporta TypeScript 7.0; se cerró el PR #7).
+- **Cambiado:** dependencias actualizadas por Dependabot: React 19.3.1, Tailwind CSS 4.3.5 (#6) y ESLint 10 (#8), verificadas con lint, typecheck, tests, build y e2e.
+- **Verificado:** producción responde con el layout de F1-07 y los headers de seguridad de F1-06. El banner de demo requiere `NEXT_PUBLIC_DEMO_MODE=true` en las variables de Vercel.
+
+### F1-08 · Documentación inicial — 19/11/2026 (#12)
 
 - **Agregado:** README completo (qué es, cómo correrlo, variables, scripts, estructura, seguridad, CI y deploy), `docs/ARCHITECTURE.md` con diagramas, `docs/adr/` con las ADR 0001–0008 y su índice, `docs/TESTING.md` con la guía de tests manuales (plantilla, índice MT-01–15 y MT-11, MT-13 y MT-14 detallados) y este changelog.
 - **Agregado:** test que verifica que los links relativos de la documentación apunten a archivos existentes.
-
-## Fase 1 — Fundaciones
 
 ### F1-07 · Sistema de diseño base y layout — 19/11/2026 (#11)
 
