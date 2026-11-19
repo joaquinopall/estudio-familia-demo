@@ -23,5 +23,7 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: !isCI,
     timeout: 180_000,
+    // Deterministic demo banner for the layout e2e, regardless of the local .env.local.
+    env: { NEXT_PUBLIC_DEMO_MODE: "true" },
   },
 });
