@@ -1,32 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Estudio de familia y sucesiones — Demo 1
 
-## Getting Started
+Sitio web profesional con sistema de consultas para un estudio jurídico de **familia y sucesiones**. Es una **demo comercial reutilizable**: se convierte en el sitio de un estudio real cambiando configuración y contenido, no código.
 
-First, run the development server:
+> **El estudio es ficticio.** Nombre, profesionales, matrículas, teléfono y dirección son inventados (ver [`src/config/site.config.ts`](src/config/site.config.ts)). Con `NEXT_PUBLIC_DEMO_MODE=true` el sitio muestra el banner "Sitio de demostración — estudio ficticio".
+
+**Qué va a hacer cuando esté completo** (alcance en [`docs/SPEC.md`](docs/SPEC.md) §2):
+
+- Sitio público: inicio, áreas de práctica, nosotros, preguntas frecuentes, contacto y política de privacidad.
+- Formulario "Contanos tu caso" en dos pasos, con anti-spam y consentimiento de datos.
+- Aviso por mail al estudio y acuse de recibo a quien consulta.
+- Panel de administración para gestionar las consultas.
+
+**Estado actual:** Fase 1 (fundaciones). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
+
+## Stack
+
+| Área         | Tecnología                                                                    |
+| ------------ | ----------------------------------------------------------------------------- |
+| Framework    | Next.js 16 (App Router) + React 19 + TypeScript estricto                      |
+| Estilos y UI | Tailwind CSS 4 + shadcn/ui (base Radix)                                       |
+| Validación   | Zod 4                                                                         |
+| Datos y auth | Supabase (Postgres + Auth) con Prisma — _desde la Fase 3_                     |
+| Servicios    | Resend (mails), Cloudflare Turnstile (anti-bots), Upstash (rate limit) — _F3_ |
+| Tests        | Vitest + Testing Library, Playwright + axe                                    |
+| Deploy y CI  | Vercel + GitHub Actions                                                       |
+
+## Requisitos
+
+- **Node.js 24** (está en [`.nvmrc`](.nvmrc); con nvm: `nvm use`).
+- **npm** (el que viene con Node 24).
+- Git.
+
+## Cómo correrlo
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/joaquinopall/estudio-familia-demo.git
+cd estudio-familia-demo
+npm ci                              # instala exactamente lo del package-lock
+cp .env.example .env.local          # en Windows: copy .env.example .env.local
+npm run dev                         # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Con los valores de `.env.example` alcanza para correr el proyecto en la Fase 1.
+
+Para los tests e2e, la primera vez instalá el navegador: `npx playwright install chromium`.
 
 ## Variables de entorno
 
-1. Copiá `.env.example` a `.env.local` (no se commitea). Con los valores del ejemplo ya alcanza para correr el proyecto en local durante la Fase 1.
-2. Las variables se validan con Zod al arrancar (`dev`, `build`, `start`). Si falta una obligatoria o tiene un formato inválido, el comando falla y el mensaje dice cuál es.
-3. En el código, las variables se leen **solo** desde `src/lib/env.ts` (servidor) o `src/lib/env.public.ts` (componentes cliente). Nunca `process.env.X` suelto.
+Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `dev`, `build` y `start`: si falta una obligatoria o tiene formato inválido, el comando falla con un mensaje que nombra la variable (nunca su valor). Detalle en [`docs/adr/0006-validacion-de-variables-de-entorno.md`](docs/adr/0006-validacion-de-variables-de-entorno.md).
 
-Hoy la única obligatoria es `NEXT_PUBLIC_SITE_URL`; el resto se vuelve obligatoria en su fase (ver comentarios en `.env.example` y SPEC §9). En Vercel hay que cargarla en Preview y Production.
+| Variable                                              | Pública | Obligatoria desde  | Uso                               |
+| ----------------------------------------------------- | :-----: | ------------------ | --------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                |   sí    | **Fase 1**         | URLs absolutas, metadata, sitemap |
+| `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`false`) | Banner de demo (`true` / `false`) |
+| `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | Fase 4             | Supabase Auth                     |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | Fase 4             | Supabase Auth                     |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                      |   sí    | Fase 3             | Widget anti-bots                  |
+| `DATABASE_URL`                                        |   no    | Fase 3             | Prisma en runtime (pooler)        |
+| `DIRECT_URL`                                          |   no    | Fase 3             | Prisma migraciones                |
+| `RESEND_API_KEY`                                      |   no    | Fase 3             | Envío de mails                    |
+| `EMAIL_FROM`                                          |   no    | Fase 3             | Remitente                         |
+| `FIRM_NOTIFICATION_EMAIL`                             |   no    | Fase 3             | Destinatario de consultas nuevas  |
+| `TURNSTILE_SECRET_KEY`                                |   no    | Fase 3             | Verificación anti-bots            |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` |   no    | Fase 3             | Rate limit                        |
+| `IP_HASH_SALT`                                        |   no    | Fase 3             | HMAC de IPs (32+ caracteres)      |
+
+Reglas:
+
+- En el código, las variables se leen **solo** desde `src/lib/env.ts` (servidor) o `src/lib/env.public.ts` (componentes cliente). Nunca `process.env.X` suelto.
+- Las `NEXT_PUBLIC_*` terminan en el JavaScript del navegador: nunca pongas secretos en ellas.
+- `.env.example` documenta todas las variables y no tiene valores reales; un test verifica que esté sincronizado con los schemas.
 
 ## Scripts
-
-> El README completo (descripción, variables de entorno, estructura y deploy) se escribe en la tarea F1-08.
 
 | Script                  | Qué hace                                                                          |
 | ----------------------- | --------------------------------------------------------------------------------- |
@@ -35,51 +80,82 @@ Hoy la única obligatoria es `NEXT_PUBLIC_SITE_URL`; el resto se vuelve obligato
 | `npm run start`         | Sirve el build de producción                                                      |
 | `npm run lint`          | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                    |
 | `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                 |
-| `npm run format`        | Formatea el código con Prettier (incluye orden de clases de Tailwind)             |
+| `npm run format`        | Formatea con Prettier (incluye el orden de clases de Tailwind)                    |
 | `npm run format:check`  | Verifica el formato sin modificar archivos                                        |
 | `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida)                         |
 | `npm run test:watch`    | Vitest en modo watch                                                              |
 | `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                    |
 | `npm run test:e2e`      | Tests e2e con Playwright contra el build de producción (levanta el servidor solo) |
 
-Antes del primer `test:e2e` hay que instalar el navegador: `npx playwright install chromium`.
+Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`](docs/TESTING.md).
+
+> Si `npm run typecheck` falla con errores dentro de `.next/dev/types` sobre archivos que ya no existen, borrá la carpeta `.next/dev` (son tipos viejos que dejó `next dev`).
+
+## Estructura
+
+```
+src/
+  app/                 rutas (App Router), layout raíz y estilos globales (tokens)
+    (public)/          layout público: banner, header, footer, WhatsApp
+  components/
+    ui/                componentes de shadcn/ui (generados)
+    layout/            Header, MobileMenu, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink
+  config/              site.config.ts: todos los datos del estudio
+  content/             contenido del sitio como datos (Fase 2)
+  features/            código por feature: inquiries, auth (Fases 3 y 4)
+  lib/                 env, ActionResult, logger, headers de seguridad, utilidades
+tests/e2e/             Playwright
+docs/                  SPEC, guía de avance, arquitectura, ADR, testing
+```
+
+Arquitectura, capas y flujos: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Decisiones: [`docs/adr/`](docs/adr/README.md).
 
 ## Diseño y datos del estudio
 
-- **Tokens de diseño** (SPEC §11.1): colores, radios y fuentes en `src/app/globals.css`. Paleta cálida: base marfil, primario verde azulado y acento terracota (solo para llamados a la acción). Un solo tema claro.
-  - Los colores están en hex: el test `src/app/__tests__/design-tokens.test.ts` verifica contraste AA (texto 4.5:1; foco y bordes de campos 3:1). Si cambiás un color y el test falla, el contraste no alcanza.
+- **Tokens de diseño** (SPEC §11.1) en `src/app/globals.css`: base marfil, primario verde azulado y acento terracota (solo para llamados a la acción). Un solo tema claro. Los colores están en hex y el test `src/app/__tests__/design-tokens.test.ts` verifica contraste AA (texto 4.5:1; foco y bordes de campos 3:1).
 - **Tipografías** (`next/font`, en `src/app/layout.tsx`): Lora para títulos y Plus Jakarta Sans para texto.
-- **Componentes UI:** shadcn/ui (base Radix) en `src/components/ui`, generados con `npx shadcn@4.23.0 add <componente>`. No se editan salvo necesidad (excepción: `sonner.tsx` usa tema claro fijo, sin `next-themes`) y no los formatea Prettier.
-- **Layout público** (`src/app/(public)/layout.tsx`): link para saltar al contenido, banner de demo (`NEXT_PUBLIC_DEMO_MODE`), header con menú mobile, footer con datos y disclaimer, y botón de WhatsApp. Componentes en `src/components/layout`.
-- **Datos del estudio:** todos en `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, contacto, WhatsApp, navegación, disclaimer). Para convertir la demo en el sitio de un estudio real se edita ese archivo, no los componentes. Hoy son **ficticios**; el test `site-config.test.ts` lo verifica mientras `isFictitious` sea `true`.
+- **Componentes UI:** shadcn/ui en `src/components/ui`, agregados con `npx shadcn@4.23.0 add <componente>`. No se editan salvo necesidad (hoy, solo `sonner.tsx`: tema claro fijo) y Prettier no los formatea.
+- **Datos del estudio:** todos en [`src/config/site.config.ts`](src/config/site.config.ts). Para un estudio real se edita ese archivo, no los componentes (ver [`src/config/README.md`](src/config/README.md)).
+- El refinamiento visual se hace con `/claude-design`, respetando los tokens.
 
-## Headers de seguridad
+## Seguridad
 
-Todas las rutas responden con HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` y una Content Security Policy en modo **report-only** (SPEC NFR-SEC-04 y NFR-SEC-05). Se definen en `src/lib/security/headers.ts` y se aplican desde `next.config.ts`.
+- **Headers** en todas las rutas: HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` y una CSP en modo **report-only** (no bloquea; las violaciones se ven en la consola del navegador como `[Report Only]`). Se definen en `src/lib/security/headers.ts`. Ver [ADR 0007](docs/adr/0007-csp-report-only-sin-nonces.md).
+- **Variables de entorno** validadas al arrancar; secretos solo del lado del servidor (`server-only`).
+- **Logs** estructurados en JSON, sin datos personales (`src/lib/logger.ts`).
+- Detalle completo de requisitos y amenazas en SPEC §10.
 
-- **Verlos:** `npm run build && npm run start`, DevTools → Network → documento → Response Headers (o `curl -I <url>`).
-- **CSP report-only:** no bloquea nada; las violaciones aparecen en la consola del navegador como `[Report Only]`. En los previews de Vercel son esperables las de `vercel.live` (barra de comentarios); se resuelven al aplicar la CSP en F5-01.
-- **Cambiar la política:** editar las directivas en `buildContentSecurityPolicy`. El e2e `tests/e2e/security-headers.spec.ts` falla si el inicio genera violaciones.
+## Calidad y CI
 
-## CI y dependencias
+- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) en cada PR y push a `main`: `npm ci` → lint → typecheck → format:check → test → build → `npm audit`. El check `CI / verify` es obligatorio para mergear.
+- **Audit:** bloquea vulnerabilidades altas en dependencias de producción; el audit completo es informativo. Ver [ADR 0008](docs/adr/0008-politica-de-npm-audit-en-ci.md).
+- **Dependabot** ([`.github/dependabot.yml`](.github/dependabot.yml)): los lunes, npm y GitHub Actions; minor/patch agrupadas, major por separado. Las major se revisan antes de mergear.
+- Los e2e todavía corren solo en local (en CI desde la tarea F5-06).
 
-- **CI (GitHub Actions, `.github/workflows/ci.yml`):** corre en cada PR hacia `main` y en cada push a `main`. Pasos: `npm ci` → lint → typecheck → format:check → test → build → `npm audit`. El check se llama `CI / verify` y es obligatorio para mergear.
-- **Audit:** bloquea solo si hay vulnerabilidades altas en dependencias de producción (`npm audit --omit=dev`). El audit completo corre también pero es informativo (ver SPEC NFR-SEC-08).
-- **Node:** versión 24 (`.nvmrc` y `engines` en `package.json`). Con nvm: `nvm use`.
-- **Dependabot (`.github/dependabot.yml`):** los lunes revisa npm y GitHub Actions. Las actualizaciones minor/patch llegan agrupadas en un PR; las major, por separado.
-- Los e2e (Playwright) todavía no corren en CI (tarea F5-06): correlos en local con `npm run test:e2e`.
+## Deploy (Vercel)
 
-## Learn More
+- **Producción** se despliega desde `main`; cada PR genera un **preview**.
+- Cargá las variables en Vercel → Settings → Environment Variables, en **Production y Preview**. Si falta una obligatoria, el build falla con el mensaje de la validación (útil para diagnosticar un deploy rojo).
+- Node 24 se toma de `engines` en `package.json`.
+- Desde la Fase 3: las migraciones de producción se aplican a mano (`prisma migrate deploy`), con aprobación, antes de mergear cambios de schema (SPEC §14).
 
-To learn more about Next.js, take a look at the following resources:
+## Flujo de trabajo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+El proyecto sigue **spec-driven development**: [`docs/SPEC.md`](docs/SPEC.md) es la fuente de verdad, y cada tarea de la guía se planifica, se aprueba, se implementa con tests y se verifica antes de cerrarse (detalle en [`CLAUDE.md`](CLAUDE.md)).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Una tarea = una rama `feat/<tarea>-<descripcion>` creada desde `main` = un PR.
+- PR con CI en verde y **squash merge**.
+- Commits con Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`).
+- Cada tarea actualiza la documentación en el mismo PR.
 
-## Deploy on Vercel
+## Documentación
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Documento                                          | Para qué                                            |
+| -------------------------------------------------- | --------------------------------------------------- |
+| [`docs/SPEC.md`](docs/SPEC.md)                     | Requisitos, arquitectura, datos, seguridad y diseño |
+| [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) | Fases, tareas y avance                              |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)     | Capas, flujos y decisiones vigentes                 |
+| [`docs/adr/`](docs/adr/README.md)                  | Registro de decisiones de arquitectura              |
+| [`docs/TESTING.md`](docs/TESTING.md)               | Cómo correr los tests y guía de tests manuales      |
+| [`CHANGELOG.md`](CHANGELOG.md)                     | Cambios por tarea                                   |
+| [`CLAUDE.md`](CLAUDE.md)                           | Instrucciones de trabajo para la IA                 |

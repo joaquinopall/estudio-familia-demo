@@ -20,7 +20,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 
 | Fase | Peso | Avance | Estado |
 |---|---|---|---|
-| F1 — Fundaciones | 0–20% | 6 / 9 | 🟨 |
+| F1 — Fundaciones | 0–20% | 7 / 9 | 🟨 |
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 0 / 8 | ⬜ |
@@ -78,14 +78,14 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
   - [X] Test (unit o e2e) que verifica que los headers están presentes.
   - Verificás: en el preview de Vercel, DevTools → Network → headers de la respuesta del documento.
 
-- [ ] **F1-07 · Sistema de diseño base y layout** (IA, después vos con `/claude-design`) · SPEC §11
+- [X] **F1-07 · Sistema de diseño base y layout** (IA, después vos con `/claude-design`) · SPEC §11
   Terminada cuando:
-  - [ ] shadcn/ui inicializado; componentes base agregados: `button`, `input`, `textarea`, `label`, `select`, `radio-group`, `checkbox`, `card`, `badge`, `sonner` o `toast`.
-  - [ ] Tokens de color y tipografía en `globals.css` según §11.1 (versión inicial) y fuentes con `next/font`.
-  - [ ] `src/config/site.config.ts` tipado con datos **ficticios** del estudio.
-  - [ ] Layout público: `SkipLink`, `DemoBanner` (con `NEXT_PUBLIC_DEMO_MODE`), `Header` (con menú mobile accesible), `Footer` (datos del config y disclaimer) y `WhatsAppButton`.
-  - [ ] `lang="es-AR"` y metadata base del sitio.
-  - [ ] Página de inicio placeholder con un `<h1>` y un CTA (el contenido real va en F2).
+  - [X] shadcn/ui inicializado; componentes base agregados: `button`, `input`, `textarea`, `label`, `select`, `radio-group`, `checkbox`, `card`, `badge`, `sonner` o `toast`.
+  - [X] Tokens de color y tipografía en `globals.css` según §11.1 (versión inicial) y fuentes con `next/font`.
+  - [X] `src/config/site.config.ts` tipado con datos **ficticios** del estudio.
+  - [X] Layout público: `SkipLink`, `DemoBanner` (con `NEXT_PUBLIC_DEMO_MODE`), `Header` (con menú mobile accesible), `Footer` (datos del config y disclaimer) y `WhatsAppButton`.
+  - [X] `lang="es-AR"` y metadata base del sitio.
+  - [X] Página de inicio placeholder con un `<h1>` y un CTA (el contenido real va en F2).
   - Verificás: en mobile y desktop se ven el header, el footer, el banner y WhatsApp; con Tab llegás a todo; el contraste da AA (DevTools o axe).
 
 - [ ] **F1-08 · Documentación inicial** (IA) · CLAUDE.md §6
