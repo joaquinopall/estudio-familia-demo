@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.4 (18/11/2026) |
+| Versión | 1.5 (19/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -164,7 +164,7 @@ src/
     layout.tsx
   components/
     ui/                          # shadcn (generado)
-    layout/                      # Header, Footer, SkipLink, DemoBanner, WhatsAppButton
+    layout/                      # Header, MobileMenu, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink (archivos en kebab-case)
     marketing/                   # Hero, PracticeAreaCard, ProcessSteps, TrustBar, FaqList, CTA
   features/
     inquiries/
@@ -191,6 +191,8 @@ src/
     ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock
     adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter
     action-result.ts             # tipo ActionResult + helpers
+    utils.ts                     # cn() (lo genera shadcn)
+    whatsapp.ts                  # buildWhatsAppUrl (FR-13)
     logger.ts                    # logger estructurado sin PII
     security/ip.ts               # obtener IP de headers y hashearla (HMAC-SHA256 con IP_HASH_SALT)
     security/headers.ts          # headers de seguridad y CSP (NFR-SEC-04/05); lo usa next.config.ts
@@ -555,3 +557,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 18/11/2026 | 1.2 | §6.2: `lib/env.ts` se acompaña de `env.public.ts` (variables públicas para el cliente) y `env.schema.ts` (schemas puros que valida `next.config.ts`). | [tu nombre] |
 | 18/11/2026 | 1.3 | §14 y NFR-MANT-02: se deja sin efecto la rama `dev` de la v1.1; las ramas de tarea salen de `main` y entran a `main` por PR. NFR-SEC-08: el audit bloqueante cubre solo dependencias de producción (`--omit=dev`) y el completo es informativo, porque GHSA-fc5q-39xc-vjpf (`picomatch`, solo en herramientas de desarrollo) no tiene versión corregida. | [tu nombre] |
 | 18/11/2026 | 1.4 | §6.2: se agrega `lib/security/headers.ts` (headers de seguridad y CSP report-only, aplicados desde `next.config.ts`). | [tu nombre] |
+| 19/11/2026 | 1.5 | §6.2: se agregan `lib/utils.ts` (`cn`, generado por shadcn) y `lib/whatsapp.ts`; `components/layout` suma `MobileMenu` y `CtaLink`, con archivos en kebab-case como los de shadcn. §11.1: tipografías elegidas, Lora (títulos) y Plus Jakarta Sans (texto); un solo tema claro en v1. | [tu nombre] |
