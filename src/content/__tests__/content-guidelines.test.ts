@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { siteConfig } from "@/config/site.config";
+import { areaPageContent, areasIndexContent } from "@/content/area-pages";
 import { faqGroups, generalFaqs } from "@/content/faqs";
 import { homeContent } from "@/content/home";
 import { practiceAreas } from "@/content/practice-areas";
@@ -22,6 +23,8 @@ const texts = [
   ...collectTexts(generalFaqs, "generalFaqs"),
   ...collectTexts(faqGroups, "faqGroups"),
   ...collectTexts(homeContent, "homeContent"),
+  ...collectTexts(areasIndexContent, "areasIndexContent"),
+  ...collectTexts(areaPageContent, "areaPageContent"),
 ];
 
 /**

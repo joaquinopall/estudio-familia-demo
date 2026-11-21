@@ -4,6 +4,13 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F2-03 · Áreas de práctica
+
+- **Agregado:** `/areas` (índice con las 5 áreas y un CTA para temas fuera de la lista) y `/areas/[slug]` con migas de pan, introducción, "¿Cuándo consultar?", documentación orientativa, preguntas frecuentes del área, "Otras áreas" y CTA con el área preseleccionada (`/contacto?area=<slug>`). Metadata propia por página (US-02 CA2; JSON-LD en F2-06).
+- **Agregado:** componentes `PracticeAreaGrid` (compartido con el inicio), `Breadcrumbs` y `ContentList`; textos en `src/content/area-pages.ts`; helper `getAreaContactHref`.
+- **Agregado:** las 5 áreas se generan en el build; un slug desconocido responde **404 real** gracias a `ensureStatic = 'navigation'` (ADR-0009), porque `dynamicParams = false` no es compatible con Cache Components y sin esa opción la respuesta era 200 con `noindex`.
+- **Agregado:** tests de las dos páginas, de los componentes y del contenido; e2e de navegación, status 200/404, CTA con área, axe y scroll horizontal; caso manual MT-17. SPEC v1.7.
+
 ### F2-02 · Inicio
 
 - **Agregado:** página de inicio completa (US-01): hero con CTA visible sin scroll en mobile, 5 tarjetas de áreas, "Cómo trabajamos" en 3 pasos, señales de confianza (matrículas, dirección, horarios, confidencialidad y tiempo de respuesta), 3 preguntas destacadas y CTA final.

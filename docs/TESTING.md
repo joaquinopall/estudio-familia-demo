@@ -102,6 +102,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-14 | Botón de WhatsApp                                       | F1-08         | **Detallado** |
 | MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-09         | Pendiente     |
 | MT-16 | Inicio responsive (360 a 1440 px)                       | F2-02         | **Detallado** |
+| MT-17 | Áreas de práctica: navegación, CTA y 404                | F2-03         | **Detallado** |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -200,6 +201,34 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - 1024 px o más: el header muestra los links y el botón; a la derecha del hero aparece la ficha con dirección, horario y tiempo de respuesta; las áreas van de a 3 y las 2 últimas quedan centradas; los 3 pasos van en fila, unidos por una línea; las preguntas frecuentes van a la derecha del título.
 - Paso 3: el borde de la tarjeta se marca y la flecha de "Leer más" se mueve apenas (no se mueve con "reducir movimiento" activado).
 - Paso 4: el foco se ve siempre; en las tarjetas de área se marca la tarjeta entera.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-17 — Áreas de práctica: navegación, CTA y 404
+
+- **Objetivo:** que cada área se pueda leer y recorrer cómodo, y que lleve al formulario con el área elegida.
+- **Requisitos:** FR-01, US-02 CA1, SPEC §11.3.
+- **Precondiciones:** sitio levantado (`npm run dev` o la URL de preview). DevTools a 360 px y a 1440 px.
+
+**Pasos**
+
+1. Desde el inicio, hacé clic en la tarjeta "Sucesiones".
+2. Recorré la página de arriba a abajo y abrí una pregunta frecuente.
+3. Mirá a dónde apuntan los dos botones "Contanos tu caso" (pasando el mouse o con clic derecho → copiar link).
+4. En "Otras áreas", entrá a otra área. Después usá las migas de pan para ir a "Áreas de práctica".
+5. Escribí a mano `/areas/no-existe` en la barra de direcciones.
+6. Repetí los pasos 1 a 4 solo con el teclado.
+
+**Resultado esperado**
+
+- Paso 1: la URL es `/areas/sucesiones` y el título de la pestaña es "Sucesiones · Estudio Alameda".
+- Paso 2: en orden se ven migas de pan, título, introducción, botón, "¿Cuándo consultar?", "¿Qué documentación suele hacer falta?" (con la aclaración de que es orientativa), preguntas frecuentes, "Otras áreas" y el cierre. A 1440 px, "Cuándo consultar" y "Documentación" van lado a lado; a 360 px, una debajo de la otra.
+- Paso 3: los dos apuntan a `/contacto?area=sucesiones` (la página de contacto todavía no existe: da 404 hasta F2-05).
+- Paso 4: "Otras áreas" muestra las otras 4, no la actual; `/areas` muestra las 5 tarjetas y el bloque "¿Tu situación no está en la lista?".
+- Paso 5: se ve la página 404 (la de Next por defecto hasta F2-07). En DevTools → Network, el documento tiene status **404**.
+- Paso 6: el foco se ve siempre; las preguntas se abren con Enter o Espacio.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
