@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.7 (21/11/2026) |
+| Versión | 1.8 (21/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -193,6 +193,7 @@ src/
     action-result.ts             # tipo ActionResult + helpers
     utils.ts                     # cn() (lo genera shadcn)
     whatsapp.ts                  # buildWhatsAppUrl (FR-13)
+    format-date.ts               # formatLongDate (fechas en es-AR, sin depender de la zona horaria)
     logger.ts                    # logger estructurado sin PII
     security/ip.ts               # obtener IP de headers y hashearla (HMAC-SHA256 con IP_HASH_SALT)
     security/headers.ts          # headers de seguridad y CSP (NFR-SEC-04/05); lo usa next.config.ts
@@ -202,6 +203,8 @@ src/
   content/
     home.ts                      # textos del inicio (hero, pasos, títulos de sección)
     area-pages.ts                # textos de /areas y rótulos de las páginas de área
+    about.ts                     # textos de /nosotros (enfoque y valores)
+    faq-page.ts                  # textos de /preguntas-frecuentes
     practice-areas.ts
     faqs.ts
     legal/privacy.ts             # texto de la política + versión
@@ -562,3 +565,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 19/11/2026 | 1.5 | §6.2: se agregan `lib/utils.ts` (`cn`, generado por shadcn) y `lib/whatsapp.ts`; `components/layout` suma `MobileMenu` y `CtaLink`, con archivos en kebab-case como los de shadcn. §11.1: tipografías elegidas, Lora (títulos) y Plus Jakarta Sans (texto); un solo tema claro en v1. | [tu nombre] |
 | 21/11/2026 | 1.6 | §6.2: se agrega `content/home.ts` (textos del inicio). La frase de confidencialidad de §11.2 pasa a `site.config.ts` (`confidentialityNote`) para usarla en el inicio y en el footer. Componentes de `components/marketing` en kebab-case, más `SectionHeading` y `CtaSection`. | [tu nombre] |
 | 21/11/2026 | 1.7 | §6.2: se agrega `content/area-pages.ts` (textos de `/areas` y rótulos de las páginas de área). `areas/[slug]` usa `generateStaticParams` + `ensureStatic = 'navigation'` en lugar de `dynamicParams = false`, que no es compatible con Cache Components (ADR-0009). | [tu nombre] |
+| 21/11/2026 | 1.8 | §6.2: se agregan `content/about.ts`, `content/faq-page.ts` y `lib/format-date.ts`. La política de privacidad (`content/legal/privacy.ts`) arranca en la versión `1.0` (vigente desde el 21/11/2026), nombra a los proveedores que procesan datos (Vercel, Supabase, Resend, Cloudflare, Upstash) e informa la transferencia internacional (art. 12, Ley 25.326). | [tu nombre] |

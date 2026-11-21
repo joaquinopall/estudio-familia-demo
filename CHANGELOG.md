@@ -4,6 +4,14 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F2-04 · Nosotros, Preguntas frecuentes y Privacidad
+
+- **Agregado:** `/nosotros` (enfoque, profesionales con matrícula y formación desde `siteConfig`, y valores), `/preguntas-frecuentes` (los 4 grupos con índice de anclas y links a las preguntas de cada área) y `/privacidad`.
+- **Agregado:** política de privacidad **versión 1.0** (vigente desde el 21/11/2026) en `src/content/legal/privacy.ts`, conforme a la Ley 25.326: responsable, datos, finalidad, carácter obligatorio, proveedores con nombre y transferencia internacional, conservación de 24 meses, seguridad, derechos, cookies y avisos obligatorios de la AAIP. Borrador pendiente de revisión jurídica.
+- **Agregado:** componentes `PageHeader`, `ProfessionalCard`, `TableOfContents` y `LegalDocument`; helpers `getFaqsByGroup` y `formatLongDate`.
+- **Cambiado:** `/areas` y `/areas/[slug]` usan `PageHeader`; la miga "Inicio" se comparte desde `home.ts`.
+- **Agregado:** tests de contenido (incluidos los avisos de la AAIP literales), de páginas y de componentes; e2e de status, axe, scroll horizontal, link del footer e índices; caso manual MT-18. SPEC v1.8.
+
 ### F2-03 · Áreas de práctica
 
 - **Agregado:** `/areas` (índice con las 5 áreas y un CTA para temas fuera de la lista) y `/areas/[slug]` con migas de pan, introducción, "¿Cuándo consultar?", documentación orientativa, preguntas frecuentes del área, "Otras áreas" y CTA con el área preseleccionada (`/contacto?area=<slug>`). Metadata propia por página (US-02 CA2; JSON-LD en F2-06).

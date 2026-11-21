@@ -6,9 +6,11 @@
  * DRAFT texts: they must be reviewed by the firm before going live.
  */
 
+import { homeBreadcrumb } from "@/content/home";
+
 /** Breadcrumb trail shared by /areas and /areas/[slug]. */
 export const areasBreadcrumbs = [
-  { label: "Inicio", href: "/" },
+  homeBreadcrumb,
   { label: "Áreas de práctica", href: "/areas" },
 ] as const;
 

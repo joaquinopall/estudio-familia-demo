@@ -112,3 +112,14 @@ export const generalFaqs = [
 export function getFeaturedFaqs(): readonly GeneralFaq[] {
   return generalFaqs.filter((faq: GeneralFaq) => faq.featured === true);
 }
+
+export type FaqGroupWithFaqs = { id: FaqGroupId; title: string; faqs: readonly GeneralFaq[] };
+
+/** Questions grouped in the order of faqGroups, for /preguntas-frecuentes. */
+export function getFaqsByGroup(): FaqGroupWithFaqs[] {
+  return faqGroups.map((group) => ({
+    id: group.id,
+    title: group.title,
+    faqs: generalFaqs.filter((faq: GeneralFaq) => faq.group === group.id),
+  }));
+}

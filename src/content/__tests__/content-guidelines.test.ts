@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { siteConfig } from "@/config/site.config";
+import { aboutContent } from "@/content/about";
 import { areaPageContent, areasIndexContent } from "@/content/area-pages";
+import { faqPageContent } from "@/content/faq-page";
 import { faqGroups, generalFaqs } from "@/content/faqs";
 import { homeContent } from "@/content/home";
+import { privacyPolicy } from "@/content/legal/privacy";
 import { practiceAreas } from "@/content/practice-areas";
 
 /** Every string inside a content value, with the path where it was found. */
@@ -25,6 +28,9 @@ const texts = [
   ...collectTexts(homeContent, "homeContent"),
   ...collectTexts(areasIndexContent, "areasIndexContent"),
   ...collectTexts(areaPageContent, "areaPageContent"),
+  ...collectTexts(aboutContent, "aboutContent"),
+  ...collectTexts(faqPageContent, "faqPageContent"),
+  ...collectTexts(privacyPolicy, "privacyPolicy"),
 ];
 
 /**

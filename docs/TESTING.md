@@ -103,6 +103,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-09         | Pendiente     |
 | MT-16 | Inicio responsive (360 a 1440 px)                       | F2-02         | **Detallado** |
 | MT-17 | Áreas de práctica: navegación, CTA y 404                | F2-03         | **Detallado** |
+| MT-18 | Nosotros, Preguntas frecuentes y Privacidad             | F2-04         | **Detallado** |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -229,6 +230,34 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - Paso 4: "Otras áreas" muestra las otras 4, no la actual; `/areas` muestra las 5 tarjetas y el bloque "¿Tu situación no está en la lista?".
 - Paso 5: se ve la página 404 (la de Next por defecto hasta F2-07). En DevTools → Network, el documento tiene status **404**.
 - Paso 6: el foco se ve siempre; las preguntas se abren con Enter o Espacio.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-18 — Nosotros, Preguntas frecuentes y Privacidad
+
+- **Objetivo:** que las páginas institucionales se lean claras, generen confianza y que la política de privacidad sea completa y fácil de recorrer.
+- **Requisitos:** FR-01, US-07 CA1, SPEC §11.2, §11.3 y §11.4, NFR-PRIV-01.
+- **Precondiciones:** sitio levantado (`npm run dev` o la URL de preview). DevTools a 360 px y a 1440 px.
+
+**Pasos**
+
+1. Abrí `/nosotros` y recorrela de arriba a abajo.
+2. Abrí `/preguntas-frecuentes`, usá el índice "Temas" para ir a "Honorarios y costos" y abrí una pregunta.
+3. Al final de esa página, entrá a un área desde "Preguntas sobre cada tema".
+4. Desde el footer de cualquier página, hacé clic en "Política de privacidad".
+5. En `/privacidad`, usá el índice "Contenido" para ir a "Tus derechos". Leé la política completa.
+6. Repetí los pasos 1 a 5 solo con el teclado.
+
+**Resultado esperado**
+
+- Paso 1: se ven el enfoque, las tarjetas de profesionales (nombre, formación y matrícula marcada como ficticia, sin fotos) y los 4 valores. No hay promesas de resultado ni comparaciones con otros estudios.
+- Paso 2: el índice baja hasta el grupo elegido; hay 4 grupos con sus preguntas.
+- Paso 3: el link lleva a `/areas/<slug>`.
+- Paso 4: lleva a `/privacidad`, con versión **1.0** y fecha de vigencia bajo el título y el aviso de que el estudio es ficticio.
+- Paso 5: el índice baja a la sección. La sección "Quién es responsable" muestra el nombre, el domicilio y el email del estudio; "Con quién los compartimos" nombra a Vercel, Supabase, Resend, Cloudflare y Upstash; están los avisos de la AAIP. A 1440 px, el índice queda fijo al costado mientras leés.
+- Paso 6: el foco se ve siempre y los índices funcionan con Enter.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

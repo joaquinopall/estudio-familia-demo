@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CtaLink } from "@/components/layout/cta-link";
-import { Breadcrumbs } from "@/components/marketing/breadcrumbs";
+import { PageHeader } from "@/components/marketing/page-header";
 import { ContentList } from "@/components/marketing/content-list";
 import { CtaSection } from "@/components/marketing/cta-section";
 import { FactLabel } from "@/components/marketing/fact-label";
@@ -50,27 +50,19 @@ export default async function AreaPage({ params }: PageProps<"/areas/[slug]">) {
 
   return (
     <>
-      <section aria-labelledby="area-title" className="bg-secondary/60">
-        <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:pt-10 sm:pb-16">
-          <Breadcrumbs
-            items={[...areasBreadcrumbs, { label: area.title, href: `/areas/${area.slug}` }]}
-          />
-          <h1 id="area-title" className="mt-6 max-w-3xl text-3xl font-semibold sm:text-5xl">
-            {area.title}
-          </h1>
-          <div className="mt-5 max-w-2xl space-y-4 text-lg text-muted-foreground">
-            {area.intro.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-          <div className="mt-8 flex flex-col items-start gap-2">
-            <CtaLink href={cta.href} size="lg">
-              {cta.label}
-            </CtaLink>
-            <p className="text-sm font-medium">{siteConfig.confidentialityNote}</p>
-          </div>
+      <PageHeader
+        id="area-title"
+        breadcrumbs={[...areasBreadcrumbs, { label: area.title, href: `/areas/${area.slug}` }]}
+        title={area.title}
+        lead={area.intro}
+      >
+        <div className="mt-8 flex flex-col items-start gap-2">
+          <CtaLink href={cta.href} size="lg">
+            {cta.label}
+          </CtaLink>
+          <p className="text-sm font-medium">{siteConfig.confidentialityNote}</p>
         </div>
-      </section>
+      </PageHeader>
 
       <div className="mx-auto grid max-w-6xl gap-5 px-4 py-14 sm:py-20 lg:grid-cols-2">
         <section aria-labelledby="when-title" className={cardClass}>
