@@ -16,7 +16,7 @@ export function Footer({ config }: FooterProps) {
             {config.shortName}
           </h2>
           <p className="mt-2 text-sm">{config.tagline}</p>
-          <p className="mt-3 text-sm font-medium">La primera conversación es confidencial.</p>
+          <p className="mt-3 text-sm font-medium">{config.confidentialityNote}</p>
         </section>
 
         <section aria-labelledby="footer-profesionales">

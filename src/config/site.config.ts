@@ -47,6 +47,8 @@ export type SiteConfig = {
     email: string;
   };
   responseTime: string;
+  /** Trust signal required by SPEC §11.2, shown in the hero, the trust block and the footer. */
+  confidentialityNote: string;
   social: { label: string; href: string }[];
   navigation: NavItem[];
   primaryCta: NavItem;
@@ -96,6 +98,7 @@ export const siteConfig: SiteConfig = {
     email: "contacto@example.com",
   },
   responseTime: "Te respondemos dentro de las próximas 24 a 48 horas hábiles.",
+  confidentialityNote: "La primera conversación es confidencial.",
   social: [],
   navigation: [
     { label: "Inicio", href: "/" },

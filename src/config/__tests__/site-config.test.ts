@@ -13,6 +13,10 @@ describe("siteConfig", () => {
     expect(siteConfig.responseTime.trim()).not.toBe("");
   });
 
+  it("states that the first conversation is confidential (SPEC §11.2)", () => {
+    expect(siteConfig.confidentialityNote).toMatch(/primera conversación es confidencial/i);
+  });
+
   it("lists every professional with a bar registration (SPEC §11.2)", () => {
     expect(siteConfig.professionals.length).toBeGreaterThan(0);
     for (const professional of siteConfig.professionals) {

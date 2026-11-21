@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { siteConfig } from "@/config/site.config";
 import { faqGroups, generalFaqs } from "@/content/faqs";
+import { homeContent } from "@/content/home";
 import { practiceAreas } from "@/content/practice-areas";
 
 /** Every string inside a content value, with the path where it was found. */
@@ -20,6 +21,7 @@ const texts = [
   ...collectTexts(practiceAreas, "practiceAreas"),
   ...collectTexts(generalFaqs, "generalFaqs"),
   ...collectTexts(faqGroups, "faqGroups"),
+  ...collectTexts(homeContent, "homeContent"),
 ];
 
 /**

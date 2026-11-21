@@ -6,6 +6,7 @@ Contenido del sitio como datos tipados, separado de los componentes (SPEC §6.1,
 | ------------------- | --------------------------------------------------------------------- | ----- |
 | `practice-areas.ts` | Las 5 áreas (FR-02): slug, título, resumen, secciones, FAQ y metadata | F2-01 |
 | `faqs.ts`           | Preguntas frecuentes generales, agrupadas, con 3 destacadas           | F2-01 |
+| `home.ts`           | Textos del inicio: hero, "Cómo trabajamos" y títulos de sección       | F2-02 |
 | `legal/privacy.ts`  | Texto de la política de privacidad (Ley 25.326) y su versión          | F2-04 |
 
 ## Forma de los datos
