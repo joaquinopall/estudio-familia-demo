@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CtaSection } from "@/components/marketing/cta-section";
 import { FaqList } from "@/components/marketing/faq-list";
 import { Hero, type HeroFact } from "@/components/marketing/hero";
-import { PracticeAreaCard } from "@/components/marketing/practice-area-card";
+import { PracticeAreaGrid } from "@/components/marketing/practice-area-grid";
 import { ProcessSteps } from "@/components/marketing/process-steps";
 import { SectionHeading } from "@/components/marketing/section-heading";
 import { TrustBar } from "@/components/marketing/trust-bar";
@@ -14,9 +14,6 @@ import { homeContent } from "@/content/home";
 import { practiceAreas } from "@/content/practice-areas";
 
 const sectionClass = "mx-auto max-w-6xl px-4 py-14 sm:py-20 lg:py-24";
-
-/** 1 column on mobile, 2 on tablet, 3 on desktop; an incomplete last row stays centered. */
-const areaItemClass = "w-full sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]";
 
 const heroFacts: readonly HeroFact[] = [
   {
@@ -50,13 +47,7 @@ export default function HomePage() {
 
       <section aria-labelledby="areas-title" className={sectionClass}>
         <SectionHeading id="areas-title" title={areas.title} lead={areas.lead} />
-        <ul className="mt-10 flex flex-wrap justify-center gap-5">
-          {practiceAreas.map((area) => (
-            <li key={area.slug} className={areaItemClass}>
-              <PracticeAreaCard area={area} />
-            </li>
-          ))}
-        </ul>
+        <PracticeAreaGrid areas={practiceAreas} className="mt-10" />
       </section>
 
       <section aria-labelledby="process-title" className="bg-secondary/60">

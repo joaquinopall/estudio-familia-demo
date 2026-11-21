@@ -309,6 +309,11 @@ export const practiceAreas = [
   },
 ] as const satisfies readonly PracticeAreaContent[];
 
+/** Contact link with the area preselected in the form (SPEC §11.3). */
+export function getAreaContactHref(slug: string): string {
+  return `/contacto?area=${encodeURIComponent(slug)}`;
+}
+
 export function getPracticeAreaBySlug(slug: string): PracticeAreaContent | undefined {
   return practiceAreas.find((area: PracticeAreaContent) => area.slug === slug);
 }

@@ -20,6 +20,7 @@ Reglas:
 | [0006](0006-validacion-de-variables-de-entorno.md)           | Validación de variables de entorno al arrancar                 | Aceptada                       |
 | [0007](0007-csp-report-only-sin-nonces.md)                   | CSP en report-only y sin nonces                                | Aceptada (se revisa en F5-01)  |
 | [0008](0008-politica-de-npm-audit-en-ci.md)                  | Política de `npm audit` en la CI                               | Aceptada                       |
+| [0009](0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con Cache Components (404 real)    | Aceptada                       |
 
 ## Plantilla
 

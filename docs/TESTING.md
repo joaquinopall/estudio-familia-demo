@@ -102,6 +102,8 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-14 | Botón de WhatsApp                                       | F1-08         | **Detallado** |
 | MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-09         | Pendiente     |
 | MT-16 | Inicio responsive (360 a 1440 px)                       | F2-02         | **Detallado** |
+| MT-17 | Áreas de práctica: navegación, CTA y 404                | F2-03         | **Detallado** |
+| MT-18 | Nosotros, Preguntas frecuentes y Privacidad             | F2-04         | **Detallado** |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -200,6 +202,62 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - 1024 px o más: el header muestra los links y el botón; a la derecha del hero aparece la ficha con dirección, horario y tiempo de respuesta; las áreas van de a 3 y las 2 últimas quedan centradas; los 3 pasos van en fila, unidos por una línea; las preguntas frecuentes van a la derecha del título.
 - Paso 3: el borde de la tarjeta se marca y la flecha de "Leer más" se mueve apenas (no se mueve con "reducir movimiento" activado).
 - Paso 4: el foco se ve siempre; en las tarjetas de área se marca la tarjeta entera.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-17 — Áreas de práctica: navegación, CTA y 404
+
+- **Objetivo:** que cada área se pueda leer y recorrer cómodo, y que lleve al formulario con el área elegida.
+- **Requisitos:** FR-01, US-02 CA1, SPEC §11.3.
+- **Precondiciones:** sitio levantado (`npm run dev` o la URL de preview). DevTools a 360 px y a 1440 px.
+
+**Pasos**
+
+1. Desde el inicio, hacé clic en la tarjeta "Sucesiones".
+2. Recorré la página de arriba a abajo y abrí una pregunta frecuente.
+3. Mirá a dónde apuntan los dos botones "Contanos tu caso" (pasando el mouse o con clic derecho → copiar link).
+4. En "Otras áreas", entrá a otra área. Después usá las migas de pan para ir a "Áreas de práctica".
+5. Escribí a mano `/areas/no-existe` en la barra de direcciones.
+6. Repetí los pasos 1 a 4 solo con el teclado.
+
+**Resultado esperado**
+
+- Paso 1: la URL es `/areas/sucesiones` y el título de la pestaña es "Sucesiones · Estudio Alameda".
+- Paso 2: en orden se ven migas de pan, título, introducción, botón, "¿Cuándo consultar?", "¿Qué documentación suele hacer falta?" (con la aclaración de que es orientativa), preguntas frecuentes, "Otras áreas" y el cierre. A 1440 px, "Cuándo consultar" y "Documentación" van lado a lado; a 360 px, una debajo de la otra.
+- Paso 3: los dos apuntan a `/contacto?area=sucesiones` (la página de contacto todavía no existe: da 404 hasta F2-05).
+- Paso 4: "Otras áreas" muestra las otras 4, no la actual; `/areas` muestra las 5 tarjetas y el bloque "¿Tu situación no está en la lista?".
+- Paso 5: se ve la página 404 (la de Next por defecto hasta F2-07). En DevTools → Network, el documento tiene status **404**.
+- Paso 6: el foco se ve siempre; las preguntas se abren con Enter o Espacio.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-18 — Nosotros, Preguntas frecuentes y Privacidad
+
+- **Objetivo:** que las páginas institucionales se lean claras, generen confianza y que la política de privacidad sea completa y fácil de recorrer.
+- **Requisitos:** FR-01, US-07 CA1, SPEC §11.2, §11.3 y §11.4, NFR-PRIV-01.
+- **Precondiciones:** sitio levantado (`npm run dev` o la URL de preview). DevTools a 360 px y a 1440 px.
+
+**Pasos**
+
+1. Abrí `/nosotros` y recorrela de arriba a abajo.
+2. Abrí `/preguntas-frecuentes`, usá el índice "Temas" para ir a "Honorarios y costos" y abrí una pregunta.
+3. Al final de esa página, entrá a un área desde "Preguntas sobre cada tema".
+4. Desde el footer de cualquier página, hacé clic en "Política de privacidad".
+5. En `/privacidad`, usá el índice "Contenido" para ir a "Tus derechos". Leé la política completa.
+6. Repetí los pasos 1 a 5 solo con el teclado.
+
+**Resultado esperado**
+
+- Paso 1: se ven el enfoque, las tarjetas de profesionales (nombre, formación y matrícula marcada como ficticia, sin fotos) y los 4 valores. No hay promesas de resultado ni comparaciones con otros estudios.
+- Paso 2: el índice baja hasta el grupo elegido; hay 4 grupos con sus preguntas.
+- Paso 3: el link lleva a `/areas/<slug>`.
+- Paso 4: lleva a `/privacidad`, con versión **1.0** y fecha de vigencia bajo el título y el aviso de que el estudio es ficticio.
+- Paso 5: el índice baja a la sección. La sección "Quién es responsable" muestra el nombre, el domicilio y el email del estudio; "Con quién los compartimos" nombra a Vercel, Supabase, Resend, Cloudflare y Upstash; están los avisos de la AAIP. A 1440 px, el índice queda fijo al costado mientras leés.
+- Paso 6: el foco se ve siempre y los índices funcionan con Enter.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

@@ -6,6 +6,9 @@
  * DRAFT texts: they must be reviewed by the firm before going live.
  */
 
+/** First item of every breadcrumb trail. */
+export const homeBreadcrumb = { label: "Inicio", href: "/" } as const;
+
 export type ProcessStep = { title: string; description: string };
 
 export type SectionCopy = { title: string; lead: string };

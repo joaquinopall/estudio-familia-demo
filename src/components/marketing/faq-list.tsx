@@ -1,14 +1,17 @@
 import type { Faq } from "@/content/faqs";
+import { cn } from "@/lib/utils";
 
-type FaqListProps = { faqs: readonly Faq[] };
+type FaqListProps = { faqs: readonly Faq[]; className?: string };
 
 /**
  * Questions as native <details>/<summary>: keyboard accessible and without client JS
  * (NFR-PERF-01). Reused by the home, the area pages and /preguntas-frecuentes.
  */
-export function FaqList({ faqs }: FaqListProps) {
+export function FaqList({ faqs, className }: FaqListProps) {
   return (
-    <div className="divide-y divide-border rounded-xl border border-border bg-card">
+    <div
+      className={cn("divide-y divide-border rounded-xl border border-border bg-card", className)}
+    >
       {faqs.map((faq) => (
         <details key={faq.question} className="group px-5">
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold [&::-webkit-details-marker]:hidden">
