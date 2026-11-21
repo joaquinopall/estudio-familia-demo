@@ -20,7 +20,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 
 | Fase | Peso | Avance | Estado |
 |---|---|---|---|
-| F1 — Fundaciones | 0–20% | 7 / 9 | 🟨 |
+| F1 — Fundaciones | 0–20% | 9 / 9 | ✅ |
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 0 / 8 | ⬜ |
@@ -88,20 +88,20 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
   - [X] Página de inicio placeholder con un `<h1>` y un CTA (el contenido real va en F2).
   - Verificás: en mobile y desktop se ven el header, el footer, el banner y WhatsApp; con Tab llegás a todo; el contraste da AA (DevTools o axe).
 
-- [ ] **F1-08 · Documentación inicial** (IA) · CLAUDE.md §6
+- [X] **F1-08 · Documentación inicial** (IA) · CLAUDE.md §6
   Terminada cuando:
-  - [ ] `README.md`: descripción, stack, requisitos, cómo correrlo, variables, scripts, estructura y deploy.
-  - [ ] `docs/ARCHITECTURE.md` con capas y diagrama (resumen del SPEC §6).
-  - [ ] `docs/adr/` con las ADR 0001 a 0005 del SPEC §15.
-  - [ ] `docs/TESTING.md` con cómo correr los tests y la plantilla de casos manuales MT-xx (todavía sin todos los casos).
-  - [ ] `CHANGELOG.md` iniciado.
+  - [X] `README.md`: descripción, stack, requisitos, cómo correrlo, variables, scripts, estructura y deploy.
+  - [X] `docs/ARCHITECTURE.md` con capas y diagrama (resumen del SPEC §6).
+  - [X] `docs/adr/` con las ADR 0001 a 0005 del SPEC §15.
+  - [X] `docs/TESTING.md` con cómo correr los tests y la plantilla de casos manuales MT-xx (todavía sin todos los casos).
+  - [X] `CHANGELOG.md` iniciado.
   - Verificás: le pasás el README a alguien (o a vos mismo en frío) y se entiende cómo levantar el proyecto.
 
-- [ ] **F1-09 · Cierre de fase** (Vos)
-  - [ ] Todas las tareas F1 mergeadas con CI en verde.
-  - [ ] Deploy de producción en Vercel actualizado y funcionando.
-  - [ ] Revisaste la estructura: ¿entendés dónde va cada cosa?
-  - [ ] Tablero actualizado: **F1 ✅ — 20%**.
+- [X] **F1-09 · Cierre de fase** (Vos)
+  - [X] Todas las tareas F1 mergeadas con CI en verde.
+  - [X] Deploy de producción en Vercel actualizado y funcionando.
+  - [X] Revisaste la estructura: ¿entendés dónde va cada cosa?
+  - [X] Tablero actualizado: **F1 ✅ — 20%**.
 
 ---
 
