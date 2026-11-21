@@ -19,7 +19,7 @@ export function Header({ shortName, navigation, primaryCta }: HeaderProps) {
           {shortName}
         </Link>
 
-        <nav aria-label="Principal" className="hidden md:block">
+        <nav aria-label="Principal" className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {navigation.map((item) => (
               <li key={item.href}>
@@ -34,7 +34,7 @@ export function Header({ shortName, navigation, primaryCta }: HeaderProps) {
           </ul>
         </nav>
 
-        <CtaLink href={primaryCta.href} className="hidden md:inline-flex">
+        <CtaLink href={primaryCta.href} className="hidden lg:inline-flex">
           {primaryCta.label}
         </CtaLink>
 

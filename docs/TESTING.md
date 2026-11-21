@@ -101,6 +101,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-13 | Banner de modo demo                                     | F1-08         | **Detallado** |
 | MT-14 | Botón de WhatsApp                                       | F1-08         | **Detallado** |
 | MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-09         | Pendiente     |
+| MT-16 | Inicio responsive (360 a 1440 px)                       | F2-02         | **Detallado** |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -173,6 +174,32 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - Paso 2: abre WhatsApp (app) con el mensaje "Hola, quisiera hacer una consulta." precargado. **En la demo el número es ficticio (`+54 9 11 0000-0000`)**: WhatsApp avisa que no existe; eso es lo esperado. No envíes el mensaje.
 - Paso 3: abre una pestaña nueva con WhatsApp Web o la página de wa.me.
 - Paso 4: la URL es `https://wa.me/5491100000000?text=Hola%2C%20quisiera%20hacer%20una%20consulta.` y **no** contiene datos personales.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-16 — Inicio responsive (360 a 1440 px)
+
+- **Objetivo:** que el inicio se lea cómodo y prolijo en cualquier ancho, de un celular chico a un monitor.
+- **Requisitos:** US-01, NFR-A11Y-01, SPEC §11.1.
+- **Precondiciones:** `npm run dev` recién levantado (si venías trabajando, frenalo y borrá `.next`). DevTools → modo dispositivo.
+
+**Pasos**
+
+1. Abrí `/` a 360 px y recorrela de arriba a abajo.
+2. Repetí a 768 px (tablet), 1024 px y 1440 px.
+3. A 1440 px, pasá el mouse por una tarjeta de área.
+4. En cualquier ancho, recorré la página con **Tab**.
+
+**Resultado esperado**
+
+- En ningún ancho aparece scroll horizontal ni texto pegado a los bordes de una tarjeta.
+- 360 px: el título, el botón "Contanos tu caso" y la frase de confidencialidad entran sin hacer scroll; las áreas van de a una; los 3 pasos van en columna, unidos por una línea vertical; el bloque de confianza es una sola ficha con divisiones.
+- 768 px: el header muestra el botón **Menú** (no los links); las áreas van de a 2 y la quinta queda centrada; los pasos siguen en columna.
+- 1024 px o más: el header muestra los links y el botón; a la derecha del hero aparece la ficha con dirección, horario y tiempo de respuesta; las áreas van de a 3 y las 2 últimas quedan centradas; los 3 pasos van en fila, unidos por una línea; las preguntas frecuentes van a la derecha del título.
+- Paso 3: el borde de la tarjeta se marca y la flecha de "Leer más" se mueve apenas (no se mueve con "reducir movimiento" activado).
+- Paso 4: el foco se ve siempre; en las tarjetas de área se marca la tarjeta entera.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

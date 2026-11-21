@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.5 (19/11/2026) |
+| Versión | 1.6 (21/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -200,6 +200,7 @@ src/
   config/
     site.config.ts
   content/
+    home.ts                      # textos del inicio (hero, pasos, títulos de sección)
     practice-areas.ts
     faqs.ts
     legal/privacy.ts             # texto de la política + versión
@@ -558,3 +559,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 18/11/2026 | 1.3 | §14 y NFR-MANT-02: se deja sin efecto la rama `dev` de la v1.1; las ramas de tarea salen de `main` y entran a `main` por PR. NFR-SEC-08: el audit bloqueante cubre solo dependencias de producción (`--omit=dev`) y el completo es informativo, porque GHSA-fc5q-39xc-vjpf (`picomatch`, solo en herramientas de desarrollo) no tiene versión corregida. | [tu nombre] |
 | 18/11/2026 | 1.4 | §6.2: se agrega `lib/security/headers.ts` (headers de seguridad y CSP report-only, aplicados desde `next.config.ts`). | [tu nombre] |
 | 19/11/2026 | 1.5 | §6.2: se agregan `lib/utils.ts` (`cn`, generado por shadcn) y `lib/whatsapp.ts`; `components/layout` suma `MobileMenu` y `CtaLink`, con archivos en kebab-case como los de shadcn. §11.1: tipografías elegidas, Lora (títulos) y Plus Jakarta Sans (texto); un solo tema claro en v1. | [tu nombre] |
+| 21/11/2026 | 1.6 | §6.2: se agrega `content/home.ts` (textos del inicio). La frase de confidencialidad de §11.2 pasa a `site.config.ts` (`confidentialityNote`) para usarla en el inicio y en el footer. Componentes de `components/marketing` en kebab-case, más `SectionHeading` y `CtaSection`. | [tu nombre] |

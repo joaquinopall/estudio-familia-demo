@@ -45,6 +45,8 @@ Con los valores de `.env.example` alcanza para correr el proyecto en la Fase 1.
 
 Para los tests e2e, la primera vez instalá el navegador: `npx playwright install chromium`.
 
+**Si los estilos no se actualizan** (por ejemplo, tarjetas sin padding o grillas en una sola columna después de agregar clases nuevas): frená `npm run dev`, borrá la carpeta `.next` y volvé a levantarlo. El CSS de Tailwind puede quedar desactualizado mientras el servidor de desarrollo corre.
+
 ## Variables de entorno
 
 Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `dev`, `build` y `start`: si falta una obligatoria o tiene formato inválido, el comando falla con un mensaje que nombra la variable (nunca su valor). Detalle en [`docs/adr/0006-validacion-de-variables-de-entorno.md`](docs/adr/0006-validacion-de-variables-de-entorno.md).
@@ -116,6 +118,8 @@ Arquitectura, capas y flujos: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). De
 - **Tipografías** (`next/font`, en `src/app/layout.tsx`): Lora para títulos y Plus Jakarta Sans para texto.
 - **Componentes UI:** shadcn/ui en `src/components/ui`, agregados con `npx shadcn@4.23.0 add <componente>`. No se editan salvo necesidad (hoy, solo `sonner.tsx`: tema claro fijo) y Prettier no los formatea.
 - **Datos del estudio:** todos en [`src/config/site.config.ts`](src/config/site.config.ts). Para un estudio real se edita ese archivo, no los componentes (ver [`src/config/README.md`](src/config/README.md)).
+- **Íconos:** `lucide-react`, siempre con trazo fino (`strokeWidth` 1.5) y sin círculos ni fondos de color detrás; se usan como apoyo de rótulos (`FactLabel`), nunca como decoración suelta. Sin clichés jurídicos (balanza, martillo).
+- **Responsive:** mobile first. El menú de escritorio aparece desde `lg` (1024 px); hasta ahí se usa el menú desplegable.
 - El refinamiento visual se hace con `/claude-design`, respetando los tokens.
 
 ## Seguridad
