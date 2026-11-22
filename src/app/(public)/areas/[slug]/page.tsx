@@ -4,14 +4,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CtaLink } from "@/components/layout/cta-link";
+import { SafetyNotice } from "@/components/layout/safety-notice";
 import { PageHeader } from "@/components/marketing/page-header";
 import { ContentList } from "@/components/marketing/content-list";
 import { CtaSection } from "@/components/marketing/cta-section";
-import { FactLabel } from "@/components/marketing/fact-label";
 import { FaqList } from "@/components/marketing/faq-list";
 import { SectionHeading } from "@/components/marketing/section-heading";
+import { UrgentNote } from "@/components/marketing/urgent-note";
 import { siteConfig } from "@/config/site.config";
 import { areaPageContent, areasBreadcrumbs } from "@/content/area-pages";
+import { notFoundContent } from "@/content/error-pages";
 import { homeContent } from "@/content/home";
 import { getAreaContactHref, getPracticeAreaBySlug, practiceAreas } from "@/content/practice-areas";
 import { publicEnv } from "@/lib/env.public";
@@ -35,7 +37,8 @@ export function generateStaticParams(): { slug: string }[] {
 export async function generateMetadata({ params }: PageProps<"/areas/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const area = getPracticeAreaBySlug(slug);
-  if (!area) return {};
+  // A nested not-found file cannot export metadata, so the 404 title is set here.
+  if (!area) return { title: notFoundContent.metaTitle };
 
   return buildPageMetadata({ ...area.metadata, path: `/areas/${area.slug}` });
 }
@@ -53,6 +56,7 @@ export default async function AreaPage({ params }: PageProps<"/areas/[slug]">) {
   const labels = areaPageContent;
   const breadcrumbs = [...areasBreadcrumbs, { label: area.title, href: `/areas/${area.slug}` }];
   const siteUrl = publicEnv.NEXT_PUBLIC_SITE_URL;
+  const [firstParagraph, ...otherParagraphs] = area.intro;
 
   return (
     <>
@@ -62,18 +66,36 @@ export default async function AreaPage({ params }: PageProps<"/areas/[slug]">) {
           buildBreadcrumbList(breadcrumbs, siteUrl),
         ]}
       />
-      <PageHeader id="area-title" breadcrumbs={breadcrumbs} title={area.title} lead={area.intro}>
-        <div className="mt-8 flex flex-col items-start gap-2">
+      <PageHeader
+        id="area-title"
+        breadcrumbs={breadcrumbs}
+        title={area.title}
+        lead={firstParagraph}
+      >
+        {/* The CTA follows the first paragraph so it fits in the first screen of a phone. */}
+        <div className="mt-4 flex flex-col items-start gap-2 sm:mt-8">
           <CtaLink href={cta.href} size="lg">
             {cta.label}
           </CtaLink>
           <p className="text-sm font-medium">{siteConfig.confidentialityNote}</p>
+          <p className="text-sm text-muted-foreground">{siteConfig.jurisdiction.note}</p>
+          <UrgentNote contact={siteConfig.contact} hours={siteConfig.hours[0]} className="mt-2" />
         </div>
+        {otherParagraphs.map((paragraph) => (
+          <p key={paragraph} className="mt-6 max-w-2xl text-lg text-muted-foreground">
+            {paragraph}
+          </p>
+        ))}
       </PageHeader>
+      {area.showsSafetyNotice ? <SafetyNotice /> : null}
 
       <div className="mx-auto grid max-w-6xl gap-5 px-4 py-14 sm:py-20 lg:grid-cols-2">
         <section aria-labelledby="when-title" className={cardClass}>
-          <FactLabel icon={MessageCircleQuestion}>{area.shortTitle}</FactLabel>
+          <MessageCircleQuestion
+            aria-hidden="true"
+            className="size-5 text-primary"
+            strokeWidth={1.5}
+          />
           <h2 id="when-title" className="mt-3 text-2xl font-semibold text-primary sm:text-3xl">
             {labels.whenToConsultTitle}
           </h2>
@@ -81,7 +103,7 @@ export default async function AreaPage({ params }: PageProps<"/areas/[slug]">) {
         </section>
 
         <section aria-labelledby="documents-title" className={cardClass}>
-          <FactLabel icon={ClipboardList}>{area.shortTitle}</FactLabel>
+          <ClipboardList aria-hidden="true" className="size-5 text-primary" strokeWidth={1.5} />
           <h2 id="documents-title" className="mt-3 text-2xl font-semibold text-primary sm:text-3xl">
             {labels.documentsTitle}
           </h2>

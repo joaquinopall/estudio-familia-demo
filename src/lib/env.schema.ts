@@ -26,10 +26,11 @@ const nonEmpty = () => z.string().min(1, { error: "no puede estar vacía" });
 export const publicEnvSchema = z.object({
   // Required from Phase 1 (metadata base, sitemap, OG).
   NEXT_PUBLIC_SITE_URL: required(httpUrl()),
-  // Demo banner (FR-15). Missing = false.
+  // Demo banner and noindex (FR-15). Missing = true, so a forgotten variable never publishes
+  // the fictitious firm as a real one (ADR-0011).
   NEXT_PUBLIC_DEMO_MODE: optional(
     z.stringbool({ truthy: ["true"], falsy: ["false"], error: 'debe ser "true" o "false"' }),
-  ).transform((value) => value ?? false),
+  ).transform((value) => value ?? true),
   // Phase 4 (Supabase Auth).
   NEXT_PUBLIC_SUPABASE_URL: optional(httpUrl()),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optional(nonEmpty()),

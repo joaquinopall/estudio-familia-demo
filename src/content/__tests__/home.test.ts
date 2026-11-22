@@ -6,9 +6,13 @@ describe("homeContent", () => {
   it("has the 3 steps of 'Cómo trabajamos' (SPEC §11.3)", () => {
     expect(homeContent.process.steps.map((step) => step.title)).toEqual([
       "Contanos tu caso",
-      "Te llamamos y analizamos tu situación",
+      "Te contactamos por el medio que elijas",
       "Te proponemos un camino claro",
     ]);
+  });
+
+  it("never promises a phone call: it may not be safe (SPEC §11.5)", () => {
+    expect(JSON.stringify(homeContent.process)).not.toMatch(/te llamamos/i);
   });
 
   it("has every text filled in", () => {

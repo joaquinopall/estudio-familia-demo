@@ -19,8 +19,8 @@ describe("Home page (US-01)", () => {
 
     expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
       homeContent.areas.title,
-      homeContent.process.title,
       homeContent.trust.title,
+      homeContent.process.title,
       homeContent.faqs.title,
       homeContent.finalCta.title,
     ]);
@@ -46,17 +46,18 @@ describe("Home page (US-01)", () => {
     );
   });
 
-  it("shows the firm's address, hours and response time in the hero, from config", () => {
+  it("shows the professionals, the jurisdiction and the urgent phone in the hero", () => {
     render(<HomePage />);
 
     const hero = screen.getByRole("region", { name: homeContent.hero.title });
-    const firstHours = siteConfig.hours[0];
-    expect(within(hero).getByRole("link", { name: /abre en una pestaña nueva/ })).toHaveAttribute(
-      "href",
-      siteConfig.address.mapsUrl,
-    );
-    expect(within(hero).getByText(`${firstHours?.days}, ${firstHours?.hours}`)).toBeInTheDocument();
-    expect(within(hero).getByText(siteConfig.responseTime)).toBeInTheDocument();
+    for (const professional of siteConfig.professionals) {
+      expect(within(hero).getByText(professional.registration)).toBeInTheDocument();
+    }
+    expect(within(hero).getByText(siteConfig.jurisdiction.note)).toBeInTheDocument();
+    expect(hero).toHaveTextContent(`· ${siteConfig.jurisdiction.label}`);
+    expect(
+      within(hero).getByRole("link", { name: siteConfig.contact.phoneDisplay }),
+    ).toHaveAttribute("href", `tel:+${siteConfig.contact.phoneE164}`);
   });
 
   it("shows the 3 process steps and the trust signals (CA3)", () => {

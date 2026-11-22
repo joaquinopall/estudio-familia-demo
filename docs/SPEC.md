@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.11 (22/11/2026) |
+| Versión | 1.12 (22/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -49,7 +49,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 - Formulario "Contanos tu caso" en dos pasos, con validación, anti-spam (Turnstile + rate limit + honeypot) y consentimiento de datos.
 - Guardado de consultas en Postgres (Supabase) vía Prisma.
 - Mail al estudio (nueva consulta) y acuse de recibo a quien consulta (Resend).
-- Botón de WhatsApp flotante y links de contacto.
+- Botón de WhatsApp siempre visible y links de contacto.
 - Panel admin con login (Supabase Auth): listado con filtros y paginación, detalle, cambio de estado, notas internas e historial de cambios.
 - SEO técnico: metadata, Open Graph, sitemap, robots y datos estructurados (JSON-LD).
 - Modo demo: banner visible "Sitio de demostración — estudio ficticio".
@@ -73,7 +73,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 ## 4. Historias de usuario y criterios de aceptación
 
 **US-01 — Entender qué hace el estudio.** Como consultante, quiero ver en el inicio qué casos atiende el estudio y cómo trabaja, para decidir si lo contacto.
-- CA1: El inicio muestra, sin hacer scroll en mobile, quién es el estudio, en qué se especializa y un botón "Contanos tu caso".
+- CA1: El inicio muestra, sin hacer scroll en mobile (desde 320×568, con el banner de demo), quién es el estudio, en qué se especializa y un botón "Contanos tu caso".
 - CA2: Hay una sección de áreas con link a cada página de área.
 - CA3: Hay una sección "Cómo trabajamos" de 3 pasos y señales de confianza: matrícula, dirección física, horarios y confidencialidad.
 
@@ -87,9 +87,10 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 - CA3: Al enviar, se ve una confirmación con un número de referencia y qué va a pasar después ("Te vamos a contactar dentro de las próximas 24 a 48 horas hábiles").
 - CA4: Si el envío falla, los datos escritos no se pierden.
 - CA5: Llega un acuse de recibo al email indicado.
+- CA6: Si elige teléfono o WhatsApp, se le pregunta "¿Es seguro que te contactemos por ese medio?". Si responde que no, se la contacta por email. La respuesta se muestra destacada en el detalle del panel y en el aviso al estudio.
 
 **US-04 — Contactar por WhatsApp.** Como consultante, quiero escribir por WhatsApp si lo prefiero.
-- CA1: Hay un botón flotante de WhatsApp en todas las páginas públicas, con un mensaje precargado genérico (sin datos personales).
+- CA1: Hay un botón de WhatsApp siempre visible en todas las páginas públicas, con un mensaje precargado genérico (sin datos personales). Nunca tapa contenido: va en el header fijo hasta 1379 px y flota desde 1380 px, donde hay margen lateral.
 
 **US-05 — Enterarme de consultas nuevas.** Como staff, quiero recibir un mail por cada consulta nueva.
 - CA1: El mail incluye área, urgencia, canal preferido, número de referencia y un link al detalle en el panel. Incluye el nombre de quien consulta, pero **no** el texto completo del mensaje (minimización de datos; se lee en el panel).
@@ -112,7 +113,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 |---|---|
 | FR-01 | Rutas públicas: `/`, `/areas`, `/areas/[slug]`, `/nosotros`, `/preguntas-frecuentes`, `/contacto`, `/privacidad`. |
 | FR-02 | Las áreas v1 son: Sucesiones, Divorcios, Alimentos, Cuidado personal y régimen de comunicación, Convenios y acuerdos familiares. Se definen en `src/content/practice-areas.ts`. |
-| FR-03 | Todo dato del estudio sale de `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, teléfono, WhatsApp, email público, redes, coordenadas). |
+| FR-03 | Todo dato del estudio sale de `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, teléfono, WhatsApp, email público, redes, coordenadas, jurisdicción donde litiga). |
 | FR-04 | El formulario de consulta usa una Server Action `submitInquiry` con mejora progresiva (`useActionState`). |
 | FR-05 | Validación compartida cliente/servidor con un único schema Zod (`inquirySchema`). |
 | FR-06 | Anti-abuso en el envío, en este orden: honeypot → rate limit → validación → Turnstile. |
@@ -124,7 +125,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 | FR-12 | Cada cambio de estado o de notas crea un `InquiryEvent` con el actor. |
 | FR-13 | Botón de WhatsApp con link `https://wa.me/<número>?text=<mensaje genérico codificado>`. |
 | FR-14 | `sitemap.xml`, `robots.txt` (el panel y `/admin/*` excluidos e indicados `noindex`), metadata por página y JSON-LD (`LegalService` en el layout y `FAQPage` en preguntas frecuentes). |
-| FR-15 | Banner de modo demo controlado por `NEXT_PUBLIC_DEMO_MODE=true`. En modo demo el sitio no se indexa (`noindex, nofollow`), sin bloquear el rastreo. |
+| FR-15 | Banner de modo demo controlado por `NEXT_PUBLIC_DEMO_MODE`: encendido salvo que valga `false` explícito (ADR-0011). En modo demo el sitio no se indexa (`noindex, nofollow`), sin bloquear el rastreo. En celulares el banner muestra solo "Sitio de demostración — estudio ficticio"; la aclaración sobre los datos aparece desde tablet. |
 | FR-16 | Página 404 y página de error amigables, con link al inicio y a contacto. |
 
 ---
@@ -159,14 +160,14 @@ src/
     sitemap.ts
     robots.ts
     opengraph-image.tsx
-    not-found.tsx
-    error.tsx
+    not-found.tsx                # 404 de URLs sin ruta (con PublicShell)
+    error.tsx                    # último recurso; (public)/ tiene su not-found.tsx y su error.tsx
     globals.css                  # tokens de diseño (Tailwind)
     layout.tsx
   components/
     ui/                          # shadcn (generado)
-    layout/                      # Header, MobileMenu, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink (archivos en kebab-case)
-    marketing/                   # Hero, PracticeAreaCard, ProcessSteps, TrustBar, FaqList, CTA
+    layout/                      # Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, NotFoundView, ErrorView (archivos en kebab-case)
+    marketing/                   # Hero, PracticeAreaCard, ProcessSteps, TrustBar, FaqList, UrgentNote, CTA
   features/
     inquiries/
       schema.ts                  # Zod: inquirySchema, updateStatusSchema, listFiltersSchema
@@ -212,6 +213,8 @@ src/
     about.ts                     # textos de /nosotros (enfoque y valores)
     faq-page.ts                  # textos de /preguntas-frecuentes
     contact-page.ts              # textos de /contacto
+    urgent-help.ts               # ayuda ante peligro y plazos (§11.5)
+    error-pages.ts               # textos de la 404 y de la página de error
     practice-areas.ts
     faqs.ts
     legal/privacy.ts             # texto de la política + versión
@@ -305,6 +308,7 @@ model Inquiry {
   urgency              Urgency
   message              String         @db.VarChar(2000)
   preferredChannel     ContactChannel @map("preferred_channel")
+  safeToContact        Boolean?       @map("safe_to_contact")   // US-03 CA6; null si el canal es EMAIL
   consentAt            DateTime       @map("consent_at")
   privacyPolicyVersion String         @map("privacy_policy_version") @db.VarChar(20)
   status               InquiryStatus  @default(NEW)
@@ -366,6 +370,7 @@ model StaffMember {
 | `email` | trim, minúsculas, email válido, ≤ 254 | "Ingresá un email válido" |
 | `phone` | opcional; si viene, solo `+`, dígitos, espacios y `-`, entre 8 y 20 dígitos | "Ingresá un teléfono válido" |
 | `preferredChannel` | enum; si es `PHONE` o `WHATSAPP`, `phone` es obligatorio | "Para contactarte por ese medio necesitamos tu teléfono" |
+| `safeToContact` | booleano; obligatorio si `preferredChannel` es `PHONE` o `WHATSAPP`, sin valor por defecto | "Decinos si es seguro contactarte por ese medio" |
 | `consent` | debe ser `true` | "Necesitamos tu consentimiento para responderte" |
 | `website` | honeypot: debe venir vacío (no se muestra error) | — |
 
@@ -386,7 +391,7 @@ Etiquetas de interfaz:
 | Variable | Pública | Uso |
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | sí | URLs absolutas, sitemap, OG |
-| `NEXT_PUBLIC_DEMO_MODE` | sí | banner demo |
+| `NEXT_PUBLIC_DEMO_MODE` | sí | banner demo y noindex; si falta vale `true` (ADR-0011) |
 | `NEXT_PUBLIC_SUPABASE_URL` | sí | Auth |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | sí | Auth (o la anon key, según el tipo de claves del proyecto) |
 | `DATABASE_URL` | no | Prisma en runtime (pooler de Supabase) |
@@ -454,11 +459,11 @@ Familia y sucesiones = **momentos difíciles**. El sitio tiene que transmitir **
 Matrícula de cada profesional (en la demo, marcada como ficticia), dirección física con mapa o link, horarios, la frase "La primera conversación es confidencial", proceso de 3 pasos, preguntas frecuentes, política de privacidad visible y tiempo de respuesta esperado.
 
 ### 11.3 Contenido por página
-- **Inicio:** hero (propuesta + llamado a la acción), áreas (5 tarjetas), "Cómo trabajamos" (Contanos tu caso → Te llamamos y analizamos tu situación → Te proponemos un camino claro), bloque de confianza, preguntas frecuentes destacadas (3) y llamado a la acción final.
-- **Área:** introducción en lenguaje simple, "¿Cuándo consultar?", "¿Qué documentación suele hacer falta?", preguntas frecuentes del área y llamado a la acción con el área preseleccionada en el formulario (`/contacto?area=sucesiones`).
-- **Nosotros:** enfoque del estudio, profesionales (nombre, matrícula, formación) y valores.
+- **Inicio:** hero (propuesta, jurisdicción, llamado a la acción, aviso de plazos y, en desktop, profesionales con matrícula), áreas (5 tarjetas), bloque de confianza, "Cómo trabajamos" (Contanos tu caso → Te contactamos por el medio que elijas → Te proponemos un camino claro), preguntas frecuentes destacadas (3) y llamado a la acción final.
+- **Área:** introducción en lenguaje simple con la jurisdicción y el aviso de plazos, "¿Cuándo consultar?", "¿Qué documentación suele hacer falta?", preguntas frecuentes del área y llamado a la acción con el área preseleccionada en el formulario (`/contacto?area=sucesiones`).
+- **Nosotros:** llamado a la acción en el encabezado, enfoque del estudio, profesionales (nombre, matrícula, formación) y valores.
 - **Preguntas frecuentes:** 8 a 12 preguntas agrupadas.
-- **Contacto:** formulario, datos de contacto, horarios, mapa y WhatsApp.
+- **Contacto:** datos de contacto (WhatsApp primero), horarios, mapa y formulario. Mientras el formulario no exista, los canales que funcionan van antes; en F3 se revisa el orden.
 
 ### 11.4 Restricciones éticas y legales del contenido
 - Respetar las normas de publicidad profesional del colegio que corresponda (CPACF en CABA): **sin promesas de resultados**, sin comparaciones con otros colegas y sin lenguaje sensacionalista.
@@ -466,13 +471,18 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 - Disclaimer en el footer: "La información de este sitio es general y no constituye asesoramiento legal."
 - Modo demo: banner "Sitio de demostración — estudio ficticio" y datos claramente ficticios (nombre, matrículas, teléfono). No usar el nombre, el logo ni los datos de un estudio real.
 
+### 11.5 Peligro y urgencias
+- **Peligro:** franja sobria con 911, 137 (opción 1), 144 y la Oficina de Violencia Doméstica (Lavalle 1250, 24 h) en el footer de todas las páginas, en Contacto y en las áreas de familia (todas salvo Sucesiones). Los números se verifican en las fuentes oficiales antes de cada entrega.
+- **Plazos:** "¿Tenés un plazo o una audiencia cercana?", con teléfono, horario y qué hacer fuera de horario, en Inicio, áreas y Contacto.
+- **Contacto seguro:** no prometer llamadas: puede ser riesgoso para quien convive con quien ejerce violencia. Se contacta por el medio que la persona elija.
+
 ---
 
 ## 12. Requisitos no funcionales (resto)
 
 | ID | Categoría | Requisito |
 |---|---|---|
-| NFR-PERF-01 | Rendimiento | Páginas públicas estáticas; LCP < 2,5 s y CLS < 0,1 en mobile; JS de cliente mínimo (solo formulario, menú y WhatsApp). |
+| NFR-PERF-01 | Rendimiento | Páginas públicas estáticas; LCP < 2,5 s y CLS < 0,1 en mobile; JS de cliente mínimo (solo formulario, navegación y WhatsApp). |
 | NFR-PERF-02 | Rendimiento | Imágenes con `next/image`; fuentes con `next/font` (sin saltos de diseño). |
 | NFR-A11Y-01 | Accesibilidad | WCAG 2.2 AA: navegación por teclado, foco visible, labels, `aria-live` en errores y confirmación, link para saltar al contenido. |
 | NFR-SEO-01 | SEO | Metadata única por página, `lang="es-AR"`, URLs en español, canonical, OG. |
@@ -576,3 +586,5 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 21/11/2026 | 1.9 | §6.2: se agrega `content/contact-page.ts`. §11.3: en Contacto, el mapa es un link a Google Maps y no un embed (la CSP no admite ese iframe y pondría cookies de terceros, contra la política de privacidad). La página es estática: en F3 el formulario lee `?area=` del lado del cliente. | [tu nombre] |
 | 21/11/2026 | 1.10 | FR-15: en modo demo el sitio lleva `noindex, nofollow` sin bloquear el rastreo (ADR-0010). FR-03: `site.config.ts` suma los horarios estructurados (`openingHours`). §6.2: `lib/seo/*` y `app/opengraph-image.tsx`. | [tu nombre] |
 | 22/11/2026 | 1.11 | §1: el puntaje de SEO de Lighthouse se mide sobre un build con el modo demo apagado (ADR-0010). | [tu nombre] |
+| 22/11/2026 | 1.12 | FR-15: banner corto en celulares. §6.2: páginas 404 y de error de FR-16 (`PublicShell`, `NotFoundView`, `ErrorView`, `content/error-pages.ts`). | [tu nombre] |
+| 22/11/2026 | 1.13 | Revisión de diseño. §11.5 nueva (peligro, plazos y contacto seguro). §11.3: orden del Inicio y de Contacto, paso 2 sin prometer llamadas. US-01 CA1 desde 320×568. US-03 CA6, §7 y §8: `safeToContact` (se implementa en F3). US-04: WhatsApp no tapa contenido. FR-03: jurisdicción. FR-15 y §9: modo demo encendido por defecto (ADR-0011). | [tu nombre] |

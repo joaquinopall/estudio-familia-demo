@@ -2,11 +2,11 @@
 
 Resumen de la arquitectura vigente. La fuente de verdad es [`SPEC.md`](SPEC.md) §6; este documento explica cómo está armado **hoy** el código y hacia dónde va. Se actualiza en cada tarea que cambie estructura o flujos.
 
-Última actualización: F2-06 (21/11/2026).
+Última actualización: F2-07 (22/11/2026).
 
 ## Principios
 
-1. **Server-first.** Las páginas públicas se renderizan de forma estática (SSG). Solo el formulario y el panel admin son dinámicos. El JavaScript de cliente se limita a lo interactivo (hoy: el menú mobile).
+1. **Server-first.** Las páginas públicas se renderizan de forma estática (SSG). Solo el formulario y el panel admin son dinámicos. El JavaScript de cliente se limita a lo interactivo (hoy: el menú mobile y la marca de página actual).
 2. **Capas con dependencias hacia adentro.** UI → Server Actions → Services → Repositories / Ports. Los services no conocen Next, Prisma ni SDKs ([ADR 0001](adr/0001-arquitectura-en-capas-por-feature.md)).
 3. **Ports & adapters** para servicios externos (mail, captcha, rate limit, reloj): se cambian o se simulan en tests sin tocar la lógica.
 4. **Un tenant por instalación:** cada estudio cliente tiene su deploy, su base y su configuración ([ADR 0003](adr/0003-un-tenant-por-instalacion.md)).
@@ -44,9 +44,9 @@ flowchart LR
 | `src/app/(public)/`           | ✅ F2-05    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
 | `src/app/admin/`              | ⏳ F4       | Login, listado y detalle de consultas.                                                         |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
-| `src/app/not-found.tsx`, `error.tsx` | ⏳ F2-07 | Páginas de error amigables (FR-16).                                                          |
+| `src/app/not-found.tsx`, `error.tsx` y los de `(public)/` | ✅ F2-07 | Páginas de error amigables (FR-16). |
 | `src/components/ui/`          | ✅ F1-07    | shadcn/ui (generados).                                                                         |
-| `src/components/layout/`      | ✅ F1-07    | Header, MobileMenu, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink.                     |
+| `src/components/layout/`      | ✅ F1-07    | Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, NotFoundView, ErrorView.                     |
 | `src/components/marketing/`   | ✅ F2-05    | Bloques del sitio público; reciben los datos por props.                                        |
 | `src/config/site.config.ts`   | ✅ F1-07    | Datos del estudio (ficticios en la demo).                                                      |
 | `src/content/`                | ✅ F2-05    | Áreas, preguntas frecuentes, textos de cada página y política de privacidad como datos.        |
@@ -79,12 +79,15 @@ sequenceDiagram
   participant N as Next.js
   B->>V: GET /
   V-->>B: HTML prerenderizado en el build (SSG)<br/>+ headers de seguridad (next.config headers())
-  Note over B: Hidrata solo los componentes cliente<br/>(hoy: MobileMenu)
+  Note over B: Hidrata solo los componentes cliente<br/>(hoy: MobileMenu y NavLinks)
 ```
 
 - Los headers (HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`, CSP report-only) se aplican a **todas** las rutas desde `next.config.ts`.
-- El layout público arma la página con datos de `site.config.ts`: banner de demo (si `NEXT_PUBLIC_DEMO_MODE=true`), header, `<main id="contenido">`, footer, botón de WhatsApp y JSON-LD `LegalService`.
+- El layout público arma la página con datos de `site.config.ts`: banner de demo (salvo `NEXT_PUBLIC_DEMO_MODE=false`, [ADR 0011](adr/0011-modo-demo-por-defecto.md)), header, `<main id="contenido">`, footer con la ayuda ante peligro, botón de WhatsApp y JSON-LD `LegalService`.
+- **Header y WhatsApp:** debajo del breakpoint `gutter` (86.25rem = 1380 px) el header es fijo y lleva WhatsApp; desde ahí WhatsApp flota en el margen. El espacio para el header fijo se da con `scroll-margin-top` en el contenido, **no** con `scroll-padding` en `html` (haría saltar la página al enfocar el header).
+- **Página actual:** `NavLinks` lee `usePathname` en un subcomponente que no dibuja nada, dentro de `Suspense`. No envuelvas la lista en ese `Suspense`: React reemplazaría los links al cargar y se perdería el foco.
 - Las áreas se generan con `generateStaticParams`; un slug desconocido espera el render completo y responde 404 ([ADR 0009](adr/0009-rutas-dinamicas-estaticas-con-cache-components.md)).
+- **404 y errores (FR-16):** `notFound()` dentro de una ruta pública usa `(public)/not-found.tsx`, dentro del layout. Una URL sin ruta usa `app/not-found.tsx`, que trae su propio `PublicShell` porque queda fuera de ese layout. Los errores usan `error.tsx` con `retry()` y nunca muestran detalles internos.
 - Cada página arma su metadata con `buildPageMetadata`. En modo demo, todas llevan `noindex, nofollow` ([ADR 0010](adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)).
 
 ## Flujos planificados
@@ -106,5 +109,6 @@ sequenceDiagram
 | [0008](adr/0008-politica-de-npm-audit-en-ci.md)                  | `npm audit` bloqueante solo para producción                    | Aceptada                   |
 | [0009](adr/0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con 404 real                       | Aceptada                   |
 | [0010](adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)         | JSON-LD seguro y noindex en modo demo                          | Aceptada                   |
+| [0011](adr/0011-modo-demo-por-defecto.md) | Modo demo encendido por defecto | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).

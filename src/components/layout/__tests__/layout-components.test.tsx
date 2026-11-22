@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { DemoBanner } from "@/components/layout/demo-banner";
 import { Footer } from "@/components/layout/footer";
+import { SafetyNotice } from "@/components/layout/safety-notice";
 import { MAIN_CONTENT_ID, SkipLink } from "@/components/layout/skip-link";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { siteConfig } from "@/config/site.config";
@@ -46,7 +47,29 @@ describe("WhatsAppButton", () => {
   });
 });
 
+describe("SafetyNotice", () => {
+  it.each([false, true])("links each helpline with its name (compact: %s)", (compact) => {
+    render(<SafetyNotice compact={compact} />);
+
+    for (const [name, number] of [
+      ["Emergencias 911", "911"],
+      ["Violencia familiar 137", "137"],
+      ["Violencia de género 144", "144"],
+    ] as const) {
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", `tel:${number}`);
+    }
+    expect(screen.getByText("(opción 1)")).toBeInTheDocument();
+    expect(screen.getByText(/Lavalle 1250/)).toBeInTheDocument();
+  });
+});
+
 describe("Footer", () => {
+  it("has the helplines on every page (SPEC §11.5)", () => {
+    render(<Footer config={siteConfig} />);
+
+    expect(screen.getByRole("link", { name: "Emergencias 911" })).toBeInTheDocument();
+  });
+
   it("shows the legal disclaimer and the privacy link (SPEC §11.4, US-07)", () => {
     render(<Footer config={siteConfig} />);
 

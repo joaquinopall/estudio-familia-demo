@@ -6,9 +6,11 @@ import AreaPage, {
   generateMetadata,
   generateStaticParams,
 } from "@/app/(public)/areas/[slug]/page";
+import { siteConfig } from "@/config/site.config";
 import { areaPageContent } from "@/content/area-pages";
 import { homeContent } from "@/content/home";
 import { practiceAreas } from "@/content/practice-areas";
+import { deadlineContent, safetyContent } from "@/content/urgent-help";
 
 vi.mock("next/navigation", () => ({
   notFound: () => {
@@ -35,8 +37,8 @@ describe("/areas/[slug] static generation", () => {
     expect(ensureStatic).toBe("navigation");
   });
 
-  it("returns no metadata for an unknown slug", async () => {
-    expect(await generateMetadata(props("no-existe"))).toEqual({});
+  it("titles an unknown slug as a 404", async () => {
+    expect(await generateMetadata(props("no-existe"))).toEqual({ title: "Página no encontrada" });
   });
 
   it.each(practiceAreas.map((area) => [area.slug, area.metadata] as const))(
@@ -89,6 +91,18 @@ describe.each(practiceAreas.map((area) => [area.slug, area] as const))(
       }
     });
 
+    it("puts the first CTA right after the first paragraph, and keeps the rest", async () => {
+      await renderArea(slug);
+
+      const [first, ...rest] = area.intro.map((paragraph) => screen.getByText(paragraph));
+      const [cta] = screen.getAllByRole("link", { name: "Contanos tu caso" });
+      const follows = (a?: Element, b?: Element) =>
+        Boolean(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+      expect(follows(first, cta)).toBe(true);
+      for (const paragraph of rest) expect(follows(cta, paragraph)).toBe(true);
+    });
+
     it("preselects the area in both calls to action", async () => {
       await renderArea(slug);
 
@@ -97,6 +111,19 @@ describe.each(practiceAreas.map((area) => [area.slug, area] as const))(
       for (const cta of ctas) {
         expect(cta).toHaveAttribute("href", `/contacto?area=${slug}`);
       }
+    });
+
+    it("says where the firm litigates and what to do with a deadline", async () => {
+      await renderArea(slug);
+
+      expect(screen.getByText(siteConfig.jurisdiction.note)).toBeInTheDocument();
+      expect(screen.getByText(deadlineContent.title)).toBeInTheDocument();
+    });
+
+    it("shows the helplines only in family areas", async () => {
+      await renderArea(slug);
+
+      expect(screen.queryByText(safetyContent.title) !== null).toBe(area.showsSafetyNotice);
     });
 
     it("links to the other 4 areas, not to itself", async () => {

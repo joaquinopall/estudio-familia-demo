@@ -15,9 +15,10 @@ export type SectionCopy = { title: string; lead: string };
 
 export const homeContent = {
   hero: {
-    eyebrow: "Estudio jurídico de familia y sucesiones",
+    eyebrow: "Familia y sucesiones",
     title: "Te acompañamos en los temas de familia que más importan",
     lead: "Sucesiones, divorcios, alimentos y cuidado de los hijos. Te escuchamos y te explicamos tus opciones con claridad, en lenguaje simple.",
+    credentialsLabel: "Profesionales matriculados",
   },
   areas: {
     title: "¿En qué te podemos ayudar?",
@@ -33,9 +34,10 @@ export const homeContent = {
           "Completá el formulario o escribinos por WhatsApp. Alcanza con unas pocas líneas sobre lo que está pasando.",
       },
       {
-        title: "Te llamamos y analizamos tu situación",
+        // Never promise a call: the person may live with whoever is hurting them.
+        title: "Te contactamos por el medio que elijas",
         description:
-          "Conversamos con tranquilidad, te hacemos las preguntas necesarias y revisamos la documentación que tengas.",
+          "Conversamos con tranquilidad, analizamos tu situación y revisamos la documentación que tengas.",
       },
       {
         title: "Te proponemos un camino claro",
@@ -59,7 +61,7 @@ export const homeContent = {
     lead: "Escribinos con tus palabras. Consultar no te obliga a iniciar ningún trámite.",
   },
 } as const satisfies {
-  hero: { eyebrow: string; title: string; lead: string };
+  hero: { eyebrow: string; title: string; lead: string; credentialsLabel: string };
   areas: SectionCopy;
   process: SectionCopy & { steps: readonly ProcessStep[] };
   trust: SectionCopy;

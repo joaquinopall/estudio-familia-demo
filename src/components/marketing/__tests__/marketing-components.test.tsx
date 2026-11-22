@@ -1,5 +1,4 @@
 import { render, screen, within } from "@testing-library/react";
-import { Clock, MapPin } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
 import { CtaSection } from "@/components/marketing/cta-section";
@@ -8,6 +7,7 @@ import { Hero } from "@/components/marketing/hero";
 import { PracticeAreaCard } from "@/components/marketing/practice-area-card";
 import { ProcessSteps } from "@/components/marketing/process-steps";
 import { TrustBar } from "@/components/marketing/trust-bar";
+import { UrgentNote } from "@/components/marketing/urgent-note";
 import { siteConfig } from "@/config/site.config";
 
 const cta = { label: "Contanos tu caso", href: "/contacto" };
@@ -22,29 +22,26 @@ describe("Hero", () => {
     expect(screen.getByText("Nota")).toBeInTheDocument();
   });
 
-  it("renders the practical facts as a description list, linking the ones with href", () => {
-    const facts = [
-      { icon: MapPin, label: "Dónde estamos", value: "Calle 123", href: "https://maps.example" },
-      { icon: Clock, label: "Horario", value: "9 a 18 h" },
-    ];
+  it("lists the professionals with their registration and the jurisdiction", () => {
+    const credentials = {
+      label: "Matriculados",
+      professionals: [{ name: "Dra. X", registration: "T° 1 F° 2" }],
+      note: "Atendemos acá.",
+    };
     render(
-      <Hero eyebrow="Estudio" title="Título" lead="Bajada" cta={cta} note="Nota" facts={facts} />,
+      <Hero eyebrow="E" title="Título" lead="B" cta={cta} note="N" credentials={credentials} />,
     );
 
-    expect(screen.getByText("Dónde estamos").closest("dt")).not.toBeNull();
-    expect(screen.getByRole("link", { name: /Calle 123/ })).toHaveAttribute(
-      "href",
-      "https://maps.example",
-    );
-    expect(screen.getByText("9 a 18 h").tagName).toBe("DD");
+    expect(screen.getByRole("listitem")).toHaveTextContent("Dra. XT° 1 F° 2");
+    expect(screen.getByText("Atendemos acá.")).toBeInTheDocument();
   });
 
-  it("renders no facts card when there are no facts", () => {
+  it("renders no card when there are no credentials", () => {
     const { container } = render(
       <Hero eyebrow="Estudio" title="Título" lead="Bajada" cta={cta} note="Nota" />,
     );
 
-    expect(container.querySelector("dl")).toBeNull();
+    expect(container.querySelector("ul")).toBeNull();
   });
 });
 
@@ -143,6 +140,21 @@ describe("FaqList", () => {
     expect(details[0]).not.toHaveAttribute("open");
     expect(details[0]?.querySelector("summary")).toHaveTextContent("¿Primera?");
     expect(details[0]).toHaveTextContent("Segundo párrafo.");
+  });
+});
+
+describe("UrgentNote", () => {
+  it("links the phone and says when it is answered and what to do after hours", () => {
+    render(
+      <UrgentNote
+        contact={{ phoneDisplay: "+54 11 0000-0000", phoneE164: "541100000000" }}
+        hours={{ days: "Lunes a viernes", hours: "9 a 18 h" }}
+      />,
+    );
+
+    expect(screen.getByRole("link")).toHaveAttribute("href", "tel:+541100000000");
+    expect(screen.getByText("(Lunes a viernes, 9 a 18 h)")).toBeInTheDocument();
+    expect(screen.getByText(/no esperes/)).toBeInTheDocument();
   });
 });
 

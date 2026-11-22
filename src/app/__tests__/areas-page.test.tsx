@@ -21,6 +21,12 @@ describe("/areas (FR-01)", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(areasIndexContent.title);
   });
 
+  it("says where the firm litigates", () => {
+    render(<AreasPage />);
+
+    expect(screen.getByText(siteConfig.jurisdiction.note)).toBeInTheDocument();
+  });
+
   it("links to every practice area page", () => {
     render(<AreasPage />);
 

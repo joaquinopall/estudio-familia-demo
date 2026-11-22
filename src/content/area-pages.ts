@@ -17,6 +17,8 @@ export const areasBreadcrumbs = [
 export const areasIndexContent = {
   title: "Áreas de práctica",
   lead: "Acompañamos a personas y familias en temas que suelen llegar en momentos difíciles. Elegí el tuyo para leer, en lenguaje simple, de qué se trata y qué se necesita.",
+  /** Heading of the card list, for screen readers only. */
+  listTitle: "Temas que atendemos",
   metadata: {
     title: "Áreas de práctica",
     description:

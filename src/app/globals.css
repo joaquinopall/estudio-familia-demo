@@ -46,6 +46,16 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * nav: the desktop menu fits with every link.
+ * gutter: the side margin of the max-w-6xl container (1224px at 17px root) fits the floating
+ * WhatsApp button, scrollbar included. Below it, WhatsApp goes in the sticky header.
+ */
+@theme {
+  --breakpoint-nav: 72rem;
+  --breakpoint-gutter: 86.25rem;
+}
+
 :root {
   --radius: 0.75rem;
 
@@ -86,6 +96,17 @@
     @apply font-sans;
     /* Base text 17px (SPEC §11.1: 16–18px) */
     font-size: 106.25%;
+  }
+  /*
+   * Room for the sticky header, so focus and anchors never end up under it (WCAG 2.4.11).
+   * Not scroll-padding on html: that also scrolls the page when focus enters the header.
+   */
+  main,
+  main :is(a, button, summary, input, select, textarea, [tabindex], [id]),
+  footer :is(a, button) {
+    @variant max-gutter {
+      scroll-margin-top: 6rem;
+    }
   }
   body {
     @apply bg-background leading-relaxed text-foreground antialiased;

@@ -11,7 +11,7 @@ export function InquiryFormSlot({ title, notice }: InquiryFormSlotProps) {
     <section
       id="formulario"
       aria-labelledby="inquiry-form-title"
-      className="scroll-mt-6 rounded-2xl border border-dashed border-input bg-background p-6 sm:p-8"
+      className="scroll-mt-24 rounded-2xl border border-dashed border-input bg-background p-6 sm:p-8 gutter:scroll-mt-6"
     >
       <h2 id="inquiry-form-title" className="text-2xl font-semibold text-primary sm:text-3xl">
         {title}

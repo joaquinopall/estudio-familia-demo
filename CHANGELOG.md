@@ -4,6 +4,19 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F2-07 · Pulido visual y accesibilidad
+
+- **Corregido:** anillo de foco invisible (1:1) en el CTA final; frase de confidencialidad tapada por WhatsApp en el hero (ahora va arriba del botón); CTA de las áreas fuera de la primera pantalla en celulares; áreas táctiles de los datos de contacto y del footer (44 px); headings y landmarks (axe sin violaciones de ningún nivel).
+- **Agregado:** 404 y página de error en español, con salidas a inicio y contacto (FR-16).
+- **Cambiado:** banner de demo corto en celulares; preguntas de Contacto debajo del formulario; sin rótulo repetido en las tarjetas de área; rótulo "Vigente desde el" en Privacidad (no cambia ninguna cláusula, sigue la versión 1.0).
+- **Agregado:** `tests/e2e/quality.spec.ts` (contraste del foco, primera pantalla sin tapar, axe, áreas táctiles, reflow, 404), tests de las páginas de error y casos MT-12 y MT-21. SPEC v1.12.
+- **Agregado (revisión de diseño, SPEC v1.13):** ayuda ante peligro (911, 137 opción 1, 144 y OVD) en footer, Contacto y áreas de familia; aviso para plazos con teléfono y horario; jurisdicción CABA en Inicio y áreas; botón en el encabezado de Nosotros; página actual marcada en el menú.
+- **Cambiado:** el paso 2 ya no promete una llamada; la ficha del hero muestra profesionales y matrícula; la confianza va antes de "Cómo trabajamos"; Contacto muestra primero los canales que funcionan; índice de preguntas en dos columnas en celulares.
+- **Corregido:** WhatsApp ya no tapa texto (header fijo hasta 1379 px, flotante desde 1380); el menú mobile se cierra al salir con Tab o tocar afuera; el botón principal entra a 320×568 con banner; sin scroll horizontal con 305 px útiles; migas e índices de 44 px; el test de contraste del foco espera el fin de las transiciones; el índice fijo de Privacidad scrollea en ventanas bajas, así su último link no queda inalcanzable.
+- **Seguridad:** sin `NEXT_PUBLIC_DEMO_MODE` el modo demo queda encendido (ADR-0011). **Un estudio real necesita `false` explícito.**
+- **Especificado para F3:** `safeToContact`, "¿es seguro que te contactemos por ese medio?".
+- **Conocido:** el 404 de un área inexistente se dibuja con JavaScript; aceptado, se revisa en F4 (ADR-0009).
+
 ### F2-06 · SEO técnico
 
 - **Agregado:** `/sitemap.xml` (11 URLs), `/robots.txt` (excluye `/admin`) e imagen Open Graph generada en el build.

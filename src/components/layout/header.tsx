@@ -4,39 +4,41 @@ import type { SiteConfig } from "@/config/site.config";
 
 import { CtaLink } from "./cta-link";
 import { MobileMenu } from "./mobile-menu";
+import { NavLinks } from "./nav-links";
+import { WhatsAppButton } from "./whatsapp-button";
 
-type HeaderProps = Pick<SiteConfig, "shortName" | "navigation" | "primaryCta">;
+type HeaderProps = Pick<SiteConfig, "shortName" | "navigation" | "primaryCta"> & {
+  whatsApp: { number: string; message: string };
+};
 
-export function Header({ shortName, navigation, primaryCta }: HeaderProps) {
+/**
+ * Sticky until the gutter breakpoint, because it carries WhatsApp (US-04). From there WhatsApp
+ * floats in the side margin and the header scrolls away.
+ */
+export function Header({ shortName, navigation, primaryCta, whatsApp }: HeaderProps) {
   return (
-    <header className="relative border-b border-border bg-background">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+    <header className="sticky top-0 z-40 border-b border-border bg-background gutter:relative">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-1 px-4 py-1.5 min-[22.5rem]:gap-2 sm:py-3">
         <Link
           href="/"
-          className="font-heading text-xl font-semibold text-primary"
+          className="mr-auto inline-flex min-h-11 items-center font-heading text-base font-semibold whitespace-nowrap text-primary min-[22.5rem]:text-xl lg:mr-0"
           aria-label={`${shortName} — Inicio`}
         >
           {shortName}
         </Link>
 
         <nav aria-label="Principal" className="hidden lg:block">
-          <ul className="flex items-center gap-1">
-            {navigation.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-muted"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <NavLinks items={navigation} variant="desktop" />
         </nav>
 
-        <CtaLink href={primaryCta.href} className="hidden lg:inline-flex">
+        <CtaLink
+          href={primaryCta.href}
+          className="hidden px-3 whitespace-nowrap lg:inline-flex nav:px-4"
+        >
           {primaryCta.label}
         </CtaLink>
+
+        <WhatsAppButton {...whatsApp} placement="header" />
 
         <MobileMenu items={navigation} cta={primaryCta} />
       </div>

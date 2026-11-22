@@ -151,6 +151,7 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 
 - [ ] **F3-02 · Schemas y tipos** (IA) · SPEC §8
   - [ ] `inquirySchema` y los demás schemas con tests de cada regla y mensaje.
+  - [ ] `safeToContact` (SPEC US-03 CA6): regla condicional y tests. Como es un dato nuevo, subir la versión de la política de privacidad.
 
 - [ ] **F3-03 · Ports y adapters** (IA) · NFR-ESC-02
   - [ ] Interfaces `EmailSender`, `CaptchaVerifier`, `RateLimiter` y `Clock`, con sus adapters (Resend, Turnstile, Upstash) y fakes para tests.
@@ -169,6 +170,7 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 - [ ] **F3-07 · Formulario de 2 pasos** (IA + `/claude-design`) · US-03
   - [ ] Componente cliente con `useActionState`, Turnstile, errores accesibles, sin pérdida de datos y confirmación con referencia.
   - [ ] Preselección de área por query param.
+  - [ ] "¿Es seguro que te contactemos por ese medio?" al elegir teléfono o WhatsApp (US-03 CA6). Revisar el orden de `/contacto` ahora que el formulario funciona.
   - [ ] Tests de componente.
 
 - [ ] **F3-08 · E2E del envío** (IA)
