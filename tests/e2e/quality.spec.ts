@@ -328,6 +328,24 @@ for (const path of PAGES) {
   });
 }
 
+// A sticky index taller than the window cuts its last links, and scrolling the page cannot reveal them.
+for (const [width, height] of [
+  [1152, 600],
+  [1280, 650],
+  [1440, 560],
+] as const) {
+  test(`the last link of the sticky index is reachable at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("/privacidad");
+    await page.evaluate(() => window.scrollTo({ top: 1200, behavior: "instant" }));
+
+    const last = page.getByRole("navigation", { name: "Contenido" }).getByRole("link").last();
+    await last.focus();
+
+    await expectVisibleAndUncovered(last);
+  });
+}
+
 test("focusing the sticky header does not move the page", async ({ page }) => {
   await page.setViewportSize({ width: 1152, height: 640 });
   await page.goto("/preguntas-frecuentes");

@@ -8,13 +8,16 @@ type TableOfContentsProps = {
   className?: string;
 };
 
-/** In-page index of anchor links (privacy policy, FAQ groups). */
+/**
+ * In-page index of anchor links (privacy policy, FAQ groups). It is sticky on desktop, so it
+ * scrolls by itself when the window is shorter: otherwise its last links are unreachable.
+ */
 export function TableOfContents({ label, items, compact, className }: TableOfContentsProps) {
   return (
     <nav
       aria-label={label}
       className={cn(
-        "rounded-2xl border border-border bg-card",
+        "rounded-2xl border border-border bg-card lg:max-h-[calc(100dvh-7rem)] lg:scroll-py-2 lg:overflow-y-auto",
         compact ? "px-4 py-3 lg:p-5" : "p-5",
         className,
       )}
