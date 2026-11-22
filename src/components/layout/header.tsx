@@ -14,6 +14,7 @@ type HeaderProps = Pick<SiteConfig, "shortName" | "navigation" | "primaryCta"> &
 /**
  * Sticky until the gutter breakpoint, because it carries WhatsApp (US-04). From there WhatsApp
  * floats in the side margin and the header scrolls away.
+ * Below lg the name may wrap: with a larger browser font it does not fit in one line.
  */
 export function Header({ shortName, navigation, primaryCta, whatsApp }: HeaderProps) {
   return (
@@ -21,7 +22,7 @@ export function Header({ shortName, navigation, primaryCta, whatsApp }: HeaderPr
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-1 px-4 py-1.5 min-[22.5rem]:gap-2 sm:py-3">
         <Link
           href="/"
-          className="mr-auto inline-flex min-h-11 items-center font-heading text-base font-semibold whitespace-nowrap text-primary min-[22.5rem]:text-xl lg:mr-0"
+          className="mr-auto inline-flex min-h-11 items-center font-heading text-base leading-tight font-semibold text-primary min-[22.5rem]:text-xl lg:mr-0 lg:whitespace-nowrap"
           aria-label={`${shortName} — Inicio`}
         >
           {shortName}

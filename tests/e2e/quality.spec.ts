@@ -328,6 +328,29 @@ for (const path of PAGES) {
   });
 }
 
+// The browser's default font at 125% (20px). Media queries in rem follow it, page zoom is another case.
+for (const width of [320, 360, 375, 390, 412, 768, 1024, 1280, 1440]) {
+  test(`nothing overflows at ${width}px with the browser font at 125%`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    const session = await page.context().newCDPSession(page);
+    await session.send("Page.enable");
+    await session.send("Page.setFontSizes", { fontSizes: { standard: 20 } });
+
+    const overflowing: string[] = [];
+    for (const path of PAGES) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      const { root, overflow } = await page.evaluate(() => ({
+        root: getComputedStyle(document.documentElement).fontSize,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      }));
+      expect(root, "the 125% font was not applied").toBe("21.25px");
+      if (overflow > 0) overflowing.push(`${path} (${overflow}px)`);
+    }
+    expect(overflowing).toEqual([]);
+  });
+}
+
 // A sticky index taller than the window cuts its last links, and scrolling the page cannot reveal them.
 for (const [width, height] of [
   [1152, 600],
