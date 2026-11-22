@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { aboutContent } from "@/content/about";
+import { contactPageContent } from "@/content/contact-page";
 import { faqPageContent } from "@/content/faq-page";
 import { faqGroups, generalFaqs, getFaqsByGroup } from "@/content/faqs";
 
 const metadataCases = [
   ["about", aboutContent.metadata],
   ["faq page", faqPageContent.metadata],
+  ["contact page", contactPageContent.metadata],
 ] as const;
 
 describe("institutional pages content", () => {
@@ -28,6 +30,14 @@ describe("institutional pages content", () => {
   it("ends each breadcrumb trail at its own page", () => {
     expect(aboutContent.breadcrumbs.at(-1)?.href).toBe("/nosotros");
     expect(faqPageContent.breadcrumbs.at(-1)?.href).toBe("/preguntas-frecuentes");
+    expect(contactPageContent.breadcrumbs.at(-1)?.href).toBe("/contacto");
+  });
+
+  it("has every contact page label filled in", () => {
+    for (const label of Object.values(contactPageContent.details)) {
+      expect(label.trim()).not.toBe("");
+    }
+    expect(contactPageContent.formSlot.notice.trim()).not.toBe("");
   });
 });
 

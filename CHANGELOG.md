@@ -4,6 +4,13 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F2-05 · Contacto (sin formulario funcional todavía)
+
+- **Agregado:** `/contacto` con el tiempo de respuesta en la apertura, el lugar reservado del formulario (`#formulario`, con un aviso y alternativas), datos de contacto (WhatsApp destacado, teléfono, email, dirección con link a Google Maps, horarios y confidencialidad) y preguntas destacadas. Los CTA "Contanos tu caso" del sitio dejan de dar 404.
+- **Agregado:** componentes `ContactDetails` e `InquiryFormSlot`; textos en `src/content/contact-page.ts`.
+- **Decidido:** mapa como link y no como embed (CSP, sin cookies de terceros y mejor rendimiento). La página es estática; en F3 el formulario lee `?area=` del lado del cliente.
+- **Agregado:** tests de la página, de los componentes y del contenido; e2e de status (con y sin `?area=`), CTA del header y de un área, WhatsApp, axe, sin iframes y sin scroll horizontal; caso manual MT-19. SPEC v1.9.
+
 ### F2-04 · Nosotros, Preguntas frecuentes y Privacidad
 
 - **Agregado:** `/nosotros` (enfoque, profesionales con matrícula y formación desde `siteConfig`, y valores), `/preguntas-frecuentes` (los 4 grupos con índice de anclas y links a las preguntas de cada área) y `/privacidad`.

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.8 (21/11/2026) |
+| Versión | 1.9 (21/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -205,6 +205,7 @@ src/
     area-pages.ts                # textos de /areas y rótulos de las páginas de área
     about.ts                     # textos de /nosotros (enfoque y valores)
     faq-page.ts                  # textos de /preguntas-frecuentes
+    contact-page.ts              # textos de /contacto
     practice-areas.ts
     faqs.ts
     legal/privacy.ts             # texto de la política + versión
@@ -566,3 +567,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 21/11/2026 | 1.6 | §6.2: se agrega `content/home.ts` (textos del inicio). La frase de confidencialidad de §11.2 pasa a `site.config.ts` (`confidentialityNote`) para usarla en el inicio y en el footer. Componentes de `components/marketing` en kebab-case, más `SectionHeading` y `CtaSection`. | [tu nombre] |
 | 21/11/2026 | 1.7 | §6.2: se agrega `content/area-pages.ts` (textos de `/areas` y rótulos de las páginas de área). `areas/[slug]` usa `generateStaticParams` + `ensureStatic = 'navigation'` en lugar de `dynamicParams = false`, que no es compatible con Cache Components (ADR-0009). | [tu nombre] |
 | 21/11/2026 | 1.8 | §6.2: se agregan `content/about.ts`, `content/faq-page.ts` y `lib/format-date.ts`. La política de privacidad (`content/legal/privacy.ts`) arranca en la versión `1.0` (vigente desde el 21/11/2026), nombra a los proveedores que procesan datos (Vercel, Supabase, Resend, Cloudflare, Upstash) e informa la transferencia internacional (art. 12, Ley 25.326). | [tu nombre] |
+| 21/11/2026 | 1.9 | §6.2: se agrega `content/contact-page.ts`. §11.3: en Contacto, el mapa es un link a Google Maps y no un embed (la CSP no admite ese iframe y pondría cookies de terceros, contra la política de privacidad). La página es estática: en F3 el formulario lee `?area=` del lado del cliente. | [tu nombre] |

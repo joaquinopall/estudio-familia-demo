@@ -104,6 +104,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-16 | Inicio responsive (360 a 1440 px)                       | F2-02         | **Detallado** |
 | MT-17 | Áreas de práctica: navegación, CTA y 404                | F2-03         | **Detallado** |
 | MT-18 | Nosotros, Preguntas frecuentes y Privacidad             | F2-04         | **Detallado** |
+| MT-19 | Contacto: canales, mapa y lugar del formulario          | F2-05         | **Detallado** |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -258,6 +259,32 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - Paso 4: lleva a `/privacidad`, con versión **1.0** y fecha de vigencia bajo el título y el aviso de que el estudio es ficticio.
 - Paso 5: el índice baja a la sección. La sección "Quién es responsable" muestra el nombre, el domicilio y el email del estudio; "Con quién los compartimos" nombra a Vercel, Supabase, Resend, Cloudflare y Upstash; están los avisos de la AAIP. A 1440 px, el índice queda fijo al costado mientras leés.
 - Paso 6: el foco se ve siempre y los índices funcionan con Enter.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-19 — Contacto: canales, mapa y lugar del formulario
+
+- **Objetivo:** que alguien pueda contactar al estudio por el canal que prefiera, sin fricción, mientras el formulario no está disponible.
+- **Requisitos:** FR-01, FR-13, US-04, SPEC §11.2 y §11.3.
+- **Precondiciones:** sitio levantado (`npm run dev` o la URL de preview). DevTools a 360 px y a 1440 px. Para el paso 3, un celular con WhatsApp (opcional).
+
+**Pasos**
+
+1. Llegá a `/contacto` desde el botón "Contanos tu caso" del header, desde el CTA final del inicio y desde el botón de una página de área.
+2. Recorré la página de arriba a abajo.
+3. Tocá "Escribinos por WhatsApp".
+4. Tocá el teléfono, el email y "Ver en Google Maps".
+5. Repetí los pasos 2 a 4 solo con el teclado.
+
+**Resultado esperado**
+
+- Paso 1: siempre se abre Contacto; desde un área, la URL termina en `?area=<slug>` y la página se ve igual.
+- Paso 2: arriba se lee el tiempo de respuesta. A 360 px, primero aparece la tarjeta "Contanos tu caso" (con el aviso de que el formulario llega pronto y las alternativas) y después los datos de contacto; a 1440 px, van lado a lado. Al final, "Antes de escribirnos", con 3 preguntas y el link a todas. No hay ningún mapa embebido.
+- Paso 3: se abre WhatsApp (o `wa.me`) en otra pestaña, con el mensaje "Hola, quisiera hacer una consulta." y sin datos personales.
+- Paso 4: el teléfono abre el marcador, el email abre el cliente de correo y el mapa se abre en otra pestaña.
+- Paso 5: el foco se ve siempre y todos los links funcionan con Enter.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

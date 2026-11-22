@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { siteConfig } from "@/config/site.config";
 import { aboutContent } from "@/content/about";
 import { areaPageContent, areasIndexContent } from "@/content/area-pages";
+import { contactPageContent } from "@/content/contact-page";
 import { faqPageContent } from "@/content/faq-page";
 import { faqGroups, generalFaqs } from "@/content/faqs";
 import { homeContent } from "@/content/home";
@@ -31,6 +32,7 @@ const texts = [
   ...collectTexts(aboutContent, "aboutContent"),
   ...collectTexts(faqPageContent, "faqPageContent"),
   ...collectTexts(privacyPolicy, "privacyPolicy"),
+  ...collectTexts(contactPageContent, "contactPageContent"),
 ];
 
 /**

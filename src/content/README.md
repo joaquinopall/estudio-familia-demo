@@ -10,6 +10,7 @@ Contenido del sitio como datos tipados, separado de los componentes (SPEC §6.1,
 | `area-pages.ts`     | Textos de `/areas`, migas de pan y rótulos de las páginas de área     | F2-03 |
 | `about.ts`          | Textos de `/nosotros`: enfoque y valores                              | F2-04 |
 | `faq-page.ts`       | Textos de `/preguntas-frecuentes`                                     | F2-04 |
+| `contact-page.ts`   | Textos de `/contacto` y rótulos de los datos de contacto              | F2-05 |
 | `legal/privacy.ts`  | Texto de la política de privacidad (Ley 25.326) y su versión          | F2-04 |
 
 ## Forma de los datos
@@ -25,6 +26,11 @@ Contenido del sitio como datos tipados, separado de los componentes (SPEC §6.1,
 - No pongas datos del estudio (nombre, teléfono, email, dirección, horarios) dentro de los textos: los componentes los toman de `src/config/site.config.ts` (FR-03).
 - Cambiar un `slug` cambia la URL pública: pensalo antes de publicar.
 - Reglas del contenido (SPEC §11.4): lenguaje simple, sin promesas de resultado, sin autoelogios ni comparaciones y sin testimonios ni reseñas inventadas.
+
+## Contacto (nota para F3)
+
+- `InquiryFormSlot` (`#formulario`) es el lugar reservado: F3 lo reemplaza por el formulario sin tocar el resto de la página.
+- Las áreas linkean a `/contacto?area=<slug>`. Para preseleccionar el área **sin volver dinámica la página**, leé el parámetro en el formulario (componente cliente, `useSearchParams` dentro de `<Suspense>`), no con `searchParams` del servidor.
 
 ## Política de privacidad
 
