@@ -22,6 +22,7 @@ Reglas:
 | [0008](0008-politica-de-npm-audit-en-ci.md)                  | Política de `npm audit` en la CI                               | Aceptada                       |
 | [0009](0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con Cache Components (404 real)    | Aceptada                       |
 | [0010](0010-seo-json-ld-seguro-y-noindex-en-demo.md) | SEO: JSON-LD seguro y noindex en modo demo | Aceptada |
+| [0011](0011-modo-demo-por-defecto.md) | Modo demo encendido por defecto | Aceptada |
 
 ## Plantilla
 

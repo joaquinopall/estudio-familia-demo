@@ -26,8 +26,14 @@ describe("parsePublicEnv", () => {
     const env = parsePublicEnv(validPublic);
 
     expect(env.NEXT_PUBLIC_SITE_URL).toBe("http://localhost:3000");
-    expect(env.NEXT_PUBLIC_DEMO_MODE).toBe(false);
+    expect(env.NEXT_PUBLIC_DEMO_MODE).toBe(true);
     expect(env.NEXT_PUBLIC_SUPABASE_URL).toBeUndefined();
+  });
+
+  it.each(["", "  "])("keeps demo mode on when the variable is empty (%j, ADR-0011)", (raw) => {
+    const env = parsePublicEnv({ ...validPublic, NEXT_PUBLIC_DEMO_MODE: raw });
+
+    expect(env.NEXT_PUBLIC_DEMO_MODE).toBe(true);
   });
 
   it("fails naming NEXT_PUBLIC_SITE_URL when it is missing", () => {

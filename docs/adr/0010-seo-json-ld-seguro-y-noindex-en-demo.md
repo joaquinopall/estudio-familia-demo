@@ -1,6 +1,6 @@
 # 0010. SEO: JSON-LD seguro y noindex en modo demo
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada (el valor por defecto del modo demo lo cambia [0011](0011-modo-demo-por-defecto.md))
 - **Fecha:** 21/11/2026
 - **Relacionado:** SPEC FR-14, FR-15, NFR-SEO-01, §11.4, CLAUDE.md §5, tarea F2-06
 
