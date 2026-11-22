@@ -8,10 +8,10 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 
 - Sitio público: inicio, áreas de práctica, nosotros, preguntas frecuentes, contacto y política de privacidad.
 - Formulario "Contanos tu caso" en dos pasos, con anti-spam y consentimiento de datos.
-- Aviso por mail al estudio y acuse de recibo a quien consulta.
+- Aviso por mail al estudio y acuse de recibo neutro a quien consulta, solo si su email es privado.
 - Panel de administración para gestionar las consultas.
 
-**Estado actual:** Fase 1 (fundaciones) completa; próxima: Fase 2 (sitio público y contenido). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
+**Estado actual:** Fase 1 (fundaciones) completa; Fase 2 (sitio público y contenido) implementada, pendiente de los tests manuales de cierre. Próxima: Fase 3 (formulario y backend de consultas). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Stack
 
@@ -41,7 +41,7 @@ cp .env.example .env.local          # en Windows: copy .env.example .env.local
 npm run dev                         # http://localhost:3000
 ```
 
-Con los valores de `.env.example` alcanza para correr el proyecto en la Fase 1.
+Con los valores de `.env.example` alcanza para correr el proyecto hasta la Fase 2 inclusive.
 
 Para los tests e2e, la primera vez instalá el navegador: `npx playwright install chromium`.
 
@@ -98,7 +98,7 @@ Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`]
 ```
 src/
   app/                 rutas (App Router), layout raíz y estilos globales (tokens)
-    (public)/          layout público: banner, header, footer, WhatsApp
+    (public)/          páginas públicas y su layout: banner, header, footer, WhatsApp
   components/
     ui/                componentes de shadcn/ui (generados)
     layout/            Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, 404 y error
@@ -130,6 +130,18 @@ Arquitectura, capas y flujos: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). De
 - **Datos estructurados:** `LegalService` en el layout público, `FAQPage` en preguntas frecuentes, `Service` en cada área y `BreadcrumbList` en las páginas internas. Se renderizan solo con `<JsonLd>` (`src/lib/seo/json-ld.tsx`), el único uso permitido de `dangerouslySetInnerHTML`. Los horarios salen de `siteConfig.openingHours`: mantenelo igual a `hours`.
 - **`/sitemap.xml`, `/robots.txt` (excluye `/admin`) y `/opengraph-image`** se generan en el build.
 - **La demo no se indexa:** con el modo demo encendido (el valor por defecto, [ADR-0011](docs/adr/0011-modo-demo-por-defecto.md)) todas las páginas llevan `noindex, nofollow` ([ADR-0010](docs/adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)). Para un estudio real, poné la variable en `false` y `NEXT_PUBLIC_SITE_URL` con el dominio final, y volvé a deployar: son valores de build.
+
+## Pasar a un estudio real
+
+La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `NEXT_PUBLIC_DEMO_MODE`.
+
+1. **Datos:** reemplazá todo [`src/config/site.config.ts`](src/config/site.config.ts). Es fácil olvidar `description`, la formación de cada profesional, `geo`, `mapsUrl`, el código postal y `openingHours`.
+2. **`isFictitious: false`:** saca el aviso de Privacidad y la etiqueta de la imagen para compartir.
+3. **`NEXT_PUBLIC_DEMO_MODE=false`** en Production, con `NEXT_PUBLIC_SITE_URL` del dominio final, y redeploy: saca el banner y el `noindex`. Dejá el modo demo encendido en Preview.
+4. **Jurisdicción y teléfonos de ayuda:** cambiar `jurisdiction` no alcanza. La OVD (Lavalle 1250) es de CABA y el 137 no cubre todo el país. Verificá en las fuentes oficiales y editá los **dos** lugares donde están: [`src/content/urgent-help.ts`](src/content/urgent-help.ts) y la pregunta sobre violencia de "Cuidado personal" en [`src/content/practice-areas.ts`](src/content/practice-areas.ts). Si cambian, actualizá también SPEC §11.5 y sus tests.
+5. **Contenido legal:** que el estudio revise áreas, preguntas frecuentes, aviso de plazos, política de privacidad (con su versión y fecha) y las normas de publicidad de su colegio (SPEC §11.4).
+6. **Ícono:** reemplazá `src/app/favicon.ico`, que todavía es el de Next.js.
+7. **Verificá:** corré los tests y los e2e, y hacé MT-01, MT-13, MT-14 y MT-22. `tests/e2e/home.spec.ts` espera el texto "CABA": si cambió la jurisdicción, ajustalo. En el deploy, abrí también `/opengraph-image`.
 
 ## Seguridad
 
