@@ -6,11 +6,15 @@ import { PracticeAreaGrid } from "@/components/marketing/practice-area-grid";
 import { siteConfig } from "@/config/site.config";
 import { areasBreadcrumbs, areasIndexContent } from "@/content/area-pages";
 import { practiceAreas } from "@/content/practice-areas";
+import { publicEnv } from "@/lib/env.public";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { buildBreadcrumbList } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: areasIndexContent.metadata.title,
-  description: areasIndexContent.metadata.description,
-};
+export const metadata: Metadata = buildPageMetadata({
+  ...areasIndexContent.metadata,
+  path: "/areas",
+});
 
 /** /areas (FR-01): index of the practice areas. Static. */
 export default function AreasPage() {
@@ -31,6 +35,7 @@ export default function AreasPage() {
         cta={siteConfig.primaryCta}
         note={siteConfig.responseTime}
       />
+      <JsonLd data={buildBreadcrumbList(areasBreadcrumbs, publicEnv.NEXT_PUBLIC_SITE_URL)} />
     </>
   );
 }

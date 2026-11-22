@@ -15,6 +15,13 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
+    // Deterministic public values for code that reads publicEnv at import time (layouts,
+    // sitemap, JSON-LD). Vitest does not load .env.local; tests can still override them with
+    // vi.stubEnv. Never put secrets here.
+    env: {
+      NEXT_PUBLIC_SITE_URL: "https://demo.example.com",
+      NEXT_PUBLIC_DEMO_MODE: "true",
+    },
     include: ["src/**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", "tests/e2e/**"],
     coverage: {

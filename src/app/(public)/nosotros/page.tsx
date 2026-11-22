@@ -7,11 +7,15 @@ import { SectionHeading } from "@/components/marketing/section-heading";
 import { siteConfig } from "@/config/site.config";
 import { aboutContent } from "@/content/about";
 import { homeContent } from "@/content/home";
+import { publicEnv } from "@/lib/env.public";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { buildBreadcrumbList } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: aboutContent.metadata.title,
-  description: aboutContent.metadata.description,
-};
+export const metadata: Metadata = buildPageMetadata({
+  ...aboutContent.metadata,
+  path: "/nosotros",
+});
 
 const sectionClass = "mx-auto max-w-6xl px-4 py-14 sm:py-20";
 
@@ -21,6 +25,7 @@ export default function AboutPage() {
 
   return (
     <>
+      <JsonLd data={buildBreadcrumbList(breadcrumbs, publicEnv.NEXT_PUBLIC_SITE_URL)} />
       <PageHeader id="about-title" breadcrumbs={breadcrumbs} title={title} lead={lead} />
 
       <section

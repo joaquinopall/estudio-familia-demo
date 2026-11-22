@@ -9,11 +9,15 @@ import { SectionHeading } from "@/components/marketing/section-heading";
 import { siteConfig } from "@/config/site.config";
 import { contactPageContent } from "@/content/contact-page";
 import { getFeaturedFaqs } from "@/content/faqs";
+import { publicEnv } from "@/lib/env.public";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { buildBreadcrumbList } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: contactPageContent.metadata.title,
-  description: contactPageContent.metadata.description,
-};
+export const metadata: Metadata = buildPageMetadata({
+  ...contactPageContent.metadata,
+  path: "/contacto",
+});
 
 /**
  * /contacto (FR-01, SPEC §11.3). Static: the form (F3) will read ?area= on the client, so the
@@ -24,6 +28,7 @@ export default function ContactPage() {
 
   return (
     <>
+      <JsonLd data={buildBreadcrumbList(breadcrumbs, publicEnv.NEXT_PUBLIC_SITE_URL)} />
       <PageHeader
         id="contact-title"
         breadcrumbs={breadcrumbs}

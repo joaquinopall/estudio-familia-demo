@@ -42,9 +42,11 @@ describe("/areas/[slug] static generation", () => {
   it.each(practiceAreas.map((area) => [area.slug, area.metadata] as const))(
     "%s has its own metadata (US-02 CA2)",
     async (slug, metadata) => {
-      expect(await generateMetadata(props(slug))).toEqual({
+      expect(await generateMetadata(props(slug))).toMatchObject({
         title: metadata.title,
         description: metadata.description,
+        alternates: { canonical: `/areas/${slug}` },
+        openGraph: { title: metadata.title, url: `/areas/${slug}` },
       });
     },
   );

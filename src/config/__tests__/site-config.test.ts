@@ -17,6 +17,17 @@ describe("siteConfig", () => {
     expect(siteConfig.confidentialityNote).toMatch(/primera conversación es confidencial/i);
   });
 
+  it("has structured opening hours for the JSON-LD (FR-14)", () => {
+    expect(siteConfig.openingHours.length).toBeGreaterThan(0);
+    for (const spec of siteConfig.openingHours) {
+      expect(spec.days.length).toBeGreaterThan(0);
+      expect(new Set(spec.days).size).toBe(spec.days.length);
+      expect(spec.opens).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
+      expect(spec.closes).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
+      expect(spec.opens < spec.closes).toBe(true);
+    }
+  });
+
   it("lists every professional with a bar registration (SPEC §11.2)", () => {
     expect(siteConfig.professionals.length).toBeGreaterThan(0);
     for (const professional of siteConfig.professionals) {

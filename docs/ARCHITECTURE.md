@@ -2,7 +2,7 @@
 
 Resumen de la arquitectura vigente. La fuente de verdad es [`SPEC.md`](SPEC.md) §6; este documento explica cómo está armado **hoy** el código y hacia dónde va. Se actualiza en cada tarea que cambie estructura o flujos.
 
-Última actualización: F1-08 (19/11/2026).
+Última actualización: F2-06 (21/11/2026).
 
 ## Principios
 
@@ -41,14 +41,17 @@ flowchart LR
 | ----------------------------- | ----------- | ---------------------------------------------------------------------------------------------- |
 | `src/app/layout.tsx`          | ✅ F1-07    | Layout raíz: `lang="es-AR"`, fuentes (`next/font`), metadata base.                             |
 | `src/app/globals.css`         | ✅ F1-07    | Tokens de diseño (SPEC §11.1).                                                                 |
-| `src/app/(public)/`           | ✅ F1-07    | Layout público e inicio provisorio. Las demás páginas públicas llegan en F2.                   |
+| `src/app/(public)/`           | ✅ F2-05    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
 | `src/app/admin/`              | ⏳ F4       | Login, listado y detalle de consultas.                                                         |
-| `src/app/sitemap.ts`, `robots.ts`, `not-found.tsx`, `error.tsx` | ⏳ F2 | SEO técnico y páginas de error.                                 |
+| `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
+| `src/app/not-found.tsx`, `error.tsx` | ⏳ F2-07 | Páginas de error amigables (FR-16).                                                          |
 | `src/components/ui/`          | ✅ F1-07    | shadcn/ui (generados).                                                                         |
 | `src/components/layout/`      | ✅ F1-07    | Header, MobileMenu, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink.                     |
-| `src/components/marketing/`   | ⏳ F2       | Bloques del sitio público.                                                                     |
+| `src/components/marketing/`   | ✅ F2-05    | Bloques del sitio público; reciben los datos por props.                                        |
 | `src/config/site.config.ts`   | ✅ F1-07    | Datos del estudio (ficticios en la demo).                                                      |
-| `src/content/`                | ⏳ F2       | Áreas, preguntas frecuentes y política de privacidad como datos.                               |
+| `src/content/`                | ✅ F2-05    | Áreas, preguntas frecuentes, textos de cada página y política de privacidad como datos.        |
+| `src/lib/seo/`                | ✅ F2-06    | Metadata, rutas del sitemap, datos estructurados y `<JsonLd>` seguro.                          |
+| `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
 | `src/features/inquiries/`     | ⏳ F3–F4    | Consultas: schema, service, repository, actions, mails y componentes.                          |
 | `src/features/auth/`          | ⏳ F4       | DAL (`requireStaff`), actions de login y repositorio de staff.                                 |
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
@@ -80,7 +83,9 @@ sequenceDiagram
 ```
 
 - Los headers (HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`, CSP report-only) se aplican a **todas** las rutas desde `next.config.ts`.
-- El layout público arma la página con datos de `site.config.ts`: banner de demo (si `NEXT_PUBLIC_DEMO_MODE=true`), header, `<main id="contenido">`, footer y botón de WhatsApp.
+- El layout público arma la página con datos de `site.config.ts`: banner de demo (si `NEXT_PUBLIC_DEMO_MODE=true`), header, `<main id="contenido">`, footer, botón de WhatsApp y JSON-LD `LegalService`.
+- Las áreas se generan con `generateStaticParams`; un slug desconocido espera el render completo y responde 404 ([ADR 0009](adr/0009-rutas-dinamicas-estaticas-con-cache-components.md)).
+- Cada página arma su metadata con `buildPageMetadata`. En modo demo, todas llevan `noindex, nofollow` ([ADR 0010](adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)).
 
 ## Flujos planificados
 
@@ -99,5 +104,7 @@ sequenceDiagram
 | [0006](adr/0006-validacion-de-variables-de-entorno.md)           | Validación de env en `next.config.ts`, pública/privada         | Aceptada                   |
 | [0007](adr/0007-csp-report-only-sin-nonces.md)                   | CSP report-only sin nonces para mantener SSG                   | Aceptada (se revisa en F5-01) |
 | [0008](adr/0008-politica-de-npm-audit-en-ci.md)                  | `npm audit` bloqueante solo para producción                    | Aceptada                   |
+| [0009](adr/0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con 404 real                       | Aceptada                   |
+| [0010](adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)         | JSON-LD seguro y noindex en modo demo                          | Aceptada                   |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).

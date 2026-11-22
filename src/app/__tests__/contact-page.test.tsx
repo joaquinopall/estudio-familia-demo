@@ -8,7 +8,10 @@ import { getFeaturedFaqs } from "@/content/faqs";
 
 describe("/contacto (FR-01, SPEC §11.3)", () => {
   it("has its own metadata", () => {
-    expect(metadata).toEqual(contactPageContent.metadata);
+    expect(metadata).toMatchObject({
+      ...contactPageContent.metadata,
+      alternates: { canonical: "/contacto" },
+    });
   });
 
   it("has a single h1 and marks itself as the current page", () => {

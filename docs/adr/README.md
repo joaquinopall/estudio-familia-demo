@@ -21,6 +21,7 @@ Reglas:
 | [0007](0007-csp-report-only-sin-nonces.md)                   | CSP en report-only y sin nonces                                | Aceptada (se revisa en F5-01)  |
 | [0008](0008-politica-de-npm-audit-en-ci.md)                  | Política de `npm audit` en la CI                               | Aceptada                       |
 | [0009](0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con Cache Components (404 real)    | Aceptada                       |
+| [0010](0010-seo-json-ld-seguro-y-noindex-en-demo.md) | SEO: JSON-LD seguro y noindex en modo demo | Aceptada |
 
 ## Plantilla
 

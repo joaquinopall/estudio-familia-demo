@@ -24,9 +24,9 @@ Detalles de los e2e:
 
 | Nivel       | Herramienta                  | Dónde                                        | Qué cubre hoy                                                                                     |
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`                 | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens |
-| Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Inicio, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
-| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe) |
+| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`                 | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots) |
+| Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
+| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404 de áreas, SEO |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
 Próximas fases: services con fakes de repos y ports, actions (validación, auth, rate limit, captcha), formulario y e2e de envío (F3), admin (F4).
@@ -38,6 +38,7 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - Preferí consultas por rol y nombre accesible (`getByRole("button", { name: "Menú" })`): si un test no encuentra un elemento así, probablemente un lector de pantalla tampoco.
 - Un bug arreglado = un test que lo reproduce.
 - Cobertura objetivo: 80% en `src/features/**` (services, schemas y actions), a medida que existan.
+- Vitest no carga `.env.local`: `vitest.config.mts` fija valores públicos de prueba (`NEXT_PUBLIC_SITE_URL` y modo demo prendido). Nunca pongas secretos ahí; para otro valor, usá `vi.stubEnv`.
 - En tests, `server-only` se reemplaza por un módulo vacío (`tests/stubs/server-only.ts`).
 
 ### Cuando falla un test "especial"
@@ -105,6 +106,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-17 | Áreas de práctica: navegación, CTA y 404                | F2-03         | **Detallado** |
 | MT-18 | Nosotros, Preguntas frecuentes y Privacidad             | F2-04         | **Detallado** |
 | MT-19 | Contacto: canales, mapa y lugar del formulario          | F2-05         | **Detallado** |
+| MT-20 | SEO técnico y datos estructurados                       | F2-06         | **Detallado** |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -285,6 +287,32 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - Paso 3: se abre WhatsApp (o `wa.me`) en otra pestaña, con el mensaje "Hola, quisiera hacer una consulta." y sin datos personales.
 - Paso 4: el teléfono abre el marcador, el email abre el cliente de correo y el mapa se abre en otra pestaña.
 - Paso 5: el foco se ve siempre y todos los links funcionan con Enter.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-20 — SEO técnico y datos estructurados
+
+- **Objetivo:** que buscadores y redes lean bien el sitio, y que la demo no se indexe.
+- **Requisitos:** FR-14, NFR-SEO-01, US-02 CA2, ADR-0010.
+- **Precondiciones:** URL de preview o de producción, con `NEXT_PUBLIC_SITE_URL` y `NEXT_PUBLIC_DEMO_MODE=true` configuradas. Si el preview está protegido con login, las herramientas externas no lo pueden leer: usá producción o pegá el código fuente de la página en la pestaña "Código".
+
+**Pasos**
+
+1. Abrí `/sitemap.xml`, `/robots.txt` y `/opengraph-image`.
+2. En el código fuente del inicio, buscá `name="robots"`, `rel="canonical"` y `og:image`.
+3. Pasá el inicio, un área y `/preguntas-frecuentes` por el [validador de schema.org](https://validator.schema.org/).
+4. Pasá las mismas páginas por el [Rich Results Test](https://search.google.com/test/rich-results).
+5. Probá la URL en un validador de Open Graph (por ejemplo, opengraph.xyz).
+
+**Resultado esperado**
+
+- Paso 1: el sitemap tiene 11 URLs con el dominio correcto y sin `/admin`; robots bloquea solo `/admin` y apunta al sitemap; la imagen muestra el nombre, el tagline y la marca de demostración.
+- Paso 2: robots dice `noindex, nofollow`; el canonical y `og:image` usan el dominio de `NEXT_PUBLIC_SITE_URL`, no `localhost`.
+- Paso 3: sin errores; se detectan `LegalService`, `Service` y `BreadcrumbList` (área) y `FAQPage` (preguntas).
+- Paso 4: sin errores en los tipos que Google reconoce. `Service` no es un rich result y `FAQPage` está limitado, así que pueden no aparecer: para esos vale el paso 3. Puede avisar que la página no es indexable: en la demo es lo esperado.
+- Paso 5: la tarjeta muestra título, descripción e imagen.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
