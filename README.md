@@ -2,7 +2,7 @@
 
 Sitio web profesional con sistema de consultas para un estudio jurídico de **familia y sucesiones**. Es una **demo comercial reutilizable**: se convierte en el sitio de un estudio real cambiando configuración y contenido, no código.
 
-> **El estudio es ficticio.** Nombre, profesionales, matrículas, teléfono y dirección son inventados (ver [`src/config/site.config.ts`](src/config/site.config.ts)). Con `NEXT_PUBLIC_DEMO_MODE=true` el sitio muestra el banner "Sitio de demostración — estudio ficticio".
+> **El estudio es ficticio.** Nombre, profesionales, matrículas, teléfono y dirección son inventados (ver [`src/config/site.config.ts`](src/config/site.config.ts)). Salvo con `NEXT_PUBLIC_DEMO_MODE=false` explícito, el sitio muestra el banner "Sitio de demostración — estudio ficticio".
 
 **Qué va a hacer cuando esté completo** (alcance en [`docs/SPEC.md`](docs/SPEC.md) §2):
 
@@ -51,21 +51,21 @@ Para los tests e2e, la primera vez instalá el navegador: `npx playwright instal
 
 Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `dev`, `build` y `start`: si falta una obligatoria o tiene formato inválido, el comando falla con un mensaje que nombra la variable (nunca su valor). Detalle en [`docs/adr/0006-validacion-de-variables-de-entorno.md`](docs/adr/0006-validacion-de-variables-de-entorno.md).
 
-| Variable                                              | Pública | Obligatoria desde  | Uso                               |
-| ----------------------------------------------------- | :-----: | ------------------ | --------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`                                |   sí    | **Fase 1**         | URLs absolutas, metadata, sitemap |
-| `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`false`) | Banner de demo y `noindex`        |
-| `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | Fase 4             | Supabase Auth                     |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | Fase 4             | Supabase Auth                     |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                      |   sí    | Fase 3             | Widget anti-bots                  |
-| `DATABASE_URL`                                        |   no    | Fase 3             | Prisma en runtime (pooler)        |
-| `DIRECT_URL`                                          |   no    | Fase 3             | Prisma migraciones                |
-| `RESEND_API_KEY`                                      |   no    | Fase 3             | Envío de mails                    |
-| `EMAIL_FROM`                                          |   no    | Fase 3             | Remitente                         |
-| `FIRM_NOTIFICATION_EMAIL`                             |   no    | Fase 3             | Destinatario de consultas nuevas  |
-| `TURNSTILE_SECRET_KEY`                                |   no    | Fase 3             | Verificación anti-bots            |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` |   no    | Fase 3             | Rate limit                        |
-| `IP_HASH_SALT`                                        |   no    | Fase 3             | HMAC de IPs (32+ caracteres)      |
+| Variable                                              | Pública | Obligatoria desde | Uso                               |
+| ----------------------------------------------------- | :-----: | ----------------- | --------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                |   sí    | **Fase 1**        | URLs absolutas, metadata, sitemap |
+| `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`true`) | Banner de demo y `noindex`        |
+| `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | Fase 4            | Supabase Auth                     |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | Fase 4            | Supabase Auth                     |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                      |   sí    | Fase 3            | Widget anti-bots                  |
+| `DATABASE_URL`                                        |   no    | Fase 3            | Prisma en runtime (pooler)        |
+| `DIRECT_URL`                                          |   no    | Fase 3            | Prisma migraciones                |
+| `RESEND_API_KEY`                                      |   no    | Fase 3            | Envío de mails                    |
+| `EMAIL_FROM`                                          |   no    | Fase 3            | Remitente                         |
+| `FIRM_NOTIFICATION_EMAIL`                             |   no    | Fase 3            | Destinatario de consultas nuevas  |
+| `TURNSTILE_SECRET_KEY`                                |   no    | Fase 3            | Verificación anti-bots            |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` |   no    | Fase 3            | Rate limit                        |
+| `IP_HASH_SALT`                                        |   no    | Fase 3            | HMAC de IPs (32+ caracteres)      |
 
 Reglas:
 
@@ -101,7 +101,7 @@ src/
     (public)/          layout público: banner, header, footer, WhatsApp
   components/
     ui/                componentes de shadcn/ui (generados)
-    layout/            Header, MobileMenu, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink
+    layout/            Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, 404 y error
   config/              site.config.ts: todos los datos del estudio
   content/             contenido del sitio como datos
   features/            código por feature: inquiries, auth (Fases 3 y 4)
@@ -119,7 +119,9 @@ Arquitectura, capas y flujos: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). De
 - **Componentes UI:** shadcn/ui en `src/components/ui`, agregados con `npx shadcn@4.23.0 add <componente>`. No se editan salvo necesidad (hoy, solo `sonner.tsx`: tema claro fijo) y Prettier no los formatea.
 - **Datos del estudio:** todos en [`src/config/site.config.ts`](src/config/site.config.ts). Para un estudio real se edita ese archivo, no los componentes (ver [`src/config/README.md`](src/config/README.md)).
 - **Íconos:** `lucide-react`, siempre con trazo fino (`strokeWidth` 1.5) y sin círculos ni fondos de color detrás; se usan como apoyo de rótulos (`FactLabel`), nunca como decoración suelta. Sin clichés jurídicos (balanza, martillo).
-- **Responsive:** mobile first. El menú de escritorio aparece desde `lg` (1024 px); hasta ahí se usa el menú desplegable.
+- **Responsive:** mobile first. El menú de escritorio aparece desde `lg` (1024 px), sin "Inicio" hasta `nav` (1152 px). Hasta `gutter` (1380 px) el header es fijo y lleva WhatsApp; desde ahí WhatsApp flota en el margen. No agregues nada flotante sobre el contenido.
+- **Peligro y plazos (SPEC §11.5):** los teléfonos de ayuda están en `src/content/urgent-help.ts`, con sus fuentes oficiales. **Verificalos antes de cada entrega a un estudio.**
+- **Foco:** el anillo usa el color primario. Sobre un fondo primario redefinilo con `[--ring:var(--primary-foreground)]` (como `CtaSection`): si no, es invisible y axe no lo detecta. Lo verifica `tests/e2e/quality.spec.ts`.
 - El refinamiento visual se hace con `/claude-design`, respetando los tokens.
 
 ## SEO
@@ -127,7 +129,7 @@ Arquitectura, capas y flujos: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). De
 - **Metadata:** cada página pública usa `buildPageMetadata` (`src/lib/seo/page-metadata.ts`): título, descripción, canonical y Open Graph completo con imagen. No armes `openGraph` a mano en una página: Next combina la metadata de forma superficial y se pierde la imagen.
 - **Datos estructurados:** `LegalService` en el layout público, `FAQPage` en preguntas frecuentes, `Service` en cada área y `BreadcrumbList` en las páginas internas. Se renderizan solo con `<JsonLd>` (`src/lib/seo/json-ld.tsx`), el único uso permitido de `dangerouslySetInnerHTML`. Los horarios salen de `siteConfig.openingHours`: mantenelo igual a `hours`.
 - **`/sitemap.xml`, `/robots.txt` (excluye `/admin`) y `/opengraph-image`** se generan en el build.
-- **La demo no se indexa:** con `NEXT_PUBLIC_DEMO_MODE=true` todas las páginas llevan `noindex, nofollow` ([ADR-0010](docs/adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)). Para un estudio real, poné la variable en `false` y `NEXT_PUBLIC_SITE_URL` con el dominio final, y volvé a deployar: son valores de build.
+- **La demo no se indexa:** con el modo demo encendido (el valor por defecto, [ADR-0011](docs/adr/0011-modo-demo-por-defecto.md)) todas las páginas llevan `noindex, nofollow` ([ADR-0010](docs/adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)). Para un estudio real, poné la variable en `false` y `NEXT_PUBLIC_SITE_URL` con el dominio final, y volvé a deployar: son valores de build.
 
 ## Seguridad
 

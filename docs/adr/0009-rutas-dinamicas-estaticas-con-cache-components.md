@@ -33,4 +33,5 @@ y la página llama a `notFound()` si el parámetro no existe. Con `'navigation'`
 - Las páginas listadas son 100% estáticas y **el build falla** si alguien les agrega trabajo por request (`cookies()`, `headers()`, `searchParams` del servidor, datos sin `use cache`). Refuerza NFR-PERF-01.
 - Un slug desconocido se renderiza una vez en el servidor para responder 404 (costo mínimo: el contenido es local).
 - Test que lo vigila: `src/app/__tests__/area-page.test.tsx` (exporta `ensureStatic = "navigation"`) y el e2e `tests/e2e/areas.spec.ts` (status 404).
+- **Limitación conocida (detectada en F2-07):** el 404 de un slug desconocido llega con un HTML vacío (`<html id="__next_error__">`) y Next lo dibuja en el navegador. El status es 404 y con JavaScript se ve la 404 amigable, pero sin JavaScript queda en blanco. Las URLs que no coinciden con ninguna ruta sí llegan renderizadas desde el servidor. Evitarlo requiere validar el slug antes del render (`proxy.ts` o rewrites). **Aceptada el 22/11/2026:** se revisa en F4, cuando exista `proxy.ts`.
 - Aplicar el mismo patrón a futuras rutas dinámicas públicas con contenido fijo.

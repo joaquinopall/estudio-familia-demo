@@ -26,7 +26,7 @@ Detalles de los e2e:
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Unit        | Vitest                       | `src/**/__tests__/*.test.ts`                 | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots) |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
-| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404 de áreas, SEO |
+| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
 Próximas fases: services con fakes de repos y ports, actions (validación, auth, rate limit, captcha), formulario y e2e de envío (F3), admin (F4).
@@ -46,6 +46,7 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`design-tokens.test.ts`:** un par de colores de `globals.css` no llega al contraste WCAG AA (texto 4.5:1; foco y bordes de campos 3:1). Ajustá el color, no el umbral.
 - **`security-headers.spec.ts` → "without report-only CSP violations":** algo del inicio carga un recurso que la CSP no permite. Mirá la consola del navegador (`[Report Only]`) y decidí si se agrega a la política en `src/lib/security/headers.ts` o se quita el recurso.
 - **`layout.spec.ts` → axe:** el mensaje lista la regla (por ejemplo `color-contrast`, `label`); la ayuda de cada regla está en <https://dequeuniversity.com/rules/axe/>.
+- **`quality.spec.ts`:** cubre lo que axe no ve. Si falla el foco, el anillo no llega a 3:1 sobre su fondo (típico: fondo primario, redefiní `--ring`). Si falla "uncovered", algo tapa el texto o el botón (típico: el botón de WhatsApp) o ya no entra en la primera pantalla. Al agregar una página, sumala a `PAGES`. Si falla "sticky index", un índice fijo quedó más alto que la ventana y no scrollea. Si falla "305px", algo no entra en un celular chico o con scrollbar clásico. Si falla "does not move the page", alguien puso `scroll-padding` en `html`: usá `scroll-margin`.
 - **`env.example.test.ts`:** agregaste o sacaste una variable del schema y no actualizaste `.env.example` (o al revés).
 
 ## En la CI
@@ -98,7 +99,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-09 | Usuario autenticado que no es staff                     | F4-08         | Pendiente     |
 | MT-10 | Cambio de estado, notas e historial                     | F4-08         | Pendiente     |
 | MT-11 | Navegación completa solo con teclado                    | F1-08         | **Detallado** |
-| MT-12 | Lighthouse mobile en 3 páginas                          | F2-07         | Pendiente     |
+| MT-12 | Lighthouse mobile en 3 páginas                          | F2-07         | **Detallado** |
 | MT-13 | Banner de modo demo                                     | F1-08         | **Detallado** |
 | MT-14 | Botón de WhatsApp                                       | F1-08         | **Detallado** |
 | MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-09         | Pendiente     |
@@ -107,6 +108,8 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-18 | Nosotros, Preguntas frecuentes y Privacidad             | F2-04         | **Detallado** |
 | MT-19 | Contacto: canales, mapa y lugar del formulario          | F2-05         | **Detallado** |
 | MT-20 | SEO técnico y datos estructurados                       | F2-06         | **Detallado** |
+| MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
+| MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -126,8 +129,8 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 
 - Paso 1: aparece arriba a la izquierda el link **"Saltar al contenido"**.
 - Paso 2: el foco pasa al contenido principal (el siguiente Tab va al primer elemento del contenido, no al menú).
-- Paso 3: el foco **siempre se ve** (contorno verde azulado) y pasa en orden lógico por: header (nombre del estudio, menú, CTA), contenido, footer (mapa, teléfono, email, política de privacidad) y botón de WhatsApp. Ningún elemento queda inalcanzable ni atrapa el foco.
-- Paso 4: navega a esa página (las de la Fase 2 todavía dan 404).
+- Paso 3: el foco **siempre se ve** (contorno verde azulado) y pasa en orden lógico por: header (nombre del estudio, menú, CTA y, hasta 1379 px, WhatsApp), contenido, footer (teléfonos de ayuda, mapa, teléfono, email, política de privacidad) y, desde 1380 px, WhatsApp flotante. Ningún elemento queda inalcanzable ni atrapa el foco.
+- Paso 4: navega a esa página y el menú la marca como actual.
 - Paso 5: el menú se abre, sus links se recorren con Tab, y con Escape se cierra y el foco vuelve al botón **Menú**.
 
 | Fecha | Entorno | Resultado | Notas |
@@ -144,13 +147,13 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 
 1. Con `NEXT_PUBLIC_DEMO_MODE=true`, corré `npm run build && npm run start` y abrí `http://localhost:3000`.
 2. Revisá el banner en desktop y en ancho de celular (375 px).
-3. Cambiá a `NEXT_PUBLIC_DEMO_MODE=false` (o borrá la línea), repetí el build y abrí el inicio.
+3. Cambiá a `NEXT_PUBLIC_DEMO_MODE=false`, repetí el build y abrí el inicio. Después borrá la línea y repetí.
 4. Poné un valor inválido (`NEXT_PUBLIC_DEMO_MODE=si`) y corré `npm run build`.
 
 **Resultado esperado**
 
-- Paso 1–2: arriba de todo se ve "**Sitio de demostración — estudio ficticio.** Los nombres, matrículas y datos de contacto no son reales.", legible y sin cortarse en mobile.
-- Paso 3: el banner no aparece.
+- Paso 1–2: arriba de todo se ve "**Sitio de demostración — estudio ficticio.**". Desde 640 px sigue con "Los nombres, matrículas y datos de contacto no son reales."; en celulares se muestra solo la primera oración, sin cortarse.
+- Paso 3: con `false` el banner no aparece; sin la línea **sí** aparece, y la página lleva `noindex, nofollow` (ADR-0011).
 - Paso 4: el build falla con `NEXT_PUBLIC_DEMO_MODE: debe ser "true" o "false"`.
 - Al terminar, volvé a dejar `NEXT_PUBLIC_DEMO_MODE=true`.
 
@@ -168,14 +171,14 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 
 **Pasos**
 
-1. En el celular, recorré el inicio de arriba a abajo mirando el botón redondo abajo a la derecha.
+1. En el celular, recorré el inicio de arriba a abajo mirando el botón redondo del header. En la computadora, repetí con la ventana a 1280 px y a 1440 px.
 2. Tocá el botón.
 3. En la computadora, pasá el mouse por el botón y tocalo.
 4. Revisá la URL que abre.
 
 **Resultado esperado**
 
-- Paso 1: el botón se ve en toda la página, no tapa contenido importante ni el footer de forma que no se pueda leer.
+- Paso 1: el botón se ve en toda la página y no tapa ningún texto. Hasta 1379 px va en el header, que queda fijo; desde 1380 px flota abajo a la derecha, fuera de la columna de contenido.
 - Paso 2: abre WhatsApp (app) con el mensaje "Hola, quisiera hacer una consulta." precargado. **En la demo el número es ficticio (`+54 9 11 0000-0000`)**: WhatsApp avisa que no existe; eso es lo esperado. No envíes el mensaje.
 - Paso 3: abre una pestaña nueva con WhatsApp Web o la página de wa.me.
 - Paso 4: la URL es `https://wa.me/5491100000000?text=Hola%2C%20quisiera%20hacer%20una%20consulta.` y **no** contiene datos personales.
@@ -192,7 +195,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 
 **Pasos**
 
-1. Abrí `/` a 360 px y recorrela de arriba a abajo.
+1. Abrí `/` a 360 px y recorrela de arriba a abajo. Repetí la primera pantalla a 320×568, con el banner de demo.
 2. Repetí a 768 px (tablet), 1024 px y 1440 px.
 3. A 1440 px, pasá el mouse por una tarjeta de área.
 4. En cualquier ancho, recorré la página con **Tab**.
@@ -200,9 +203,9 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 **Resultado esperado**
 
 - En ningún ancho aparece scroll horizontal ni texto pegado a los bordes de una tarjeta.
-- 360 px: el título, el botón "Contanos tu caso" y la frase de confidencialidad entran sin hacer scroll; las áreas van de a una; los 3 pasos van en columna, unidos por una línea vertical; el bloque de confianza es una sola ficha con divisiones.
+- 360 px: el título, el botón "Contanos tu caso" y la frase de confidencialidad (arriba del botón) entran sin hacer scroll (también a 320×568); arriba se lee "Familia y sucesiones · CABA"; el bloque de confianza va antes de "Cómo trabajamos"; las áreas van de a una; los 3 pasos van en columna, unidos por una línea vertical; el bloque de confianza es una sola ficha con divisiones.
 - 768 px: el header muestra el botón **Menú** (no los links); las áreas van de a 2 y la quinta queda centrada; los pasos siguen en columna.
-- 1024 px o más: el header muestra los links y el botón; a la derecha del hero aparece la ficha con dirección, horario y tiempo de respuesta; las áreas van de a 3 y las 2 últimas quedan centradas; los 3 pasos van en fila, unidos por una línea; las preguntas frecuentes van a la derecha del título.
+- 1024 px o más: el header muestra los links y el botón; a la derecha del hero aparece la ficha con los profesionales, su matrícula y la jurisdicción; la página actual se ve subrayada en el menú ("Inicio" recién desde 1152 px); las áreas van de a 3 y las 2 últimas quedan centradas; los 3 pasos van en fila, unidos por una línea; las preguntas frecuentes van a la derecha del título.
 - Paso 3: el borde de la tarjeta se marca y la flecha de "Leer más" se mueve apenas (no se mueve con "reducir movimiento" activado).
 - Paso 4: el foco se ve siempre; en las tarjetas de área se marca la tarjeta entera.
 
@@ -228,10 +231,10 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 **Resultado esperado**
 
 - Paso 1: la URL es `/areas/sucesiones` y el título de la pestaña es "Sucesiones · Estudio Alameda".
-- Paso 2: en orden se ven migas de pan, título, introducción, botón, "¿Cuándo consultar?", "¿Qué documentación suele hacer falta?" (con la aclaración de que es orientativa), preguntas frecuentes, "Otras áreas" y el cierre. A 1440 px, "Cuándo consultar" y "Documentación" van lado a lado; a 360 px, una debajo de la otra.
-- Paso 3: los dos apuntan a `/contacto?area=sucesiones` (la página de contacto todavía no existe: da 404 hasta F2-05).
+- Paso 2: en orden se ven migas de pan, título, primer párrafo, botón, resto de la introducción, "¿Cuándo consultar?", "¿Qué documentación suele hacer falta?" (con la aclaración de que es orientativa), preguntas frecuentes, "Otras áreas" y el cierre. A 1440 px, "Cuándo consultar" y "Documentación" van lado a lado; a 360 px, una debajo de la otra.
+- Paso 3: los dos apuntan a `/contacto?area=sucesiones` (se abre Contacto).
 - Paso 4: "Otras áreas" muestra las otras 4, no la actual; `/areas` muestra las 5 tarjetas y el bloque "¿Tu situación no está en la lista?".
-- Paso 5: se ve la página 404 (la de Next por defecto hasta F2-07). En DevTools → Network, el documento tiene status **404**.
+- Paso 5: se ve la 404 en español, con header, footer y links. En DevTools → Network, el documento tiene status **404**.
 - Paso 6: el foco se ve siempre; las preguntas se abren con Enter o Espacio.
 
 | Fecha | Entorno | Resultado | Notas |
@@ -283,7 +286,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 **Resultado esperado**
 
 - Paso 1: siempre se abre Contacto; desde un área, la URL termina en `?area=<slug>` y la página se ve igual.
-- Paso 2: arriba se lee el tiempo de respuesta. A 360 px, primero aparece la tarjeta "Contanos tu caso" (con el aviso de que el formulario llega pronto y las alternativas) y después los datos de contacto; a 1440 px, van lado a lado. Al final, "Antes de escribirnos", con 3 preguntas y el link a todas. No hay ningún mapa embebido.
+- Paso 2: arriba está la franja de ayuda. A 360 px primero aparecen los datos de contacto (WhatsApp sin hacer scroll, aviso de plazos, tiempo de respuesta) y después la tarjeta "Contanos tu caso" (con el aviso de que el formulario llega pronto); a 1440 px van lado a lado, con los datos a la izquierda. "Antes de escribirnos" va al final en 360 px y debajo de la tarjeta del formulario en 1440 px, con 3 preguntas y el link a todas. No hay ningún mapa embebido.
 - Paso 3: se abre WhatsApp (o `wa.me`) en otra pestaña, con el mensaje "Hola, quisiera hacer una consulta." y sin datos personales.
 - Paso 4: el teléfono abre el marcador, el email abre el cliente de correo y el mapa se abre en otra pestaña.
 - Paso 5: el foco se ve siempre y todos los links funcionan con Enter.
@@ -313,6 +316,79 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - Paso 3: sin errores; se detectan `LegalService`, `Service` y `BreadcrumbList` (área) y `FAQPage` (preguntas).
 - Paso 4: sin errores en los tipos que Google reconoce. `Service` no es un rich result y `FAQPage` está limitado, así que pueden no aparecer: para esos vale el paso 3. Puede avisar que la página no es indexable: en la demo es lo esperado.
 - Paso 5: la tarjeta muestra título, descripción e imagen.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-12 — Lighthouse mobile en 3 páginas
+
+- **Objetivo:** sostener ≥ 90 en las 4 categorías (SPEC §1).
+- **Requisitos:** SPEC §1, NFR-PERF-01, NFR-A11Y-01, NFR-SEO-01, ADR-0010.
+- **Precondiciones:** build de producción local, nada más corriendo en el puerto y Chrome instalado, o `CHROME_PATH` apuntando al Chromium de Playwright. Lighthouse no es dependencia del proyecto: se corre con `npx` y versión fija.
+
+**Pasos**
+
+1. Con el modo demo prendido, corré en PowerShell `npm run build` y después `npm run start`.
+2. En otra terminal: `$env:CHROME_PATH = node -p "require('@playwright/test').chromium.executablePath()"`.
+3. Corré `npx lighthouse@13.6.0 http://localhost:3000/ --view --no-enable-error-reporting` y repetí con `/areas/sucesiones` y `/contacto`.
+4. Frená el servidor. Corré `$env:NEXT_PUBLIC_DEMO_MODE = "false"`, volvé a hacer build y start, y repetí el paso 3 para leer SEO.
+5. Al terminar, corré `Remove-Item Env:NEXT_PUBLIC_DEMO_MODE` y volvé a hacer build. **No deployes el build del paso 4:** sería el estudio ficticio indexable.
+
+**Resultado esperado**
+
+- Paso 3: Performance, Accessibility y Best Practices ≥ 90. SEO da menos, solo por "Page is blocked from indexing": es lo esperado en la demo.
+- Paso 4: SEO ≥ 90.
+
+| Fecha      | Entorno                                                  | Resultado | Notas                                                                                     |
+| ---------- | -------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------- |
+| 22/11/2026 | Local, Lighthouse 13.6.0, Chromium de Playwright (la IA) | ✅ pasa   | 11 páginas: 99 / 100 / 100 / 100 (SEO sin modo demo; 66 con demo). LCP ≤ 0,9 s, CLS 0. Una corrida por página, antes de la pasada visual. |
+| 22/11/2026 | Local, Lighthouse 13.6.0, Chromium de Playwright (la IA) | ✅ pasa   | Después de la pasada visual, 11 páginas: 99–100 / 100 / 100 / 100 (SEO sin modo demo; 66 con demo). LCP ≤ 0,9 s, CLS 0. Una corrida por página. |
+
+### MT-21 — Páginas 404 y de error
+
+- **Objetivo:** que un link roto o un error no deje a la persona sin salida.
+- **Requisitos:** FR-16, NFR-A11Y-01.
+- **Precondiciones:** sitio levantado. Para el paso 4, `npm run dev` y una copia de trabajo sin cambios en el inicio.
+
+**Pasos**
+
+1. Abrí `/no-existe` y `/areas/no-existe`, con DevTools → Network abierto.
+2. Usá "Ir a contacto" y "Volver al inicio".
+3. Repetí el paso 2 solo con el teclado.
+4. Agregá temporalmente `if (process.env.NODE_ENV) throw new Error("prueba interna");` al principio de `HomePage`, abrí `/`, cerrá el aviso de desarrollo de Next y después **revertí el cambio**.
+
+**Resultado esperado**
+
+- Paso 1: status 404, título "Página no encontrada", mensaje en español, header y footer. En `/areas/no-existe` puede verse un instante en blanco: es la limitación de ADR-0009.
+- Pasos 2–3: los links funcionan y el foco se ve siempre.
+- Paso 4: se ve "Algo salió mal" con header y footer, sin el texto "prueba interna". Después de revertir, "Probar de nuevo" recupera la página.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-22 — Ayuda ante peligro y plazos
+
+- **Objetivo:** que alguien en riesgo o con un plazo encuentre qué hacer sin buscar, y que los números sean correctos.
+- **Requisitos:** SPEC §11.5.
+- **Precondiciones:** sitio levantado; un celular. **No llames al 911 para probar.**
+
+**Pasos**
+
+1. Abrí Contacto, cada página de área y el footer de cualquier página.
+2. Tocá cada número sin completar la llamada.
+3. Compará los números con las fuentes que figuran en `src/content/urgent-help.ts`.
+4. Abrí el Inicio, un área y Contacto y buscá el aviso de plazos.
+5. Leé "Cómo trabajamos".
+
+**Resultado esperado**
+
+- Paso 1: "¿Estás en peligro?" aparece en Contacto, en las 4 áreas de familia (no en Sucesiones) y en todos los footers. En Contacto, en celular, muestra solo los números.
+- Paso 2: el marcador se abre con 911, 137 o 144. Junto al 137 dice "(opción 1)".
+- Paso 3: los números, la opción del 137 y la dirección de la OVD coinciden.
+- Paso 4: el aviso muestra el teléfono del estudio, el horario y qué hacer si el plazo vence antes.
+- Paso 5: el paso 2 no promete una llamada.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
