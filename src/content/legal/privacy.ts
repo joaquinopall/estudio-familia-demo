@@ -39,7 +39,7 @@ export const privacyPolicy = {
     "Este es un sitio de demostración: el estudio, sus profesionales y sus datos de contacto son ficticios. Esta política es un modelo y no se aplica a ningún estudio real.",
   tocLabel: "Contenido",
   versionLabel: "Versión",
-  effectiveDateLabel: "Vigente desde",
+  effectiveDateLabel: "Vigente desde el",
   controllerId: "responsable",
   sections: [
     {

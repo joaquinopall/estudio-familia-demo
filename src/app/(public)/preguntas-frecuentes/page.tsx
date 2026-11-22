@@ -35,15 +35,20 @@ export default function FaqPage() {
       />
       <PageHeader id="faq-title" breadcrumbs={breadcrumbs} title={title} lead={lead} />
 
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-20 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-16">
-        <TableOfContents label={tocLabel} items={groups} className="h-fit lg:sticky lg:top-6" />
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-5 pb-14 sm:py-20 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-16">
+        <TableOfContents
+          label={tocLabel}
+          items={groups}
+          compact
+          className="h-fit lg:sticky lg:top-24 gutter:top-6"
+        />
         <div className="max-w-3xl space-y-14">
           {groups.map((group) => (
             <section
               key={group.id}
               id={group.id}
               aria-labelledby={`${group.id}-title`}
-              className="scroll-mt-6"
+              className="scroll-mt-24 gutter:scroll-mt-6"
             >
               <h2
                 id={`${group.id}-title`}

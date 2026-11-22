@@ -17,6 +17,11 @@ describe("siteConfig", () => {
     expect(siteConfig.confidentialityNote).toMatch(/primera conversación es confidencial/i);
   });
 
+  it("says where the firm litigates (FR-03)", () => {
+    expect(siteConfig.jurisdiction.label.trim()).not.toBe("");
+    expect(siteConfig.jurisdiction.note).toContain(siteConfig.jurisdiction.label);
+  });
+
   it("has structured opening hours for the JSON-LD (FR-14)", () => {
     expect(siteConfig.openingHours.length).toBeGreaterThan(0);
     for (const spec of siteConfig.openingHours) {

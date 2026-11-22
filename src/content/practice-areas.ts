@@ -17,6 +17,8 @@ export type PracticeAreaContent = {
   slug: string;
   inquiryArea: InquiryAreaCode;
   title: string;
+  /** Family areas show the helplines for someone at risk (SPEC §11.5). */
+  showsSafetyNotice: boolean;
   /** Shorter title for cards and tight spaces. */
   shortTitle: string;
   /** One or two sentences for the card on the home page. */
@@ -35,6 +37,7 @@ export const practiceAreas = [
   {
     slug: "sucesiones",
     inquiryArea: "SUCCESSION",
+    showsSafetyNotice: false,
     title: "Sucesiones",
     shortTitle: "Sucesiones",
     summary:
@@ -92,6 +95,7 @@ export const practiceAreas = [
   {
     slug: "divorcio",
     inquiryArea: "DIVORCE",
+    showsSafetyNotice: true,
     title: "Divorcio",
     shortTitle: "Divorcio",
     summary:
@@ -149,6 +153,7 @@ export const practiceAreas = [
   {
     slug: "alimentos",
     inquiryArea: "CHILD_SUPPORT",
+    showsSafetyNotice: true,
     title: "Alimentos",
     shortTitle: "Alimentos",
     summary: "Te ayudamos a acordar, reclamar o actualizar la cuota alimentaria de tus hijos.",
@@ -204,6 +209,7 @@ export const practiceAreas = [
   {
     slug: "cuidado-personal",
     inquiryArea: "PARENTING",
+    showsSafetyNotice: true,
     title: "Cuidado personal y régimen de comunicación",
     shortTitle: "Cuidado personal",
     summary:
@@ -247,7 +253,7 @@ export const practiceAreas = [
       {
         question: "¿Qué hago si hay violencia o una situación de riesgo?",
         answer: [
-          "Lo primero es tu seguridad y la de tus hijos. Podés llamar en cualquier momento a la línea 137 (violencia familiar) o a la línea 144 (violencia de género), o al 911 si hay una emergencia.",
+          "Lo primero es tu seguridad y la de tus hijos. Si hay una emergencia, llamá al 911. Podés llamar en cualquier momento al 137, opción 1 (violencia familiar), o al 144 (violencia de género). También podés denunciar las 24 horas en la Oficina de Violencia Doméstica, Lavalle 1250, CABA.",
           "Después, te ayudamos a pedir las medidas de protección que correspondan.",
         ],
       },
@@ -261,6 +267,7 @@ export const practiceAreas = [
   {
     slug: "convenios-y-acuerdos",
     inquiryArea: "AGREEMENTS",
+    showsSafetyNotice: true,
     title: "Convenios y acuerdos familiares",
     shortTitle: "Convenios y acuerdos",
     summary:

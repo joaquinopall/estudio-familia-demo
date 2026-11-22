@@ -5,6 +5,7 @@ import ContactPage, { metadata } from "@/app/(public)/contacto/page";
 import { siteConfig } from "@/config/site.config";
 import { contactPageContent } from "@/content/contact-page";
 import { getFeaturedFaqs } from "@/content/faqs";
+import { deadlineContent, safetyContent } from "@/content/urgent-help";
 
 describe("/contacto (FR-01, SPEC §11.3)", () => {
   it("has its own metadata", () => {
@@ -23,11 +24,20 @@ describe("/contacto (FR-01, SPEC §11.3)", () => {
     expect(within(breadcrumbs).getByText("Contacto")).toHaveAttribute("aria-current", "page");
   });
 
-  it("states the expected response time up front", () => {
+  it("puts the channels that work before the form, with the response time", () => {
+    const { container } = render(<ContactPage />);
+
+    const details = screen.getByRole("region", { name: contactPageContent.details.title });
+    const slot = container.querySelector("#formulario") as Element;
+    expect(details.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(details).getByText(siteConfig.responseTime)).toBeInTheDocument();
+  });
+
+  it("shows the helplines and the way out for deadlines", () => {
     render(<ContactPage />);
 
-    const header = screen.getByRole("region", { name: "Contacto" });
-    expect(within(header).getByText(siteConfig.responseTime)).toBeInTheDocument();
+    expect(screen.getByText(safetyContent.title)).toBeInTheDocument();
+    expect(screen.getByText(deadlineContent.title)).toBeInTheDocument();
   });
 
   it("reserves the place of the inquiry form (#formulario) for F3", () => {

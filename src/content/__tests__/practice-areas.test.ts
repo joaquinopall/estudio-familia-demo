@@ -59,6 +59,12 @@ describe("practiceAreas", () => {
     },
   );
 
+  it("shows the helplines in every family area, not in successions (SPEC §11.5)", () => {
+    expect(
+      practiceAreas.filter((area) => area.showsSafetyNotice).map((area) => area.inquiryArea),
+    ).toEqual(["DIVORCE", "CHILD_SUPPORT", "PARENTING", "AGREEMENTS"]);
+  });
+
   it("has unique metadata titles and descriptions (NFR-SEO-01)", () => {
     const titles = practiceAreas.map((area) => area.metadata.title);
     const descriptions = practiceAreas.map((area) => area.metadata.description);

@@ -18,15 +18,24 @@ export const metadata: Metadata = buildPageMetadata({
 
 /** /areas (FR-01): index of the practice areas. Static. */
 export default function AreasPage() {
-  const { title, lead, otherTopic } = areasIndexContent;
+  const { title, lead, listTitle, otherTopic } = areasIndexContent;
 
   return (
     <>
-      <PageHeader id="areas-index-title" breadcrumbs={areasBreadcrumbs} title={title} lead={lead} />
+      <PageHeader
+        id="areas-index-title"
+        breadcrumbs={areasBreadcrumbs}
+        title={title}
+        lead={[lead, siteConfig.jurisdiction.note]}
+      />
 
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
+      <section aria-labelledby="areas-list-title" className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
+        {/* The cards are h3: this h2 keeps the outline without repeating the h1 visually. */}
+        <h2 id="areas-list-title" className="sr-only">
+          {listTitle}
+        </h2>
         <PracticeAreaGrid areas={practiceAreas} />
-      </div>
+      </section>
 
       <CtaSection
         id="areas-other-topic-title"

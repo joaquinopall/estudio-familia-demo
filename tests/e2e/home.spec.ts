@@ -9,7 +9,7 @@ test.describe("home on a small phone (US-01 CA1)", () => {
     const hero = page.getByRole("region", { name: /familia/i }).first();
 
     await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
-    await expect(hero.getByText("Estudio jurídico de familia y sucesiones")).toBeInViewport();
+    await expect(hero.getByText("Familia y sucesiones · CABA")).toBeInViewport();
     await expect(hero.getByRole("link", { name: "Contanos tu caso" })).toBeInViewport({
       ratio: 1,
     });
@@ -31,7 +31,9 @@ for (const width of [360, 768, 1024, 1440]) {
 test.describe("home on desktop", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("shows the area cards in rows of three and the facts card in the hero", async ({ page }) => {
+  test("shows the area cards in rows of three and the professionals in the hero", async ({
+    page,
+  }) => {
     await page.goto("/");
     const cards = page.getByRole("region", { name: "¿En qué te podemos ayudar?" }).locator("li");
     const tops = await cards.evaluateAll((items) =>
@@ -44,7 +46,7 @@ test.describe("home on desktop", () => {
       page
         .getByRole("region", { name: /familia/i })
         .first()
-        .getByText("Tiempo de respuesta"),
+        .getByText("Profesionales matriculados"),
     ).toBeVisible();
   });
 });

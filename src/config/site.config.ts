@@ -40,6 +40,8 @@ export type SiteConfig = {
     mapsUrl: string;
   };
   geo: { latitude: number; longitude: number };
+  /** Where the firm litigates: `label` for tight spaces, `note` as a sentence. */
+  jurisdiction: { label: string; note: string };
   /** Human-readable hours shown on the site. */
   hours: OfficeHours[];
   /** Same hours, structured (24 h "HH:MM"). Keep both in sync. */
@@ -95,6 +97,7 @@ export const siteConfig: SiteConfig = {
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Plaza+de+Mayo+Buenos+Aires",
   },
   geo: { latitude: -34.6083, longitude: -58.3712 },
+  jurisdiction: { label: "CABA", note: "Atendemos trámites en CABA." },
   hours: [
     { days: "Lunes a viernes", hours: "9 a 18 h" },
     { days: "Sábados, domingos y feriados", hours: "Cerrado" },

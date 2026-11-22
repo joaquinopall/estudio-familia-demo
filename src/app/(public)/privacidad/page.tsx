@@ -29,9 +29,12 @@ function ControllerDetails() {
       <dd>
         {address.street}, {address.city}
       </dd>
-      <dt className="font-semibold">Email</dt>
+      <dt className="font-semibold sm:self-center">Email</dt>
       <dd>
-        <a href={`mailto:${contact.email}`} className="underline underline-offset-4">
+        <a
+          href={`mailto:${contact.email}`}
+          className="inline-flex min-h-11 items-center underline underline-offset-4"
+        >
           {contact.email}
         </a>
       </dd>

@@ -4,11 +4,13 @@ import { siteConfig } from "@/config/site.config";
 import { aboutContent } from "@/content/about";
 import { areaPageContent, areasIndexContent } from "@/content/area-pages";
 import { contactPageContent } from "@/content/contact-page";
+import { errorContent, notFoundContent } from "@/content/error-pages";
 import { faqPageContent } from "@/content/faq-page";
 import { faqGroups, generalFaqs } from "@/content/faqs";
 import { homeContent } from "@/content/home";
 import { privacyPolicy } from "@/content/legal/privacy";
 import { practiceAreas } from "@/content/practice-areas";
+import { deadlineContent, safetyContent } from "@/content/urgent-help";
 
 /** Every string inside a content value, with the path where it was found. */
 function collectTexts(value: unknown, path: string): { path: string; text: string }[] {
@@ -33,6 +35,10 @@ const texts = [
   ...collectTexts(faqPageContent, "faqPageContent"),
   ...collectTexts(privacyPolicy, "privacyPolicy"),
   ...collectTexts(contactPageContent, "contactPageContent"),
+  ...collectTexts(notFoundContent, "notFoundContent"),
+  ...collectTexts(errorContent, "errorContent"),
+  ...collectTexts(safetyContent, "safetyContent"),
+  ...collectTexts(deadlineContent, "deadlineContent"),
 ];
 
 /**

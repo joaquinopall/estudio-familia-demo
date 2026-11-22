@@ -1,8 +1,14 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Header } from "@/components/layout/header";
 import { siteConfig } from "@/config/site.config";
+
+const navigation = vi.hoisted(() => ({ pathname: "/" }));
+vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname }));
+afterEach(() => {
+  navigation.pathname = "/";
+});
 
 function renderHeader() {
   render(
@@ -10,6 +16,7 @@ function renderHeader() {
       shortName={siteConfig.shortName}
       navigation={siteConfig.navigation}
       primaryCta={siteConfig.primaryCta}
+      whatsApp={{ number: "5491100000000", message: "Hola" }}
     />,
   );
 }
@@ -34,6 +41,24 @@ describe("Header", () => {
         item.href,
       );
     }
+  });
+});
+
+describe("current page", () => {
+  it.each([
+    ["/", "Inicio", "page"],
+    ["/nosotros", "Nosotros", "page"],
+    ["/areas/divorcio", "Áreas de práctica", "true"],
+  ])("on %s marks %s (aria-current=%s)", (pathname, label, value) => {
+    navigation.pathname = pathname;
+    renderHeader();
+
+    const nav = screen.getByRole("navigation", { name: "Principal" });
+    const marked = within(nav)
+      .getAllByRole("link")
+      .filter((link) => link.hasAttribute("aria-current"));
+    expect(marked.map((link) => link.textContent)).toEqual([label]);
+    expect(marked[0]).toHaveAttribute("aria-current", value);
   });
 });
 
@@ -72,6 +97,36 @@ describe("MobileMenu", () => {
 
     expect(menuButton()).toHaveAttribute("aria-expanded", "false");
     expect(menuButton()).toHaveFocus();
+  });
+
+  it("closes when focus leaves it", () => {
+    renderHeader();
+    fireEvent.click(menuButton());
+
+    fireEvent.focusOut(menuButton(), { relatedTarget: document.body });
+
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("stays open while focus moves inside it", () => {
+    renderHeader();
+    fireEvent.click(menuButton());
+    const mobileNav = screen.getByRole("navigation", { name: "Principal (móvil)" });
+
+    fireEvent.focusOut(menuButton(), {
+      relatedTarget: within(mobileNav).getByRole("link", { name: "Nosotros" }),
+    });
+
+    expect(menuButton()).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("closes when pressing outside", () => {
+    renderHeader();
+    fireEvent.click(menuButton());
+
+    fireEvent.pointerDown(document.body);
+
+    expect(menuButton()).toHaveAttribute("aria-expanded", "false");
   });
 
   it("closes when a link is chosen", () => {

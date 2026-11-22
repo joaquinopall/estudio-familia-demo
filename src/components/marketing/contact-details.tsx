@@ -11,9 +11,14 @@ import { FactLabel } from "./fact-label";
 type ContactDetailsProps = Pick<
   SiteConfig,
   "contact" | "address" | "hours" | "confidentialityNote" | "responseTime"
-> & { labels: ContactDetailsLabels };
+> & {
+  labels: ContactDetailsLabels;
+  /** Shown right under the WhatsApp button (e.g. the urgent note). */
+  notice?: ReactNode;
+};
 
-const linkClass = "underline decoration-border underline-offset-4 hover:decoration-primary";
+const linkClass =
+  "inline-flex min-h-11 items-center underline decoration-border underline-offset-4 hover:decoration-primary";
 
 /**
  * Contact channels (FR-13, SPEC §11.2/§11.3): WhatsApp first, then phone, email, address with a
@@ -26,11 +31,12 @@ export function ContactDetails({
   confidentialityNote,
   responseTime,
   labels,
+  notice,
 }: ContactDetailsProps) {
   return (
     <section
       aria-labelledby="contact-details-title"
-      className="rounded-2xl border border-border bg-card p-6 sm:p-8"
+      className="rounded-2xl border border-border bg-card p-4 sm:p-6"
     >
       <h2 id="contact-details-title" className="text-2xl font-semibold text-primary sm:text-3xl">
         {labels.title}
@@ -41,13 +47,14 @@ export function ContactDetails({
         target="_blank"
         rel="noopener noreferrer"
         size="lg"
-        className="mt-6 w-full sm:w-auto"
+        className="mt-3 w-full px-3 sm:w-auto sm:px-6"
       >
         {labels.whatsappLabel}
         <span className="sr-only"> (se abre en una pestaña nueva)</span>
       </CtaLink>
+      {notice ? <div className="mt-4">{notice}</div> : null}
 
-      <dl className="mt-8 divide-y divide-border border-t border-border">
+      <dl className="mt-6 divide-y divide-border border-t border-border">
         <Detail icon={Phone} label={labels.phoneLabel}>
           <a href={`tel:+${contact.phoneE164}`} className={linkClass}>
             {contact.phoneDisplay}
@@ -68,7 +75,7 @@ export function ContactDetails({
             href={address.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`mt-1 inline-flex min-h-6 items-center text-sm font-semibold text-primary ${linkClass}`}
+            className={`text-sm font-semibold text-primary ${linkClass}`}
           >
             {labels.mapLinkLabel}
             <span className="sr-only"> (se abre en una pestaña nueva)</span>

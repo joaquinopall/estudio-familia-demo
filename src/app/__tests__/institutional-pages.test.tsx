@@ -43,6 +43,16 @@ describe("/nosotros (SPEC §11.3)", () => {
     }
   });
 
+  it("offers the call to action in the header, not only at the end", () => {
+    render(<AboutPage />);
+
+    const header = screen.getByRole("region", { name: aboutContent.title });
+    expect(within(header).getByRole("link", { name: siteConfig.primaryCta.label })).toHaveAttribute(
+      "href",
+      siteConfig.primaryCta.href,
+    );
+  });
+
   it("shows the approach and the values", () => {
     render(<AboutPage />);
 

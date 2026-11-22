@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { CtaLink } from "@/components/layout/cta-link";
 import { CtaSection } from "@/components/marketing/cta-section";
 import { PageHeader } from "@/components/marketing/page-header";
 import { ProfessionalCard } from "@/components/marketing/professional-card";
@@ -26,7 +27,11 @@ export default function AboutPage() {
   return (
     <>
       <JsonLd data={buildBreadcrumbList(breadcrumbs, publicEnv.NEXT_PUBLIC_SITE_URL)} />
-      <PageHeader id="about-title" breadcrumbs={breadcrumbs} title={title} lead={lead} />
+      <PageHeader id="about-title" breadcrumbs={breadcrumbs} title={title} lead={lead}>
+        <CtaLink href={siteConfig.primaryCta.href} size="lg" className="mt-5 sm:mt-8">
+          {siteConfig.primaryCta.label}
+        </CtaLink>
+      </PageHeader>
 
       <section
         aria-labelledby="approach-title"
