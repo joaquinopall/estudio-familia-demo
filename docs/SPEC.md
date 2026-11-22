@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.12 (22/11/2026) |
+| Versión | 1.14 (22/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -48,7 +48,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 - Sitio público de varias páginas: Inicio, Áreas de práctica (índice + una página por área), Nosotros, Preguntas frecuentes, Contacto, Política de privacidad.
 - Formulario "Contanos tu caso" en dos pasos, con validación, anti-spam (Turnstile + rate limit + honeypot) y consentimiento de datos.
 - Guardado de consultas en Postgres (Supabase) vía Prisma.
-- Mail al estudio (nueva consulta) y acuse de recibo a quien consulta (Resend).
+- Mail al estudio (nueva consulta) y acuse de recibo a quien consulta, si su email es privado (Resend).
 - Botón de WhatsApp siempre visible y links de contacto.
 - Panel admin con login (Supabase Auth): listado con filtros y paginación, detalle, cambio de estado, notas internas e historial de cambios.
 - SEO técnico: metadata, Open Graph, sitemap, robots y datos estructurados (JSON-LD).
@@ -84,16 +84,17 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 **US-03 — Enviar una consulta.** Como consultante, quiero contar mi caso y dejar mis datos para que me contacten.
 - CA1: El formulario tiene 2 pasos: (1) área, urgencia y mensaje; (2) nombre, email, teléfono opcional, canal preferido y consentimiento.
 - CA2: Los errores se muestran junto a cada campo, en español claro, y se anuncian a lectores de pantalla.
-- CA3: Al enviar, se ve una confirmación con un número de referencia y qué va a pasar después ("Te vamos a contactar dentro de las próximas 24 a 48 horas hábiles").
+- CA3: Al enviar, se ve una confirmación con un número de referencia y qué va a pasar después ("Te vamos a contactar dentro de las próximas 24 a 48 horas hábiles"). Si no hay un medio seguro (CA7), no promete contacto: le pide guardar la referencia y comunicarse con el estudio cuando pueda hacerlo con seguridad.
 - CA4: Si el envío falla, los datos escritos no se pierden.
-- CA5: Llega un acuse de recibo al email indicado.
-- CA6: Si elige teléfono o WhatsApp, se le pregunta "¿Es seguro que te contactemos por ese medio?". Si responde que no, se la contacta por email. La respuesta se muestra destacada en el detalle del panel y en el aviso al estudio.
+- CA5: Solo si el email es privado (CA7), llega un acuse de recibo con remitente, asunto, texto y firma neutros: sin el área, sin la especialidad del estudio (ej. "Familia y Sucesiones") ni nada que revele el motivo de la consulta (§11.5).
+- CA6: Si elige teléfono o WhatsApp, se le pregunta "¿Es seguro que te contactemos por ese medio?". Si responde que no, se la contacta por email solo si es privado (CA7). La respuesta se muestra destacada en el detalle del panel y en el aviso al estudio.
+- CA7: El formulario pregunta siempre "¿Este email es privado (solo lo leés vos)?" (`emailIsPrivate`), sin valor por defecto, porque una casilla compartida puede delatar la consulta. Si responde que no, no se le manda ningún email y la referencia se ve solo en pantalla. El estudio inicia el contacto solo por un **medio seguro**: teléfono o WhatsApp con `safeToContact = true`, o email con `emailIsPrivate = true`. Si no hay ninguno (incluye elegir email cuando no es privado), no lo inicia, y el panel y el aviso al estudio destacan "No iniciar contacto".
 
 **US-04 — Contactar por WhatsApp.** Como consultante, quiero escribir por WhatsApp si lo prefiero.
 - CA1: Hay un botón de WhatsApp siempre visible en todas las páginas públicas, con un mensaje precargado genérico (sin datos personales). Nunca tapa contenido: va en el header fijo hasta 1379 px y flota desde 1380 px, donde hay margen lateral.
 
 **US-05 — Enterarme de consultas nuevas.** Como staff, quiero recibir un mail por cada consulta nueva.
-- CA1: El mail incluye área, urgencia, canal preferido, número de referencia y un link al detalle en el panel. Incluye el nombre de quien consulta, pero **no** el texto completo del mensaje (minimización de datos; se lee en el panel).
+- CA1: El mail incluye área, urgencia, canal preferido, si es seguro contactar por ese canal (destacado, US-03 CA6), si el email es privado y, si corresponde, "No iniciar contacto" (destacado, US-03 CA7), número de referencia y un link al detalle en el panel. Incluye el nombre de quien consulta, pero **no** el texto completo del mensaje (minimización de datos; se lee en el panel).
 
 **US-06 — Gestionar consultas.** Como staff, quiero ver, filtrar y actualizar las consultas.
 - CA1: Login con email y contraseña. No existe registro público.
@@ -250,7 +251,7 @@ sequenceDiagram
   R-->>S: inquiry
   S-->>A: { id, reference }
   A-->>U: ActionResult ok { reference }
-  A--)E: after(): mail al estudio + acuse al consultante
+  A--)E: after(): mail al estudio + acuse al consultante (solo si emailIsPrivate)
 ```
 
 ### 6.4 Flujo: admin
@@ -309,6 +310,7 @@ model Inquiry {
   message              String         @db.VarChar(2000)
   preferredChannel     ContactChannel @map("preferred_channel")
   safeToContact        Boolean?       @map("safe_to_contact")   // US-03 CA6; null si el canal es EMAIL
+  emailIsPrivate       Boolean        @map("email_is_private")  // US-03 CA7
   consentAt            DateTime       @map("consent_at")
   privacyPolicyVersion String         @map("privacy_policy_version") @db.VarChar(20)
   status               InquiryStatus  @default(NEW)
@@ -371,6 +373,7 @@ model StaffMember {
 | `phone` | opcional; si viene, solo `+`, dígitos, espacios y `-`, entre 8 y 20 dígitos | "Ingresá un teléfono válido" |
 | `preferredChannel` | enum; si es `PHONE` o `WHATSAPP`, `phone` es obligatorio | "Para contactarte por ese medio necesitamos tu teléfono" |
 | `safeToContact` | booleano; obligatorio si `preferredChannel` es `PHONE` o `WHATSAPP`, sin valor por defecto | "Decinos si es seguro contactarte por ese medio" |
+| `emailIsPrivate` | booleano; obligatorio siempre, sin valor por defecto | "Decinos si este email es privado" |
 | `consent` | debe ser `true` | "Necesitamos tu consentimiento para responderte" |
 | `website` | honeypot: debe venir vacío (no se muestra error) | — |
 
@@ -397,7 +400,7 @@ Etiquetas de interfaz:
 | `DATABASE_URL` | no | Prisma en runtime (pooler de Supabase) |
 | `DIRECT_URL` | no | Prisma migraciones (conexión directa o sesión) |
 | `RESEND_API_KEY` | no | mails |
-| `EMAIL_FROM` | no | remitente (dominio verificado en Resend) |
+| `EMAIL_FROM` | no | remitente (dominio verificado en Resend); nombre y dirección sin la especialidad del estudio (US-03 CA5) |
 | `FIRM_NOTIFICATION_EMAIL` | no | destinatario de consultas nuevas |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | sí | widget |
 | `TURNSTILE_SECRET_KEY` | no | verificación |
@@ -439,6 +442,7 @@ Etiquetas de interfaz:
 | Lectura directa de la DB vía Supabase API | RLS habilitado sin políticas |
 | Fuerza bruta en el login | Rate limit + mensajes genéricos + protección propia de Supabase |
 | Fuga de datos por mail | Mail al estudio sin el mensaje completo; link al panel |
+| Acuse leído por otra persona (casilla compartida) | Sin acuse si el email no es privado; remitente, asunto y texto neutros (US-03 CA5 y CA7). Riesgo residual: el nombre y el dominio del estudio siguen identificándolo |
 | Clickjacking | `frame-ancestors 'none'` |
 | Secretos filtrados | `server-only`, `env.ts` separado en público y privado, revisión en PR |
 
@@ -474,7 +478,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 ### 11.5 Peligro y urgencias
 - **Peligro:** franja sobria con 911, 137 (opción 1), 144 y la Oficina de Violencia Doméstica (Lavalle 1250, 24 h) en el footer de todas las páginas, en Contacto y en las áreas de familia (todas salvo Sucesiones). Los números se verifican en las fuentes oficiales antes de cada entrega.
 - **Plazos:** "¿Tenés un plazo o una audiencia cercana?", con teléfono, horario y qué hacer fuera de horario, en Inicio, áreas y Contacto.
-- **Contacto seguro:** no prometer llamadas: puede ser riesgoso para quien convive con quien ejerce violencia. Se contacta por el medio que la persona elija.
+- **Contacto seguro:** no prometer llamadas: puede ser riesgoso para quien convive con quien ejerce violencia. Se contacta por el medio que la persona elija, si es seguro. El email tampoco lo es siempre: acuse neutro y solo a una casilla privada. Sin un medio seguro, el estudio no inicia el contacto (US-03 CA5 a CA7).
 
 ---
 
@@ -588,3 +592,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 22/11/2026 | 1.11 | §1: el puntaje de SEO de Lighthouse se mide sobre un build con el modo demo apagado (ADR-0010). | [tu nombre] |
 | 22/11/2026 | 1.12 | FR-15: banner corto en celulares. §6.2: páginas 404 y de error de FR-16 (`PublicShell`, `NotFoundView`, `ErrorView`, `content/error-pages.ts`). | [tu nombre] |
 | 22/11/2026 | 1.13 | Revisión de diseño. §11.5 nueva (peligro, plazos y contacto seguro). §11.3: orden del Inicio y de Contacto, paso 2 sin prometer llamadas. US-01 CA1 desde 320×568. US-03 CA6, §7 y §8: `safeToContact` (se implementa en F3). US-04: WhatsApp no tapa contenido. FR-03: jurisdicción. FR-15 y §9: modo demo encendido por defecto (ADR-0011). | [tu nombre] |
+| 22/11/2026 | 1.14 | US-05 CA1: el aviso al estudio incluye si es seguro contactar, como ya pedía US-03 CA6. US-03 CA3, CA5, CA6 y CA7 (nuevo), §2, §6.3, §7, §8, §9, §10.2 y §11.5: `emailIsPrivate`, acuse neutro solo a emails privados y contacto solo por un medio seguro. Se corrige la versión del encabezado, que había quedado en 1.12. | [tu nombre] |

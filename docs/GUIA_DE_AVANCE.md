@@ -152,6 +152,7 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 - [ ] **F3-02 · Schemas y tipos** (IA) · SPEC §8
   - [ ] `inquirySchema` y los demás schemas con tests de cada regla y mensaje.
   - [ ] `safeToContact` (SPEC US-03 CA6): regla condicional y tests. Como es un dato nuevo, subir la versión de la política de privacidad.
+  - [ ] `emailIsPrivate` (SPEC US-03 CA7): obligatorio, sin valor por defecto, y regla de "medio seguro" con tests de cada combinación. Incluirlo en la misma versión nueva de la política, que además tiene que decir que el acuse es solo para emails privados.
 
 - [ ] **F3-03 · Ports y adapters** (IA) · NFR-ESC-02
   - [ ] Interfaces `EmailSender`, `CaptchaVerifier`, `RateLimiter` y `Clock`, con sus adapters (Resend, Turnstile, Upstash) y fakes para tests.
@@ -166,11 +167,13 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 
 - [ ] **F3-06 · Mails** (IA) · US-05, ADR-0005
   - [ ] Plantillas React Email: aviso al estudio (sin el mensaje completo) y acuse al consultante. Preview local.
+  - [ ] Acuse solo si el email es privado, con remitente, asunto, texto y firma neutros (US-03 CA5). Aviso al estudio con `safeToContact`, `emailIsPrivate` y "No iniciar contacto" destacados (US-05 CA1). Tests de los dos.
 
 - [ ] **F3-07 · Formulario de 2 pasos** (IA + `/claude-design`) · US-03
   - [ ] Componente cliente con `useActionState`, Turnstile, errores accesibles, sin pérdida de datos y confirmación con referencia.
   - [ ] Preselección de área por query param.
   - [ ] "¿Es seguro que te contactemos por ese medio?" al elegir teléfono o WhatsApp (US-03 CA6). Revisar el orden de `/contacto` ahora que el formulario funciona.
+  - [ ] "¿Este email es privado (solo lo leés vos)?" (US-03 CA7). Sin medio seguro, la confirmación muestra la referencia y no promete contacto (US-03 CA3).
   - [ ] Tests de componente.
 
 - [ ] **F3-08 · E2E del envío** (IA)
