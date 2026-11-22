@@ -14,6 +14,10 @@ import { siteConfig } from "@/config/site.config";
 import { areaPageContent, areasBreadcrumbs } from "@/content/area-pages";
 import { homeContent } from "@/content/home";
 import { getAreaContactHref, getPracticeAreaBySlug, practiceAreas } from "@/content/practice-areas";
+import { publicEnv } from "@/lib/env.public";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { buildAreaService, buildBreadcrumbList } from "@/lib/seo/structured-data";
 
 /**
  * The 5 areas are prerendered at build time. `dynamicParams = false` is not allowed with
@@ -33,7 +37,7 @@ export async function generateMetadata({ params }: PageProps<"/areas/[slug]">): 
   const area = getPracticeAreaBySlug(slug);
   if (!area) return {};
 
-  return { title: area.metadata.title, description: area.metadata.description };
+  return buildPageMetadata({ ...area.metadata, path: `/areas/${area.slug}` });
 }
 
 const cardClass = "rounded-2xl border border-border bg-card p-6 sm:p-8";
@@ -47,15 +51,18 @@ export default async function AreaPage({ params }: PageProps<"/areas/[slug]">) {
   const cta = { label: siteConfig.primaryCta.label, href: getAreaContactHref(area.slug) };
   const otherAreas = practiceAreas.filter((other) => other.slug !== area.slug);
   const labels = areaPageContent;
+  const breadcrumbs = [...areasBreadcrumbs, { label: area.title, href: `/areas/${area.slug}` }];
+  const siteUrl = publicEnv.NEXT_PUBLIC_SITE_URL;
 
   return (
     <>
-      <PageHeader
-        id="area-title"
-        breadcrumbs={[...areasBreadcrumbs, { label: area.title, href: `/areas/${area.slug}` }]}
-        title={area.title}
-        lead={area.intro}
-      >
+      <JsonLd
+        data={[
+          buildAreaService(area, siteUrl, siteConfig.address.city),
+          buildBreadcrumbList(breadcrumbs, siteUrl),
+        ]}
+      />
+      <PageHeader id="area-title" breadcrumbs={breadcrumbs} title={area.title} lead={area.intro}>
         <div className="mt-8 flex flex-col items-start gap-2">
           <CtaLink href={cta.href} size="lg">
             {cta.label}

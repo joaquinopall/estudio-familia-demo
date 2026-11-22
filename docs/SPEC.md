@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.9 (21/11/2026) |
+| Versión | 1.11 (22/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -36,7 +36,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 **Objetivo técnico:** que sea una base **segura, mantenible, escalable y eficiente**, reutilizable para clientes reales cambiando configuración y contenido.
 
 **Indicadores de éxito de la demo:**
-- Lighthouse mobile ≥ 90 en Performance, Accessibility, Best Practices y SEO en todas las páginas públicas.
+- Lighthouse mobile ≥ 90 en Performance, Accessibility, Best Practices y SEO en todas las páginas públicas. SEO se mide sobre un build con el modo demo apagado, porque la demo lleva `noindex` a propósito (FR-15, ADR-0010).
 - Enviar una consulta desde el celular lleva menos de 2 minutos.
 - 0 errores de lint o tipos y tests en verde en `main`.
 
@@ -124,7 +124,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 | FR-12 | Cada cambio de estado o de notas crea un `InquiryEvent` con el actor. |
 | FR-13 | Botón de WhatsApp con link `https://wa.me/<número>?text=<mensaje genérico codificado>`. |
 | FR-14 | `sitemap.xml`, `robots.txt` (el panel y `/admin/*` excluidos e indicados `noindex`), metadata por página y JSON-LD (`LegalService` en el layout y `FAQPage` en preguntas frecuentes). |
-| FR-15 | Banner de modo demo controlado por `NEXT_PUBLIC_DEMO_MODE=true`. |
+| FR-15 | Banner de modo demo controlado por `NEXT_PUBLIC_DEMO_MODE=true`. En modo demo el sitio no se indexa (`noindex, nofollow`), sin bloquear el rastreo. |
 | FR-16 | Página 404 y página de error amigables, con link al inicio y a contacto. |
 
 ---
@@ -158,6 +158,7 @@ src/
       (protected)/consultas/[id]/page.tsx
     sitemap.ts
     robots.ts
+    opengraph-image.tsx
     not-found.tsx
     error.tsx
     globals.css                  # tokens de diseño (Tailwind)
@@ -198,6 +199,11 @@ src/
     security/ip.ts               # obtener IP de headers y hashearla (HMAC-SHA256 con IP_HASH_SALT)
     security/headers.ts          # headers de seguridad y CSP (NFR-SEC-04/05); lo usa next.config.ts
     seo/json-ld.tsx              # serialización segura de JSON-LD
+    seo/structured-data.ts       # builders de schema.org
+    seo/page-metadata.ts         # metadata por página (canonical, OG) y robots
+    seo/routes.ts                # rutas públicas del sitemap
+    seo/og-image.ts              # datos de la imagen OG
+    seo/brand-colors.ts          # tokens para la imagen OG (test contra globals.css)
   config/
     site.config.ts
   content/
@@ -568,3 +574,5 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 21/11/2026 | 1.7 | §6.2: se agrega `content/area-pages.ts` (textos de `/areas` y rótulos de las páginas de área). `areas/[slug]` usa `generateStaticParams` + `ensureStatic = 'navigation'` en lugar de `dynamicParams = false`, que no es compatible con Cache Components (ADR-0009). | [tu nombre] |
 | 21/11/2026 | 1.8 | §6.2: se agregan `content/about.ts`, `content/faq-page.ts` y `lib/format-date.ts`. La política de privacidad (`content/legal/privacy.ts`) arranca en la versión `1.0` (vigente desde el 21/11/2026), nombra a los proveedores que procesan datos (Vercel, Supabase, Resend, Cloudflare, Upstash) e informa la transferencia internacional (art. 12, Ley 25.326). | [tu nombre] |
 | 21/11/2026 | 1.9 | §6.2: se agrega `content/contact-page.ts`. §11.3: en Contacto, el mapa es un link a Google Maps y no un embed (la CSP no admite ese iframe y pondría cookies de terceros, contra la política de privacidad). La página es estática: en F3 el formulario lee `?area=` del lado del cliente. | [tu nombre] |
+| 21/11/2026 | 1.10 | FR-15: en modo demo el sitio lleva `noindex, nofollow` sin bloquear el rastreo (ADR-0010). FR-03: `site.config.ts` suma los horarios estructurados (`openingHours`). §6.2: `lib/seo/*` y `app/opengraph-image.tsx`. | [tu nombre] |
+| 22/11/2026 | 1.11 | §1: el puntaje de SEO de Lighthouse se mide sobre un build con el modo demo apagado (ADR-0010). | [tu nombre] |

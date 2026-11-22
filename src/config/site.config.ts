@@ -16,6 +16,12 @@ export type Professional = {
 
 export type OfficeHours = { days: string; hours: string };
 
+export type DayOfWeek =
+  "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+
+/** Machine-readable opening hours for structured data (schema.org OpeningHoursSpecification). */
+export type OpeningHoursSpec = { days: DayOfWeek[]; opens: string; closes: string };
+
 export type NavItem = { label: string; href: string };
 
 export type SiteConfig = {
@@ -34,7 +40,10 @@ export type SiteConfig = {
     mapsUrl: string;
   };
   geo: { latitude: number; longitude: number };
+  /** Human-readable hours shown on the site. */
   hours: OfficeHours[];
+  /** Same hours, structured (24 h "HH:MM"). Keep both in sync. */
+  openingHours: OpeningHoursSpec[];
   contact: {
     /** Human-readable phone. */
     phoneDisplay: string;
@@ -89,6 +98,13 @@ export const siteConfig: SiteConfig = {
   hours: [
     { days: "Lunes a viernes", hours: "9 a 18 h" },
     { days: "Sábados, domingos y feriados", hours: "Cerrado" },
+  ],
+  openingHours: [
+    {
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "09:00",
+      closes: "18:00",
+    },
   ],
   contact: {
     phoneDisplay: "+54 11 0000-0000",

@@ -8,13 +8,17 @@ import { SectionHeading } from "@/components/marketing/section-heading";
 import { TableOfContents } from "@/components/marketing/table-of-contents";
 import { siteConfig } from "@/config/site.config";
 import { faqPageContent } from "@/content/faq-page";
-import { getFaqsByGroup } from "@/content/faqs";
+import { generalFaqs, getFaqsByGroup } from "@/content/faqs";
 import { practiceAreas } from "@/content/practice-areas";
+import { publicEnv } from "@/lib/env.public";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { buildBreadcrumbList, buildFaqPage } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: faqPageContent.metadata.title,
-  description: faqPageContent.metadata.description,
-};
+export const metadata: Metadata = buildPageMetadata({
+  ...faqPageContent.metadata,
+  path: "/preguntas-frecuentes",
+});
 
 /** /preguntas-frecuentes (FR-01, SPEC §11.3): general questions grouped by topic. Static. */
 export default function FaqPage() {
@@ -23,6 +27,12 @@ export default function FaqPage() {
 
   return (
     <>
+      <JsonLd
+        data={[
+          buildFaqPage(generalFaqs),
+          buildBreadcrumbList(breadcrumbs, publicEnv.NEXT_PUBLIC_SITE_URL),
+        ]}
+      />
       <PageHeader id="faq-title" breadcrumbs={breadcrumbs} title={title} lead={lead} />
 
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-20 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-16">

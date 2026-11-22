@@ -8,7 +8,10 @@ import { practiceAreas } from "@/content/practice-areas";
 
 describe("/areas (FR-01)", () => {
   it("has its own metadata", () => {
-    expect(metadata).toEqual(areasIndexContent.metadata);
+    expect(metadata).toMatchObject({
+      ...areasIndexContent.metadata,
+      alternates: { canonical: "/areas" },
+    });
   });
 
   it("has a single h1", () => {

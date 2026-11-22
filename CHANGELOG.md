@@ -4,6 +4,16 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F2-06 · SEO técnico
+
+- **Agregado:** `/sitemap.xml` (11 URLs), `/robots.txt` (excluye `/admin`) e imagen Open Graph generada en el build.
+- **Agregado:** canonical y Open Graph completo en cada página con `buildPageMetadata`; JSON-LD `LegalService`, `FAQPage`, `Service` y `BreadcrumbList` con serialización segura (`<JsonLd>`).
+- **Agregado:** `noindex, nofollow` en modo demo (ADR-0010) y horarios estructurados en `siteConfig.openingHours`.
+- **Cambiado:** Vitest fija variables públicas de prueba, porque las páginas ahora las leen al importarse.
+- **Agregado:** tests de serialización, builders, metadata, sitemap, robots y colores; e2e de SEO y de `og:image` en cada tipo de página; caso manual MT-20. SPEC v1.10.
+- **Decidido:** el SEO de Lighthouse se mide sobre un build local con el modo demo apagado. SPEC v1.11.
+- **Documentado:** `ARCHITECTURE.md` y `TESTING.md` al día con la Fase 2.
+
 ### F2-05 · Contacto (sin formulario funcional todavía)
 
 - **Agregado:** `/contacto` con el tiempo de respuesta en la apertura, el lugar reservado del formulario (`#formulario`, con un aviso y alternativas), datos de contacto (WhatsApp destacado, teléfono, email, dirección con link a Google Maps, horarios y confidencialidad) y preguntas destacadas. Los CTA "Contanos tu caso" del sitio dejan de dar 404.

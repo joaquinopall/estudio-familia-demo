@@ -1,4 +1,5 @@
 import { Clock, Hourglass, MapPin } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CtaSection } from "@/components/marketing/cta-section";
@@ -12,6 +13,13 @@ import { siteConfig } from "@/config/site.config";
 import { getFeaturedFaqs } from "@/content/faqs";
 import { homeContent } from "@/content/home";
 import { practiceAreas } from "@/content/practice-areas";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata: Metadata = {
+  ...buildPageMetadata({ title: siteConfig.name, description: siteConfig.description, path: "/" }),
+  // The home shows the firm name alone, without the "%s · shortName" template.
+  title: { absolute: siteConfig.name },
+};
 
 const sectionClass = "mx-auto max-w-6xl px-4 py-14 sm:py-20 lg:py-24";
 

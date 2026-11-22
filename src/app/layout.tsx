@@ -3,6 +3,7 @@ import { Lora, Plus_Jakarta_Sans } from "next/font/google";
 
 import { siteConfig } from "@/config/site.config";
 import { publicEnv } from "@/lib/env.public";
+import { buildSiteRobots } from "@/lib/seo/page-metadata";
 
 import "./globals.css";
 
@@ -26,6 +27,8 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
   },
+  twitter: { card: "summary_large_image" },
+  robots: buildSiteRobots(publicEnv.NEXT_PUBLIC_DEMO_MODE),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -6,12 +6,16 @@ import { type LegalSection, LegalDocument } from "@/components/marketing/legal-d
 import { PageHeader } from "@/components/marketing/page-header";
 import { siteConfig } from "@/config/site.config";
 import { type PrivacySection, privacyPolicy } from "@/content/legal/privacy";
+import { publicEnv } from "@/lib/env.public";
 import { formatLongDate } from "@/lib/format-date";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { buildBreadcrumbList } from "@/lib/seo/structured-data";
 
-export const metadata: Metadata = {
-  title: privacyPolicy.metadata.title,
-  description: privacyPolicy.metadata.description,
-};
+export const metadata: Metadata = buildPageMetadata({
+  ...privacyPolicy.metadata,
+  path: "/privacidad",
+});
 
 /** The firm's identity, from site.config.ts (FR-03). */
 function ControllerDetails() {
@@ -60,6 +64,7 @@ export default function PrivacyPage() {
 
   return (
     <>
+      <JsonLd data={buildBreadcrumbList(breadcrumbs, publicEnv.NEXT_PUBLIC_SITE_URL)} />
       <PageHeader id="privacy-title" breadcrumbs={breadcrumbs} title={title} lead={lead}>
         <p className="mt-6 text-sm text-muted-foreground">
           {privacyPolicy.versionLabel} {version} · {privacyPolicy.effectiveDateLabel}{" "}

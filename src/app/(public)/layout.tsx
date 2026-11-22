@@ -7,8 +7,13 @@ import { MAIN_CONTENT_ID, SkipLink } from "@/components/layout/skip-link";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { siteConfig } from "@/config/site.config";
 import { publicEnv } from "@/lib/env.public";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { buildLegalService } from "@/lib/seo/structured-data";
 
-/** Public site shell: skip link, demo banner, header, footer and WhatsApp button. */
+/**
+ * Public site shell: skip link, demo banner, header, footer, WhatsApp button and the firm's
+ * LegalService structured data (FR-14).
+ */
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <>
@@ -27,6 +32,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         number={siteConfig.contact.whatsappNumber}
         message={siteConfig.contact.whatsappMessage}
       />
+      <JsonLd data={buildLegalService(siteConfig, publicEnv.NEXT_PUBLIC_SITE_URL)} />
     </>
   );
 }

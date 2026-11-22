@@ -54,7 +54,7 @@ Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `de
 | Variable                                              | Pública | Obligatoria desde  | Uso                               |
 | ----------------------------------------------------- | :-----: | ------------------ | --------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                                |   sí    | **Fase 1**         | URLs absolutas, metadata, sitemap |
-| `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`false`) | Banner de demo (`true` / `false`) |
+| `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`false`) | Banner de demo y `noindex`        |
 | `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | Fase 4             | Supabase Auth                     |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | Fase 4             | Supabase Auth                     |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                      |   sí    | Fase 3             | Widget anti-bots                  |
@@ -103,9 +103,9 @@ src/
     ui/                componentes de shadcn/ui (generados)
     layout/            Header, MobileMenu, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink
   config/              site.config.ts: todos los datos del estudio
-  content/             contenido del sitio como datos (Fase 2)
+  content/             contenido del sitio como datos
   features/            código por feature: inquiries, auth (Fases 3 y 4)
-  lib/                 env, ActionResult, logger, headers de seguridad, utilidades
+  lib/                 env, ActionResult, logger, headers de seguridad, SEO, utilidades
 tests/e2e/             Playwright
 docs/                  SPEC, guía de avance, arquitectura, ADR, testing
 ```
@@ -121,6 +121,13 @@ Arquitectura, capas y flujos: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). De
 - **Íconos:** `lucide-react`, siempre con trazo fino (`strokeWidth` 1.5) y sin círculos ni fondos de color detrás; se usan como apoyo de rótulos (`FactLabel`), nunca como decoración suelta. Sin clichés jurídicos (balanza, martillo).
 - **Responsive:** mobile first. El menú de escritorio aparece desde `lg` (1024 px); hasta ahí se usa el menú desplegable.
 - El refinamiento visual se hace con `/claude-design`, respetando los tokens.
+
+## SEO
+
+- **Metadata:** cada página pública usa `buildPageMetadata` (`src/lib/seo/page-metadata.ts`): título, descripción, canonical y Open Graph completo con imagen. No armes `openGraph` a mano en una página: Next combina la metadata de forma superficial y se pierde la imagen.
+- **Datos estructurados:** `LegalService` en el layout público, `FAQPage` en preguntas frecuentes, `Service` en cada área y `BreadcrumbList` en las páginas internas. Se renderizan solo con `<JsonLd>` (`src/lib/seo/json-ld.tsx`), el único uso permitido de `dangerouslySetInnerHTML`. Los horarios salen de `siteConfig.openingHours`: mantenelo igual a `hours`.
+- **`/sitemap.xml`, `/robots.txt` (excluye `/admin`) y `/opengraph-image`** se generan en el build.
+- **La demo no se indexa:** con `NEXT_PUBLIC_DEMO_MODE=true` todas las páginas llevan `noindex, nofollow` ([ADR-0010](docs/adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)). Para un estudio real, poné la variable en `false` y `NEXT_PUBLIC_SITE_URL` con el dominio final, y volvé a deployar: son valores de build.
 
 ## Seguridad
 

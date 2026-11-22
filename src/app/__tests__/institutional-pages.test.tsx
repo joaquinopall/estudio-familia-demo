@@ -16,8 +16,8 @@ describe.each([
   ["/preguntas-frecuentes", FaqPage, faqMetadata, faqPageContent],
   ["/privacidad", PrivacyPage, privacyMetadata, privacyPolicy],
 ] as const)("%s", (path, Page, metadata, content) => {
-  it("has its own metadata", () => {
-    expect(metadata).toEqual(content.metadata);
+  it("has its own metadata with canonical", () => {
+    expect(metadata).toMatchObject({ ...content.metadata, alternates: { canonical: path } });
   });
 
   it("has a single h1 and marks itself as the current page", () => {
