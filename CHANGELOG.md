@@ -4,6 +4,12 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F2-08 · Cierre de fase
+
+- **Documentado:** caso MT-01 (celular real); README con el checklist para pasar a un estudio real, probado en una copia limpia con otro estudio; arquitectura al cierre del sitio público.
+- **Corregido en docs:** pasos de MT-11 (orden del foco después de "Saltar al contenido") y versión del encabezado del SPEC; MT-13 suma la revisión del deploy.
+- **Especificado para F3 (SPEC v1.14):** el aviso al estudio dice si es seguro contactar; `emailIsPrivate`, acuse neutro solo a emails privados y, sin un medio seguro, el estudio no inicia el contacto. Ítems agregados a F3-02, F3-06 y F3-07 de la guía.
+
 ### F2-07 · Pulido visual y accesibilidad
 
 - **Corregido:** anillo de foco invisible (1:1) en el CTA final; frase de confidencialidad tapada por WhatsApp en el hero (ahora va arriba del botón); CTA de las áreas fuera de la primera pantalla en celulares; áreas táctiles de los datos de contacto y del footer (44 px); headings y landmarks (axe sin violaciones de ningún nivel).

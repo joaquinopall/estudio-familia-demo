@@ -88,7 +88,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 
 | ID    | Caso                                                    | Se detalla en | Estado        |
 | ----- | ------------------------------------------------------- | ------------- | ------------- |
-| MT-01 | Navegar todas las páginas en un celular real            | F2-08         | Pendiente     |
+| MT-01 | Navegar todas las páginas en un celular real            | F2-08         | **Detallado** |
 | MT-02 | Enviar una consulta completa                            | F3-09         | Pendiente     |
 | MT-03 | Errores de validación de cada campo                     | F3-09         | Pendiente     |
 | MT-04 | Exceder el rate limit                                   | F3-09         | Pendiente     |
@@ -111,6 +111,36 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
 
+### MT-01 — Navegar todas las páginas en un celular real
+
+- **Objetivo:** que todo el sitio público se pueda leer y usar con el dedo, en el navegador y la pantalla que usa quien consulta. Los e2e solo corren en Chromium de escritorio.
+- **Requisitos:** FR-01, US-01 CA1, US-04, NFR-A11Y-01, SPEC §11.5.
+- **Precondiciones:** un celular real con iOS (Safari) o Android (Chrome); si podés, los dos. URL de producción, o del preview con la sesión de Vercel iniciada. **No completes ninguna llamada a los teléfonos de ayuda.**
+
+**Pasos**
+
+1. Abrí el inicio y, sin scrollear, mirá la primera pantalla.
+2. Con el botón **Menú**, entrá a Áreas de práctica, Nosotros, Preguntas frecuentes, Contacto e Inicio. Recorré cada una hasta el footer.
+3. Desde Áreas de práctica, entrá a las 5 áreas y recorrelas. En una, tocá "Contanos tu caso".
+4. Desde el footer, entrá a Política de privacidad y usá su índice. Hacé lo mismo con el índice de Preguntas frecuentes y abrí una pregunta.
+5. En Contacto, tocá el teléfono, el email y el mapa. Volvé atrás sin llamar ni enviar.
+6. Abrí una dirección inventada, por ejemplo `/no-existe`.
+7. Girá el celular y repetí el inicio, el menú y Contacto.
+8. Agrandá el texto del navegador al 125% (Chrome en Android: Configuración → Accesibilidad; Safari en iPhone: botón "aA") y repetí el inicio. Al terminar, volvelo a como estaba.
+
+**Resultado esperado**
+
+- Paso 1: se leen el banner de demo, qué hace el estudio, la frase de confidencialidad y el botón "Contanos tu caso".
+- Pasos 2–4: las 11 páginas cargan sin scroll horizontal, texto cortado ni nada tapado. El header queda fijo con WhatsApp visible, y los títulos a los que llevan los índices no quedan debajo de él. El menú se cierra al elegir un link o tocar afuera. "Contanos tu caso" abre Contacto con `?area=<slug>`.
+- Paso 5: se abren el marcador, el correo y el mapa, y al volver el sitio sigue igual.
+- Paso 6: se ve la 404 en español, con salidas a inicio y contacto.
+- Paso 7: nada se corta y el menú entero se alcanza, scrolleando si hace falta.
+- Paso 8: no aparece scroll horizontal; el nombre del estudio puede partir en dos líneas.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
 ### MT-11 — Navegación completa solo con teclado
 
 - **Objetivo:** que alguien que no usa mouse (o usa un lector de pantalla) pueda recorrer y usar todo el sitio.
@@ -121,7 +151,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 
 1. Recargá la página de inicio y apretá **Tab** una vez.
 2. Apretá **Enter**.
-3. Seguí apretando **Tab** hasta llegar al final de la página, y después **Shift+Tab** para volver.
+3. Seguí apretando **Tab** hasta llegar al final de la página, y después **Shift+Tab** hasta volver al principio.
 4. Sobre un link del menú, apretá **Enter**.
 5. Achicá la ventana a ancho de celular (o DevTools → modo dispositivo, 375 px), recargá y llegá con **Tab** al botón **Menú**. Apretá **Enter**, recorré los links con **Tab** y apretá **Escape**.
 
@@ -129,7 +159,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 
 - Paso 1: aparece arriba a la izquierda el link **"Saltar al contenido"**.
 - Paso 2: el foco pasa al contenido principal (el siguiente Tab va al primer elemento del contenido, no al menú).
-- Paso 3: el foco **siempre se ve** (contorno verde azulado) y pasa en orden lógico por: header (nombre del estudio, menú, CTA y, hasta 1379 px, WhatsApp), contenido, footer (teléfonos de ayuda, mapa, teléfono, email, política de privacidad) y, desde 1380 px, WhatsApp flotante. Ningún elemento queda inalcanzable ni atrapa el foco.
+- Paso 3: el foco **siempre se ve** (contorno verde azulado; claro sobre la franja verde del cierre) y nunca queda debajo del header. Con Tab pasa por el contenido, el footer (teléfonos de ayuda, mapa, teléfono, email, política de privacidad) y, desde 1380 px, WhatsApp flotante. Con Shift+Tab vuelve por el mismo camino y termina en el header (hasta 1379 px WhatsApp, CTA, menú, nombre del estudio) y "Saltar al contenido". Ningún elemento queda inalcanzable ni atrapa el foco.
 - Paso 4: navega a esa página y el menú la marca como actual.
 - Paso 5: el menú se abre, sus links se recorren con Tab, y con Escape se cierra y el foco vuelve al botón **Menú**.
 
@@ -149,12 +179,14 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 2. Revisá el banner en desktop y en ancho de celular (375 px).
 3. Cambiá a `NEXT_PUBLIC_DEMO_MODE=false`, repetí el build y abrí el inicio. Después borrá la línea y repetí.
 4. Poné un valor inválido (`NEXT_PUBLIC_DEMO_MODE=si`) y corré `npm run build`.
+5. Abrí el preview y producción de la demo en Vercel y mirá el código fuente (Ctrl+U).
 
 **Resultado esperado**
 
 - Paso 1–2: arriba de todo se ve "**Sitio de demostración — estudio ficticio.**". Desde 640 px sigue con "Los nombres, matrículas y datos de contacto no son reales."; en celulares se muestra solo la primera oración, sin cortarse.
 - Paso 3: con `false` el banner no aparece; sin la línea **sí** aparece, y la página lleva `noindex, nofollow` (ADR-0011).
 - Paso 4: el build falla con `NEXT_PUBLIC_DEMO_MODE: debe ser "true" o "false"`.
+- Paso 5: los dos muestran el banner y tienen `<meta name="robots" content="noindex, nofollow"/>`.
 - Al terminar, volvé a dejar `NEXT_PUBLIC_DEMO_MODE=true`.
 
 > Las `NEXT_PUBLIC_*` se fijan en el build: para ver un cambio hay que volver a hacer `build` (en `dev` alcanza con reiniciar el servidor).
