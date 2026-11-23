@@ -2,7 +2,7 @@
 
 Configuración del estudio (SPEC §6.1, FR-03). Es lo que se cambia para convertir la demo en el sitio de un estudio real, sin tocar componentes.
 
-- `site.config.ts`: nombre del estudio, profesionales y matrículas, dirección, horarios (texto visible en `hours` y versión estructurada para buscadores en `openingHours`: cambiá siempre las dos), teléfono, WhatsApp (número y mensaje genérico), email público, tiempo de respuesta, jurisdicción (`jurisdiction`: dónde litiga, según las matrículas), redes, coordenadas, navegación, CTA principal y disclaimer. Tipado (`SiteConfig`). En la demo, con datos **ficticios** (SPEC §11.4) e `isFictitious: true`.
+- `site.config.ts`: nombre del estudio, profesionales y matrículas, dirección, horarios (texto visible en `hours` y versión estructurada para buscadores en `openingHours`: cambiá siempre las dos), teléfono, WhatsApp (número y mensaje genérico), email público, tiempo de respuesta, jurisdicción (`jurisdiction`: dónde litiga, según las matrículas), monograma del ícono (`monogram`: una o dos mayúsculas), redes, coordenadas, navegación, CTA principal y disclaimer. Tipado (`SiteConfig`). En la demo, con datos **ficticios** (SPEC §11.4) e `isFictitious: true`.
 
 Ningún componente debe hardcodear estos datos.
 

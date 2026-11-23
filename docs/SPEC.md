@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.14 (22/11/2026) |
+| Versión | 1.15 (23/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -114,7 +114,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 |---|---|
 | FR-01 | Rutas públicas: `/`, `/areas`, `/areas/[slug]`, `/nosotros`, `/preguntas-frecuentes`, `/contacto`, `/privacidad`. |
 | FR-02 | Las áreas v1 son: Sucesiones, Divorcios, Alimentos, Cuidado personal y régimen de comunicación, Convenios y acuerdos familiares. Se definen en `src/content/practice-areas.ts`. |
-| FR-03 | Todo dato del estudio sale de `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, teléfono, WhatsApp, email público, redes, coordenadas, jurisdicción donde litiga). |
+| FR-03 | Todo dato del estudio sale de `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, teléfono, WhatsApp, email público, redes, coordenadas, jurisdicción donde litiga y monograma del ícono). |
 | FR-04 | El formulario de consulta usa una Server Action `submitInquiry` con mejora progresiva (`useActionState`). |
 | FR-05 | Validación compartida cliente/servidor con un único schema Zod (`inquirySchema`). |
 | FR-06 | Anti-abuso en el envío, en este orden: honeypot → rate limit → validación → Turnstile. |
@@ -161,6 +161,7 @@ src/
     sitemap.ts
     robots.ts
     opengraph-image.tsx
+    icon.tsx, apple-icon.tsx     # ícono con el monograma del estudio; /favicon.ico se reescribe a /icon
     not-found.tsx                # 404 de URLs sin ruta (con PublicShell)
     error.tsx                    # último recurso; (public)/ tiene su not-found.tsx y su error.tsx
     globals.css                  # tokens de diseño (Tailwind)
@@ -206,6 +207,7 @@ src/
     seo/routes.ts                # rutas públicas del sitemap
     seo/og-image.ts              # datos de la imagen OG
     seo/brand-colors.ts          # tokens para la imagen OG (test contra globals.css)
+    seo/app-icon.tsx             # dibuja los íconos de la pestaña y de inicio
   config/
     site.config.ts
   content/
@@ -476,7 +478,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 - Modo demo: banner "Sitio de demostración — estudio ficticio" y datos claramente ficticios (nombre, matrículas, teléfono). No usar el nombre, el logo ni los datos de un estudio real.
 
 ### 11.5 Peligro y urgencias
-- **Peligro:** franja sobria con 911, 137 (opción 1), 144 y la Oficina de Violencia Doméstica (Lavalle 1250, 24 h) en el footer de todas las páginas, en Contacto y en las áreas de familia (todas salvo Sucesiones). Los números se verifican en las fuentes oficiales antes de cada entrega.
+- **Peligro:** franja sobria con 911, 137 (opción 1), 144 y la Oficina de Violencia Doméstica (Lavalle 1250, 24 h) en el footer de todas las páginas, en Contacto y en las áreas de familia (todas salvo Sucesiones). Los números se verifican en las fuentes oficiales antes de cada entrega y se definen una sola vez, en `content/urgent-help.ts`.
 - **Plazos:** "¿Tenés un plazo o una audiencia cercana?", con teléfono, horario y qué hacer fuera de horario, en Inicio, áreas y Contacto.
 - **Contacto seguro:** no prometer llamadas: puede ser riesgoso para quien convive con quien ejerce violencia. Se contacta por el medio que la persona elija, si es seguro. El email tampoco lo es siempre: acuse neutro y solo a una casilla privada. Sin un medio seguro, el estudio no inicia el contacto (US-03 CA5 a CA7).
 
@@ -593,3 +595,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 22/11/2026 | 1.12 | FR-15: banner corto en celulares. §6.2: páginas 404 y de error de FR-16 (`PublicShell`, `NotFoundView`, `ErrorView`, `content/error-pages.ts`). | [tu nombre] |
 | 22/11/2026 | 1.13 | Revisión de diseño. §11.5 nueva (peligro, plazos y contacto seguro). §11.3: orden del Inicio y de Contacto, paso 2 sin prometer llamadas. US-01 CA1 desde 320×568. US-03 CA6, §7 y §8: `safeToContact` (se implementa en F3). US-04: WhatsApp no tapa contenido. FR-03: jurisdicción. FR-15 y §9: modo demo encendido por defecto (ADR-0011). | [tu nombre] |
 | 22/11/2026 | 1.14 | US-05 CA1: el aviso al estudio incluye si es seguro contactar, como ya pedía US-03 CA6. US-03 CA3, CA5, CA6 y CA7 (nuevo), §2, §6.3, §7, §8, §9, §10.2 y §11.5: `emailIsPrivate`, acuse neutro solo a emails privados y contacto solo por un medio seguro. Se corrige la versión del encabezado, que había quedado en 1.12. | [tu nombre] |
+| 23/11/2026 | 1.15 | FR-03: `site.config.ts` suma el monograma del ícono. §6.2: `icon.tsx`, `apple-icon.tsx` y `lib/seo/app-icon.tsx` reemplazan el `favicon.ico` de Next.js. §11.5: los teléfonos de ayuda se definen en un solo lugar. | [tu nombre] |

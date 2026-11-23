@@ -4,6 +4,12 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F2-07 · Ícono y datos en un solo lugar (después de #20)
+
+- **Corregido:** la pestaña mostraba el logo de Next.js. Ahora el ícono y el de inicio del celular se generan con el monograma del estudio (`monogram` en `site.config.ts`), y `/favicon.ico` lleva al mismo ícono.
+- **Cambiado:** los teléfonos de ayuda y la dirección de la OVD están en un solo lugar (`urgent-help.ts`); la pregunta sobre violencia de "Cuidado personal" se arma desde ahí, con el mismo texto que antes.
+- **Corregido:** `tests/e2e/home.spec.ts` lee la jurisdicción de la configuración: pasar a otro estudio ya no rompe los e2e. SPEC v1.15.
+
 ### F2-08 · Cierre de fase
 
 - **Documentado:** caso MT-01 (celular real); README con el checklist para pasar a un estudio real, probado en una copia limpia con otro estudio; arquitectura al cierre del sitio público.
