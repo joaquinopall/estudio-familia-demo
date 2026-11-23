@@ -22,6 +22,10 @@ describe("siteConfig", () => {
     expect(siteConfig.jurisdiction.note).toContain(siteConfig.jurisdiction.label);
   });
 
+  it("has a short monogram for the browser icon", () => {
+    expect(siteConfig.monogram).toMatch(/^[A-ZÁÉÍÓÚÑ]{1,2}$/);
+  });
+
   it("has structured opening hours for the JSON-LD (FR-14)", () => {
     expect(siteConfig.openingHours.length).toBeGreaterThan(0);
     for (const spec of siteConfig.openingHours) {

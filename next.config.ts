@@ -24,6 +24,11 @@ export default function config(phase: string): NextConfig {
         },
       },
     },
+    // The icon is generated from site.config.ts (src/app/icon.tsx), but browsers and crawlers
+    // still request /favicon.ico without reading the <head>.
+    async rewrites() {
+      return [{ source: "/favicon.ico", destination: "/icon" }];
+    },
     // Security headers for every route (NFR-SEC-04, NFR-SEC-05).
     async headers() {
       return [{ source: "/(.*)", headers: buildSecurityHeaders({ isDev }) }];
