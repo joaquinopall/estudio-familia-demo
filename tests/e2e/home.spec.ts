@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { siteConfig } from "../../src/config/site.config";
+
 test.describe("home on a small phone (US-01 CA1)", () => {
   // iPhone SE: one of the smallest common viewports.
   test.use({ viewport: { width: 375, height: 667 } });
@@ -9,7 +11,9 @@ test.describe("home on a small phone (US-01 CA1)", () => {
     const hero = page.getByRole("region", { name: /familia/i }).first();
 
     await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
-    await expect(hero.getByText("Familia y sucesiones · CABA")).toBeInViewport();
+    await expect(
+      hero.getByText(`Familia y sucesiones · ${siteConfig.jurisdiction.label}`),
+    ).toBeInViewport();
     await expect(hero.getByRole("link", { name: "Contanos tu caso" })).toBeInViewport({
       ratio: 1,
     });

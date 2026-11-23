@@ -11,7 +11,7 @@ Contenido del sitio como datos tipados, separado de los componentes (SPEC §6.1,
 | `about.ts`          | Textos de `/nosotros`: enfoque y valores                              | F2-04 |
 | `faq-page.ts`       | Textos de `/preguntas-frecuentes`                                     | F2-04 |
 | `contact-page.ts`   | Textos de `/contacto` y rótulos de los datos de contacto              | F2-05 |
-| `urgent-help.ts`    | Ayuda ante peligro y plazos (§11.5), con las fuentes oficiales        | F2-07 |
+| `urgent-help.ts`    | Ayuda ante peligro y plazos (§11.5): único lugar de los teléfonos     | F2-07 |
 | `error-pages.ts`    | Textos de la 404 y de la página de error (sin imports: va al cliente) | F2-07 |
 | `legal/privacy.ts`  | Texto de la política de privacidad (Ley 25.326) y su versión          | F2-04 |
 

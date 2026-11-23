@@ -37,6 +37,23 @@ test.describe("technical SEO (FR-14, NFR-SEO-01)", () => {
     expect(response.headers()["content-type"]).toBe("image/png");
   });
 
+  test("the browser and home-screen icons are the firm's own", async ({ page, request }) => {
+    await page.goto("/");
+
+    for (const rel of ["icon", "apple-touch-icon"]) {
+      const href = await page.locator(`head link[rel="${rel}"]`).first().getAttribute("href");
+      expect(href, rel).not.toContain("favicon.ico");
+      const response = await request.get(href ?? "");
+      expect(response.status(), rel).toBe(200);
+      expect(response.headers()["content-type"], rel).toBe("image/png");
+    }
+
+    // Browsers and crawlers still ask for /favicon.ico without reading the <head>.
+    const favicon = await request.get("/favicon.ico");
+    expect(favicon.status()).toBe(200);
+    expect(favicon.headers()["content-type"]).toBe("image/png");
+  });
+
   test("the home has canonical, Open Graph, LegalService and noindex in demo mode", async ({
     page,
   }) => {

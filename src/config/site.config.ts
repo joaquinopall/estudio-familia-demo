@@ -27,6 +27,8 @@ export type NavItem = { label: string; href: string };
 export type SiteConfig = {
   name: string;
   shortName: string;
+  /** One or two capital letters for the browser and home-screen icons. */
+  monogram: string;
   tagline: string;
   description: string;
   isFictitious: boolean;
@@ -72,6 +74,7 @@ export type SiteConfig = {
 export const siteConfig: SiteConfig = {
   name: "Estudio Alameda — Familia y Sucesiones",
   shortName: "Estudio Alameda",
+  monogram: "A",
   tagline: "Acompañamiento legal en temas de familia y sucesiones",
   description:
     "Estudio jurídico de familia y sucesiones en la Ciudad de Buenos Aires. Te escuchamos, te explicamos tus opciones con claridad y te acompañamos en cada paso.",

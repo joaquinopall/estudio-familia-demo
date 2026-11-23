@@ -1,4 +1,5 @@
 import type { Faq } from "@/content/faqs";
+import { violenceFaqAnswer } from "@/content/urgent-help";
 
 /**
  * Practice areas (SPEC FR-02). Each one feeds its card on the home page and its page at
@@ -253,7 +254,7 @@ export const practiceAreas = [
       {
         question: "¿Qué hago si hay violencia o una situación de riesgo?",
         answer: [
-          "Lo primero es tu seguridad y la de tus hijos. Si hay una emergencia, llamá al 911. Podés llamar en cualquier momento al 137, opción 1 (violencia familiar), o al 144 (violencia de género). También podés denunciar las 24 horas en la Oficina de Violencia Doméstica, Lavalle 1250, CABA.",
+          violenceFaqAnswer,
           "Después, te ayudamos a pedir las medidas de protección que correspondan.",
         ],
       },

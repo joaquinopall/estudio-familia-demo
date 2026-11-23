@@ -138,10 +138,10 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 1. **Datos:** reemplazá todo [`src/config/site.config.ts`](src/config/site.config.ts). Es fácil olvidar `description`, la formación de cada profesional, `geo`, `mapsUrl`, el código postal y `openingHours`.
 2. **`isFictitious: false`:** saca el aviso de Privacidad y la etiqueta de la imagen para compartir.
 3. **`NEXT_PUBLIC_DEMO_MODE=false`** en Production, con `NEXT_PUBLIC_SITE_URL` del dominio final, y redeploy: saca el banner y el `noindex`. Dejá el modo demo encendido en Preview.
-4. **Jurisdicción y teléfonos de ayuda:** cambiar `jurisdiction` no alcanza. La OVD (Lavalle 1250) es de CABA y el 137 no cubre todo el país. Verificá en las fuentes oficiales y editá los **dos** lugares donde están: [`src/content/urgent-help.ts`](src/content/urgent-help.ts) y la pregunta sobre violencia de "Cuidado personal" en [`src/content/practice-areas.ts`](src/content/practice-areas.ts). Si cambian, actualizá también SPEC §11.5 y sus tests.
+4. **Jurisdicción y teléfonos de ayuda:** cambiar `jurisdiction` no alcanza. La OVD (Lavalle 1250) es de CABA y el 137 no cubre todo el país. Verificá en las fuentes oficiales y editalos en [`src/content/urgent-help.ts`](src/content/urgent-help.ts), el único lugar donde están: de ahí salen la franja de ayuda y la pregunta sobre violencia de "Cuidado personal". Si cambian, actualizá también SPEC §11.5 y `src/content/__tests__/urgent-help.test.ts`, que fija los números verificados.
 5. **Contenido legal:** que el estudio revise áreas, preguntas frecuentes, aviso de plazos, política de privacidad (con su versión y fecha) y las normas de publicidad de su colegio (SPEC §11.4).
-6. **Ícono:** reemplazá `src/app/favicon.ico`, que todavía es el de Next.js.
-7. **Verificá:** corré los tests y los e2e, y hacé MT-01, MT-13, MT-14 y MT-22. `tests/e2e/home.spec.ts` espera el texto "CABA": si cambió la jurisdicción, ajustalo. En el deploy, abrí también `/opengraph-image`.
+6. **Ícono:** poné la inicial del estudio en `monogram`. La pestaña y el ícono de inicio del celular se generan con ella y los colores de la marca.
+7. **Verificá:** corré los tests y los e2e, y hacé MT-01, MT-13, MT-14 y MT-22. En el deploy, abrí también `/opengraph-image` y `/icon`.
 
 ## Seguridad
 

@@ -44,13 +44,14 @@ flowchart LR
 | `src/app/(public)/`           | ✅ F2-07    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
 | `src/app/admin/`              | ⏳ F4       | Login, listado y detalle de consultas.                                                         |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
+| `src/app/icon.tsx`, `apple-icon.tsx` | ✅ F2-07 | Íconos con el monograma de `site.config.ts`, generados en el build. `/favicon.ico` se reescribe a `/icon`. |
 | `src/app/not-found.tsx`, `error.tsx` y los de `(public)/` | ✅ F2-07 | Páginas de error amigables (FR-16). |
 | `src/components/ui/`          | ✅ F1-07    | shadcn/ui (generados).                                                                         |
 | `src/components/layout/`      | ✅ F1-07    | Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, NotFoundView, ErrorView.                     |
 | `src/components/marketing/`   | ✅ F2-07    | Bloques del sitio público; los datos del estudio llegan por props (`UrgentNote` lee su texto fijo de `src/content`). |
 | `src/config/site.config.ts`   | ✅ F1-07    | Datos del estudio (ficticios en la demo).                                                      |
 | `src/content/`                | ✅ F2-07    | Áreas, preguntas, textos de cada página y de error, ayuda urgente y privacidad como datos.     |
-| `src/lib/seo/`                | ✅ F2-06    | Metadata, rutas del sitemap, datos estructurados y `<JsonLd>` seguro.                          |
+| `src/lib/seo/`                | ✅ F2-07    | Metadata, rutas del sitemap, datos estructurados, `<JsonLd>` seguro e íconos.                  |
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
 | `src/features/inquiries/`     | ⏳ F3–F4    | Consultas: schema, service, repository, actions, mails y componentes.                          |
 | `src/features/auth/`          | ⏳ F4       | DAL (`requireStaff`), actions de login y repositorio de staff.                                 |
