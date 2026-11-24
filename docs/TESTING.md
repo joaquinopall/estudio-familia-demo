@@ -65,6 +65,8 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`contact-safety.test.ts`:** la tabla es la definición de US-03 CA6 y CA7. Si falla, la que está mal es la regla, no la tabla, salvo que cambie el SPEC.
 - **`port-contracts.test.ts`:** el fake y el adapter real del rate limiter se comportan distinto. Corregí el que no cumpla el contrato del port; no relajes el test.
 - **`turnstile-verifier.test.ts` → hostname:** si cambiaste a claves reales de Turnstile, el hostname esperado sale de `NEXT_PUBLIC_SITE_URL`; con las de prueba es `example.com`.
+- **`emails.test.tsx` → "never reveals the reason":** alguien agregó al acuse un dato que delata el motivo de la consulta (el área, la urgencia, la especialidad, un link o el nombre completo del estudio). Sacalo: el acuse tiene que ser neutro (US-03 CA5). No relajes el test.
+- **`site-config.test.ts` → "keeps shortName neutral":** el nombre corto del estudio incluye la especialidad, y ese nombre firma el acuse. Elegí un nombre corto sin la especialidad.
 - **`repository.db.test.ts`:** si falla al conectar, revisá `DATABASE_URL` (y que las migraciones estén aplicadas: `npx prisma migrate status`). Si queda alguna fila `E2E-` en `inquiries`, borrala desde el Table Editor de Supabase dev.
 - **`enums.test.ts`:** cambiaste un enum en `prisma/schema.prisma` y no en `src/features/inquiries/types.ts` (o al revés), o un área de `practice-areas.ts` no existe en el enum.
 - **`db.test.ts` y `db-tls.test.ts`:** corren en entorno `node` (Prisma no funciona en jsdom) y no se conectan a nada. Si fallan al importar `@/generated/prisma/client`, corré `npm run db:generate`. Si falla "is a PEM certificate", falta `prisma/certs/supabase-ca.crt` o alguien puso ahí otra cosa (nunca una clave privada).
@@ -121,7 +123,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-03 | Errores de validación de cada campo                     | F3-02         | **Detallado** · se ejecuta en F3-09 |
 | MT-04 | Exceder el rate limit                                   | F3-05         | **Detallado** · se ejecuta en F3-09 |
 | MT-05 | Honeypot completado (no guarda nada)                    | F3-05         | **Detallado** · se ejecuta en F3-09 |
-| MT-06 | Mails recibidos: estudio y acuse                        | F3-09         | Pendiente     |
+| MT-06 | Mails recibidos: estudio y acuse                        | F3-06         | **Detallado** · se ejecuta en F3-09 |
 | MT-07 | Login y logout del admin                                | F4-08         | Pendiente     |
 | MT-08 | Entrar a `/admin` sin sesión                            | F4-08         | Pendiente     |
 | MT-09 | Usuario autenticado que no es staff                     | F4-08         | Pendiente     |
@@ -605,6 +607,36 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 - Paso 3: la confirmación aparece normal, con su referencia. La consulta está en `inquiries`, con su evento `CREATED` en `inquiry_events`. En la terminal aparecen `inquiry.firm_email_failed` e `inquiry.receipt_email_failed` con el `inquiryId` y el código de Resend, y sin nombre, email ni mensaje.
 - No llega ningún mail.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-06 — Mails recibidos: estudio y acuse
+
+- **Objetivo:** que el aviso al estudio tenga todo lo necesario para contactar de forma segura, y que el acuse no delate el motivo de la consulta a quien vea la casilla.
+- **Requisitos:** US-05 CA1, US-03 CA5 a CA7, ADR-0005, SPEC §11.5.
+- **Precondiciones:** formulario funcionando (F3-07) en el preview, con Resend configurado. Sin dominio verificado, Resend solo entrega a la casilla de la cuenta: usá esa casilla como email de la consulta y como `FIRM_NOTIFICATION_EMAIL`. Abrí los mails en Gmail desde el celular y desde la computadora.
+
+**Pasos**
+
+1. Enviá una consulta de Sucesiones, con WhatsApp, "es seguro" = **Sí** y "email privado" = **Sí**.
+2. Enviá otra con WhatsApp, "es seguro" = **No** y "email privado" = **Sí**.
+3. Enviá otra con WhatsApp, "es seguro" = **No** y "email privado" = **No**.
+4. Enviá otra con canal **Email** y "email privado" = **Sí**.
+5. Para cada consulta, abrí el aviso al estudio y, si llegó, el acuse. Mirá también cómo aparecen en la bandeja de entrada, sin abrirlos (asunto y vista previa).
+6. Hacé clic en "Ver la consulta en el panel".
+
+**Resultado esperado**
+
+- Paso 1: aviso con "Contactar por: WhatsApp" arriba. Llega el acuse.
+- Paso 2: aviso con "Contactar por: Email". Llega el acuse.
+- Paso 3: aviso con el asunto empezando por "[No iniciar contacto]" y el recuadro "NO INICIAR CONTACTO" arriba. **No llega acuse.**
+- Paso 4: aviso con "Contactar por: Email" y "No aplica (eligió email)" en la pregunta de seguridad. Llega el acuse.
+- En todos los avisos: referencia, nombre, área, urgencia, canal, las dos respuestas de seguridad y el botón al panel. **Nunca el texto del mensaje.**
+- En todos los acuses: asunto "Recibimos tu mensaje", el nombre, la referencia y la firma con el nombre corto del estudio. **Ni en la bandeja ni abierto** aparecen el área, la urgencia, "Familia", "Sucesiones", el nombre completo del estudio ni links.
+- Los mails se leen bien en celular y en computadora, sin texto cortado ni colores sin contraste.
+- Paso 6: lleva a `/admin/consultas/<id>`. Hasta F4 da 404; desde F4, pide el login y muestra la consulta.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

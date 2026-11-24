@@ -88,6 +88,7 @@ Reglas:
 | `npm run format:check`  | Verifica el formato sin modificar archivos                                        |
 | `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)        |
 | `npm run test:db`       | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI |
+| `npm run email:dev`     | Preview de los mails en `http://localhost:3001`, con datos de ejemplo ficticios   |
 | `npm run test:watch`    | Vitest en modo watch                                                              |
 | `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                    |
 | `npm run test:e2e`      | Tests e2e con Playwright contra el build de producción (levanta el servidor solo) |
@@ -123,6 +124,7 @@ Cada uno está detrás de un port (`src/lib/ports`), con su adapter en `src/lib/
 | **Cloudflare Turnstile** | Anti-bots, verificado en el servidor            | Claves de prueba en local y Preview (ya están en `.env.example`). Las reales (widget "Managed" con el dominio) solo en Production.                              |
 | **Upstash Redis**        | Rate limit (SPEC §8.2, `config/rate-limits.ts`) | Base Redis en `us-east`; URL y token REST de escritura (`UPSTASH_REDIS_REST_*`).                                                                                |
 
+- **Mails:** plantillas de React Email en `src/features/inquiries/emails`, textos en `src/content/emails.ts`. Se previsualizan con `npm run email:dev`. El acuse es neutro y va firmado con `siteConfig.shortName`, que no puede incluir la especialidad del estudio (lo controla un test).
 - **Si un servicio se cae:** el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y un mail que falla no pierde la consulta (ADR-0013).
 - Desde F3-05 sus variables son obligatorias: sin ellas, `dev`, `build` y `start` fallan nombrando la que falta. Cada adapter se crea recién cuando se usa (`getEmailSender()`, `getCaptchaVerifier()`, `getRateLimiter()`).
 

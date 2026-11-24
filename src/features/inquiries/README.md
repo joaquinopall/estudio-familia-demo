@@ -2,22 +2,22 @@
 
 Todo lo relacionado con una consulta (`Inquiry`): el formulario público, el guardado, los mails y la gestión desde el panel.
 
-| Archivo / carpeta   | Contenido                                                                                           | Tarea        |
-| ------------------- | --------------------------------------------------------------------------------------------------- | ------------ |
-| `schema.ts`         | `inquirySchema`, `updateStatusSchema`, `updateNotesSchema`, `listFiltersSchema`, honeypot (SPEC §8) | F3-02 ✅     |
-| `types.ts`          | Enums y tipos de dominio (sincronizados con Prisma por test)                                        | F3-02 ✅     |
-| `contact-safety.ts` | `planContact`: medio seguro, "No iniciar contacto" y acuse (US-03 CA5–CA7)                          | F3-02 ✅     |
-| `reference.ts`      | `toReference(id)` → `C-7F3A9B21` (FR-09)                                                            | F3-04 ✅     |
-| `errors.ts`         | Errores de dominio: `InquiryStoreError`, `InvalidInquiryInputError`                                 | F3-04 ✅     |
-| `repository.ts`     | Acceso a Prisma: consulta + evento `CREATED` en una escritura atómica                               | F3-04 ✅     |
-| `service.ts`        | `createInquiry` ✅ (F3-04); `listInquiries`, `getInquiry`, `changeStatus`, `updateNotes` (F4)       | F3-04, F4    |
-| `actions.ts`        | `submitInquiry` ✅ (F3-05); `updateInquiryStatus`, `updateInquiryNotes` (F4-05)                     | F3-05, F4-05 |
-| `submit-inquiry.ts` | Lógica de `submitInquiry` con dependencias por parámetro (orden de FR-06)                           | F3-05 ✅     |
-| `notifications.ts`  | Aviso al estudio y acuse (texto provisorio con las reglas de privacidad) y su envío                 | F3-05 ✅     |
-| `labels.ts`         | Nombres en español de áreas, urgencias, canales y estados                                           | F3-05 ✅     |
-| `emails/`           | Plantillas React Email: aviso al estudio y acuse al consultante                                     | F3-06        |
-| `components/`       | `InquiryForm` (cliente), `InquiryTable`, `StatusBadge`, …                                           | F3-07, F4-04 |
-| `__tests__/`        | Tests unitarios y de integración de la feature                                                      | F3, F4       |
+| Archivo / carpeta   | Contenido                                                                                                                                     | Tarea        |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `schema.ts`         | `inquirySchema`, `updateStatusSchema`, `updateNotesSchema`, `listFiltersSchema`, honeypot (SPEC §8)                                           | F3-02 ✅     |
+| `types.ts`          | Enums y tipos de dominio (sincronizados con Prisma por test)                                                                                  | F3-02 ✅     |
+| `contact-safety.ts` | `planContact`: medio seguro, "No iniciar contacto" y acuse (US-03 CA5–CA7)                                                                    | F3-02 ✅     |
+| `reference.ts`      | `toReference(id)` → `C-7F3A9B21` (FR-09)                                                                                                      | F3-04 ✅     |
+| `errors.ts`         | Errores de dominio: `InquiryStoreError`, `InvalidInquiryInputError`                                                                           | F3-04 ✅     |
+| `repository.ts`     | Acceso a Prisma: consulta + evento `CREATED` en una escritura atómica                                                                         | F3-04 ✅     |
+| `service.ts`        | `createInquiry` ✅ (F3-04); `listInquiries`, `getInquiry`, `changeStatus`, `updateNotes` (F4)                                                 | F3-04, F4    |
+| `actions.ts`        | `submitInquiry` ✅ (F3-05); `updateInquiryStatus`, `updateInquiryNotes` (F4-05)                                                               | F3-05, F4-05 |
+| `submit-inquiry.ts` | Lógica de `submitInquiry` con dependencias por parámetro (orden de FR-06)                                                                     | F3-05 ✅     |
+| `notifications.ts`  | Aviso al estudio y acuse (texto provisorio con las reglas de privacidad) y su envío                                                           | F3-05 ✅     |
+| `labels.ts`         | Nombres en español de áreas, urgencias, canales y estados                                                                                     | F3-05 ✅     |
+| `emails/`           | Plantillas React Email: aviso al estudio (`new-inquiry-email.tsx`) y acuse (`inquiry-receipt-email.tsx`); `render.ts` las pasa a HTML y texto | F3-06 ✅     |
+| `components/`       | `InquiryForm` (cliente), `InquiryTable`, `StatusBadge`, …                                                                                     | F3-07, F4-04 |
+| `__tests__/`        | Tests unitarios y de integración de la feature                                                                                                | F3, F4       |
 
 ## Reglas de validación (`schema.ts`)
 
@@ -56,9 +56,20 @@ Orden (FR-06, de lo más barato a lo más caro):
 3. **Validación** con `inquirySchema` → `VALIDATION` con los errores por campo.
 4. **Turnstile** (token `cf-turnstile-response`) → `CAPTCHA_FAILED`. Si Cloudflare no responde, también, pero con un mensaje que ofrece WhatsApp (ADR-0013).
 5. **`createInquiry`** con el hash de la IP → si la base falla, `INTERNAL`.
-6. **Mails con `after()`**, después de responder: el aviso al estudio siempre, y el acuse solo si el email es privado. Un fallo se loguea con el `inquiryId` y la consulta ya está guardada (FR-08).
+6. **Mails con `after()`**, después de responder: el aviso al estudio siempre, y el acuse solo si el email es privado (ver "Mails"). Un fallo se loguea con el `inquiryId` y la consulta ya está guardada (FR-08).
 
 `actions.ts` solo lee la IP de los headers y arma las dependencias reales. Toda la lógica está en `submit-inquiry.ts`, y sus tests cubren cada rama con fakes, incluido que ningún log tenga datos personales.
+
+## Mails (`emails/`)
+
+- **Aviso al estudio** (`new-inquiry-email.tsx`):
+  - Arriba, destacado: "Contactar por: …" (el medio seguro según `planContact`) o **"NO INICIAR CONTACTO"**.
+  - Después: referencia, nombre, área, urgencia, canal preferido, si es seguro contactarla y si el email es privado, y el botón al panel.
+  - **Nunca el mensaje.**
+- **Acuse** (`inquiry-receipt-email.tsx`): solo el nombre, la referencia y la firma (`siteConfig.shortName`). Sin área, urgencia, especialidad, mensaje ni links. Sale solo si el email es privado.
+- **Textos** en `src/content/emails.ts`; los estilos van en línea (`styles.ts`), con los colores de la marca y fuentes del sistema.
+- **Preview:** `npm run email:dev` y abrí `http://localhost:3001`. Cada plantilla tiene datos de ejemplo ficticios en `PreviewProps`.
+- **Tests:** `__tests__/emails.test.tsx` revisa el contenido en el HTML y en el texto plano. Si agregás un dato al acuse, el test de neutralidad tiene que seguir pasando para las 6 áreas.
 
 ## Medio seguro (`contact-safety.ts`)
 
