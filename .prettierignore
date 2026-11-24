@@ -5,6 +5,7 @@ build/
 node_modules/
 package-lock.json
 next-env.d.ts
+src/generated/
 
 # Test artifacts
 coverage/

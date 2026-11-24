@@ -1,0 +1,112 @@
+// Data model (SPEC §7, ADR-0002, ADR-0012).
+//
+// Prisma 7: the connection URLs are not set here. The CLI (migrations) reads DIRECT_URL from
+// prisma.config.ts, and the app connects through the pooler (DATABASE_URL) in src/lib/db.ts.
+// Every table needs Row Level Security enabled in a migration (checked by prisma/__tests__/rls.test.ts).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PracticeArea {
+  SUCCESSION
+  DIVORCE
+  CHILD_SUPPORT
+  PARENTING
+  AGREEMENTS
+  OTHER
+}
+
+enum Urgency {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum ContactChannel {
+  WHATSAPP
+  PHONE
+  EMAIL
+}
+
+enum InquiryStatus {
+  NEW
+  IN_REVIEW
+  CONTACTED
+  CLOSED
+  DISCARDED
+}
+
+enum InquiryEventType {
+  CREATED
+  STATUS_CHANGED
+  NOTES_UPDATED
+}
+
+enum StaffRole {
+  ADMIN
+}
+
+model Inquiry {
+  id                   String         @id @default(uuid()) @db.Uuid
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+  fullName             String         @map("full_name") @db.VarChar(120)
+  email                String         @db.VarChar(254)
+  phone                String?        @db.VarChar(30)
+  area                 PracticeArea
+  urgency              Urgency
+  message              String         @db.VarChar(2000)
+  preferredChannel     ContactChannel @map("preferred_channel")
+  /// US-03 CA6. Null when the preferred channel is EMAIL.
+  safeToContact        Boolean?       @map("safe_to_contact")
+  /// US-03 CA7.
+  emailIsPrivate       Boolean        @map("email_is_private")
+  consentAt            DateTime       @map("consent_at")
+  privacyPolicyVersion String         @map("privacy_policy_version") @db.VarChar(20)
+  status               InquiryStatus  @default(NEW)
+  internalNotes        String?        @map("internal_notes") @db.VarChar(5000)
+  /// HMAC-SHA256 of the IP (NFR-SEC-06). Never the raw IP.
+  ipHash               String?        @map("ip_hash") @db.VarChar(64)
+  /// utm_source or origin.
+  source               String?        @db.VarChar(100)
+  events               InquiryEvent[]
+
+  @@index([status, createdAt])
+  @@index([area, createdAt])
+  @@index([createdAt])
+  @@map("inquiries")
+}
+
+model InquiryEvent {
+  id         String           @id @default(uuid()) @db.Uuid
+  inquiryId  String           @map("inquiry_id") @db.Uuid
+  inquiry    Inquiry          @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  type       InquiryEventType
+  fromStatus InquiryStatus?   @map("from_status")
+  toStatus   InquiryStatus?   @map("to_status")
+  /// StaffMember.id. Null for CREATED.
+  actorId    String?          @map("actor_id") @db.Uuid
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([inquiryId, createdAt])
+  @@map("inquiry_events")
+}
+
+model StaffMember {
+  id         String    @id @default(uuid()) @db.Uuid
+  /// auth.users.id in Supabase.
+  authUserId String    @unique @map("auth_user_id") @db.Uuid
+  email      String    @unique @db.VarChar(254)
+  fullName   String    @map("full_name") @db.VarChar(120)
+  role       StaffRole @default(ADMIN)
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("staff_members")
+}

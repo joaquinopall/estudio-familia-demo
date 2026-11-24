@@ -16,6 +16,10 @@ export default function config(phase: string): NextConfig {
     partialPrefetching: true,
     // Do not advertise the framework (X-Powered-By: Next.js).
     poweredByHeader: false,
+    // Supabase's root CA, read at runtime by src/lib/db.ts to verify the database TLS.
+    outputFileTracingIncludes: {
+      "/**": ["./prisma/certs/supabase-ca.crt"],
+    },
     turbopack: {
       rules: {
         "*.css": {
