@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.17 (24/11/2026) |
+| Versión | 1.18 (24/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -194,8 +194,10 @@ src/
     db-tls.ts                    # TLS verificado contra la CA de Supabase (app y CLI de Prisma)
     supabase/server.ts           # cliente SSR (cookies)
     supabase/client.ts           # cliente browser (solo si hace falta)
-    ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock
-    adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter
+    ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock (sin excepciones, ADR-0013)
+    ports/fakes/                 # fakes en memoria, solo para tests
+    adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter, systemClock
+    adapters/index.ts            # raíz de composición: getEmailSender(), getCaptchaVerifier(), getRateLimiter(), getClock()
     action-result.ts             # tipo ActionResult + helpers
     utils.ts                     # cn() (lo genera shadcn)
     whatsapp.ts                  # buildWhatsAppUrl (FR-13)
@@ -212,6 +214,7 @@ src/
     seo/app-icon.tsx             # dibuja los íconos de la pestaña y de inicio
   config/
     site.config.ts
+    rate-limits.ts               # límites anti-abuso (§8.2)
   content/
     home.ts                      # textos del inicio (hero, pasos, títulos de sección)
     area-pages.ts                # textos de /areas y rótulos de las páginas de área
@@ -395,7 +398,9 @@ Etiquetas de interfaz:
 - Rate limit de consultas: **5 por IP cada 10 minutos** y **3 por email cada hora**.
 - Rate limit de login: **5 intentos por IP cada 15 minutos**.
 - Turnstile verificado del lado del servidor con `TURNSTILE_SECRET_KEY`, IP y hostname esperado.
-- En dev, test y CI se usan las claves de prueba oficiales de Turnstile.
+- En dev, test, CI y Preview de Vercel se usan las claves de prueba oficiales de Turnstile; las reales, solo en Production (ADR-0013).
+- Si un servicio no responde (ADR-0013): con el rate limit caído, se deja pasar y se registra en el log; con Turnstile caído, se rechaza (`CAPTCHA_FAILED`).
+- Las claves del rate limit son hashes: Upstash nunca recibe un email ni una IP.
 
 ---
 
@@ -607,3 +612,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 23/11/2026 | 1.15 | FR-03: `site.config.ts` suma el monograma del ícono. §6.2: `icon.tsx`, `apple-icon.tsx` y `lib/seo/app-icon.tsx` reemplazan el `favicon.ico` de Next.js. §11.5: los teléfonos de ayuda se definen en un solo lugar. | [tu nombre] |
 | 24/11/2026 | 1.16 | F3-01 (ADR-0012). §7: con Prisma 7 las URLs van en `prisma.config.ts` (`DIRECT_URL`) y en `lib/db.ts` (`DATABASE_URL`), no en el `datasource`. RLS en todas las tablas de `public`, incluida `_prisma_migrations`. §9: conexiones con TLS verificado contra la CA de Supabase, sin parámetros `ssl*` en las URLs, y "Enforce SSL" activado en Supabase. §6.2: `prisma.config.ts`, `lib/db-tls.ts`, `src/generated/prisma/`, `prisma/__tests__/` y `prisma/certs/`. | [tu nombre] |
 | 24/11/2026 | 1.17 | F3-02. §8.1: mensaje para un canal faltante o inválido ("Elegí cómo preferís que te contactemos"); `fullName` acepta el apóstrofo tipográfico `’` y lo guarda como `'`; todos los errores salen a la vez; el honeypot lo revisa la action. §6.2: `contact-safety.ts` (regla de medio seguro) y `updateNotesSchema`. Política de privacidad 1.1 (`safeToContact`, `emailIsPrivate` y acuse solo a emails privados). | [tu nombre] |
+| 24/11/2026 | 1.18 | F3-03 (ADR-0013). §6.2: `ports/fakes/`, `adapters/index.ts` y `config/rate-limits.ts`. §8.2: claves de prueba de Turnstile también en Preview; con el rate limit caído se deja pasar, con Turnstile caído se rechaza; las claves del rate limit son hashes. | [tu nombre] |

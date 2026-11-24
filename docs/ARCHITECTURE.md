@@ -60,7 +60,8 @@ flowchart LR
 | `src/lib/logger.ts`           | ✅ F1-04    | Logger JSON sin datos personales.                                                              |
 | `src/lib/security/headers.ts` | ✅ F1-06    | Headers de seguridad y CSP ([ADR 0007](adr/0007-csp-report-only-sin-nonces.md)).               |
 | `src/lib/whatsapp.ts`, `utils.ts` | ✅ F1-07 | Link de WhatsApp (FR-13) y `cn()`.                                                           |
-| `src/lib/ports/`, `adapters/` | ⏳ F3       | Interfaces y adapters de Resend, Turnstile y Upstash.                                          |
+| `src/lib/ports/`, `adapters/` | ✅ F3-03    | Ports sin excepciones, adapters de Resend, Turnstile y Upstash, y fakes para tests ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)). |
+| `src/config/rate-limits.ts`   | ✅ F3-03    | Límites anti-abuso de SPEC §8.2.                                                               |
 | `src/lib/db.ts`, `db-tls.ts`  | ✅ F3-01    | `getDb()`: cliente Prisma único y lazy, por el pooler, con TLS verificado ([ADR 0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)). |
 | `src/lib/supabase/`           | ⏳ F4       | Clientes de Supabase Auth.                                                                     |
 | `src/generated/prisma/`       | ✅ F3-01    | Cliente generado por `prisma generate` (fuera de git).                                         |
@@ -72,6 +73,14 @@ flowchart LR
 ### Arranque y validación de entorno
 
 Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se validan todas las variables con los schemas de `src/lib/env.schema.ts`. Si falta una obligatoria o tiene formato inválido, el proceso termina con un mensaje que nombra la variable, nunca su valor. En runtime, el código lee las variables desde `env.ts` (servidor, con `server-only`) o `env.public.ts` (cliente). Ver [ADR 0006](adr/0006-validacion-de-variables-de-entorno.md).
+
+### Servicios externos (F3-03)
+
+- **Ports** (`src/lib/ports`): `EmailSender`, `CaptchaVerifier`, `RateLimiter` y `Clock`. No tiran excepciones por fallas del proveedor: devuelven `unavailable`, `invalid` o `{ ok: false }`, y la action decide.
+- **Adapters** (`src/lib/adapters`, `server-only`): Resend, Turnstile (`siteverify` en el servidor, con hostname verificado) y Upstash (ventana deslizante; su timeout cuenta como `unavailable`). `index.ts` es la raíz de composición: crea cada adapter cuando se usa, leyendo `env`.
+- **Flujo:** Server Action → toma los ports de `lib/adapters` → se los pasa al service. Los services y sus tests solo conocen los ports, y en tests usan los fakes de `lib/ports/fakes`.
+- **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
+- **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
 
 ### Acceso a datos (F3-01)
 
@@ -122,5 +131,6 @@ sequenceDiagram
 | [0010](adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)         | JSON-LD seguro y noindex en modo demo                          | Aceptada                   |
 | [0011](adr/0011-modo-demo-por-defecto.md) | Modo demo encendido por defecto | Aceptada |
 | [0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md) | Prisma 7 con adapter `pg`, `prisma.config.ts`, TLS verificado y override de `effect` | Aceptada |
+| [0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md) | Ports sin excepciones; rate limit caído deja pasar, Turnstile caído rechaza | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).
