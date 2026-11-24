@@ -63,6 +63,14 @@ Los tests manuales cubren lo que la automatización no ve bien: cómo se siente 
 
 Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fecha, el entorno (local, preview con su URL o producción; navegador y dispositivo), el resultado (✅ pasa / ❌ falla) y notas. Si falla, abrí un issue o una tarea con el detalle y el link a la fila.
 
+### Ejecuciones pendientes
+
+Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando se cumple la condición, se ejecutan, se registra el resultado en su tabla y se saca la fila de acá.
+
+| Caso  | Qué falta correr                                     | Cuándo                                                                                                             | Por qué quedó pendiente                                         |
+| ----- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| MT-23 | Pasos 1 a 5 y 7 en **dev**; el caso completo en **prod** | Dev: en **F4-01**, apenas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` estén en `.env.local`. Prod: en **F5-08**, después de `db:deploy`. | En F3-01 no estaban cargadas la URL de la API ni la clave pública (son de F4). |
+
 ### Plantilla
 
 ```markdown
@@ -112,7 +120,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-20 | SEO técnico y datos estructurados                       | F2-06         | **Detallado** |
 | MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
-| MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** |
+| MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** · sin ejecutar (pendiente: F4-01 y F5-08) |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -434,6 +442,15 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - **Objetivo:** que las migraciones estén aplicadas y que nadie pueda leer ni escribir las consultas con la clave pública de Supabase, que viaja en el navegador.
 - **Requisitos:** NFR-SEC-03, ADR-0002, SPEC §7.
 - **Precondiciones:** proyecto de Supabase (dev, o prod después de `db:deploy`) con las migraciones aplicadas. Su URL (`https://<project-ref>.supabase.co`) y su clave pública (publishable o anon), de Settings → API. **Nunca uses la service role key**: esa saltea RLS.
+
+> **Pendiente de ejecutar** (ver [Ejecuciones pendientes](#ejecuciones-pendientes)).
+>
+> - **Dev:** correr los pasos 1 a 5 y 7 en **F4-01**, apenas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` estén en `.env.local`. Es la única prueba de que la API pública de Supabase, la que usa el navegador, no puede leer ni escribir las consultas. Conviene hacerla antes de que el panel use Supabase Auth.
+> - **Prod:** el caso completo en **F5-08**, después de `db:deploy`.
+> - **Ya verificado en F3-01 (24/11/2026, dev),** sin la API pública, por eso no cuenta como ejecución del caso:
+>   - el paso 6: migraciones aplicadas y en sync;
+>   - en el catálogo de Postgres: RLS activado con 0 políticas en las 4 tablas;
+>   - Enforce SSL: una conexión sin cifrar es rechazada (`ESSLREQUIRED`).
 
 **Pasos**
 

@@ -106,7 +106,7 @@ Postgres de Supabase con Prisma 7 ([ADR 0002](docs/adr/0002-supabase-con-prisma-
 - **Cambiar el modelo:** editá `prisma/schema.prisma` y corré `npm run db:migrate -- --name <cambio>`. Commiteá la carpeta de la migración. Si agregás una tabla, activale RLS en la misma migración: `prisma/__tests__/rls.test.ts` falla si falta.
 - **SQL a mano** (como RLS): `npm run db:migrate -- --create-only --name <cambio>`, editá el `migration.sql` y volvé a correr `npm run db:migrate`.
 - **Nunca** `prisma db push` ni `prisma migrate reset` contra una base compartida (CLAUDE.md §5).
-- **RLS:** todas las tablas de `public`, incluida `_prisma_migrations`, tienen RLS activado y sin políticas: la API de Supabase no las puede leer (NFR-SEC-03). Cómo verificarlo: MT-23 en [`docs/TESTING.md`](docs/TESTING.md).
+- **RLS:** todas las tablas de `public`, incluida `_prisma_migrations`, tienen RLS activado y sin políticas: la API de Supabase no las puede leer (NFR-SEC-03). Cómo verificarlo: MT-23 en [`docs/TESTING.md`](docs/TESTING.md). **Pendiente de ejecutar** con la clave pública: en F4-01 (dev) y en F5-08 (prod).
 - **Código:** solo los repositories usan `getDb()` (`src/lib/db.ts`). El cliente no se conecta hasta la primera consulta, así que el build y los tests no tocan la base.
 - **Cliente generado:** vive en `src/generated/prisma` (fuera de git). Si `typecheck` no encuentra `@/generated/prisma/client`, corré `npm run db:generate`.
 

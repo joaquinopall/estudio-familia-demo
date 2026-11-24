@@ -4,6 +4,10 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-01 · MT-23 pendiente (después de #23)
+
+- **Documentado:** MT-23 queda sin ejecutar hasta tener la URL de la API y la clave pública de Supabase en `.env.local`: pasos 1 a 5 y 7 en dev en F4-01, y el caso completo en prod en F5-08. Nueva sección "Ejecuciones pendientes" en `docs/TESTING.md`, con lo que ya se verificó en F3-01 sin la API pública.
+
 ### F3-01 · Supabase y Prisma
 
 - **Agregado:** Prisma 7.10.1 con `@prisma/adapter-pg` (ADR-0012). `prisma/schema.prisma` con el modelo de SPEC §7, `prisma.config.ts` (carga `.env*` como Next y usa `DIRECT_URL` para migrar) y `src/lib/db.ts` (`getDb()`: cliente único y lazy, por el pooler con `DATABASE_URL`).
