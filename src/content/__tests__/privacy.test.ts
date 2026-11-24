@@ -53,6 +53,15 @@ describe("privacyPolicy (US-07, Ley 25.326)", () => {
     expect(allText).toMatch(/eliminemos/);
   });
 
+  it("explains safe contact and the receipt only to a private email (v1.1, US-03 CA5–CA7)", () => {
+    expect(Number(privacyPolicy.version)).toBeGreaterThanOrEqual(1.1);
+    expect(allText).toMatch(/si es seguro contactarte por ese medio/);
+    expect(allText).toMatch(/si tu email es privado/i);
+    expect(allText).toMatch(/acuse se envía solo si nos indicaste que tu email es privado/);
+    expect(allText).toMatch(/no menciona el motivo de tu consulta/);
+    expect(allText).toMatch(/Si no hay ningún medio seguro, no te contactamos nosotros/);
+  });
+
   it("names every provider that processes data on behalf of the firm", () => {
     for (const provider of ["Vercel", "Supabase", "Resend", "Cloudflare", "Upstash"]) {
       expect(allText).toContain(provider);
