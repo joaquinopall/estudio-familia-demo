@@ -1,12 +1,27 @@
 # `src/lib/ports`
 
-Interfaces (puertos) de los servicios externos que usan los services (SPEC §6.1, NFR-ESC-02). Los services dependen de estas interfaces, nunca de un SDK concreto, así se pueden cambiar de proveedor o simular en tests.
+Interfaces (puertos) de los servicios externos que usan los services (SPEC §6.1, NFR-ESC-02). Los services dependen de estas interfaces, nunca de un SDK concreto, así se puede cambiar de proveedor o simularlo en tests.
 
-| Puerto            | Para qué                               | Adapter real (`src/lib/adapters`) |
-| ----------------- | -------------------------------------- | --------------------------------- |
-| `EmailSender`     | Enviar mails                           | `ResendEmailSender`               |
-| `CaptchaVerifier` | Verificar el token anti-bots           | `TurnstileVerifier`               |
-| `RateLimiter`     | Limitar intentos por clave (IP, email) | `UpstashRateLimiter`              |
-| `Clock`           | Obtener la hora actual (testeable)     | reloj del sistema                 |
+| Puerto            | Archivo               | Para qué                                | Adapter real (`src/lib/adapters`) |
+| ----------------- | --------------------- | --------------------------------------- | --------------------------------- |
+| `EmailSender`     | `email-sender.ts`     | Enviar mails                            | `ResendEmailSender`               |
+| `CaptchaVerifier` | `captcha-verifier.ts` | Verificar el token anti-bots (servidor) | `TurnstileVerifier`               |
+| `RateLimiter`     | `rate-limiter.ts`     | Limitar intentos por clave              | `UpstashRateLimiter`              |
+| `Clock`           | `clock.ts`            | Obtener la hora actual (testeable)      | `systemClock`                     |
 
-Se crean en la tarea **F3-03**, junto con fakes para los tests.
+## Contrato ([ADR-0013](../../../docs/adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md))
+
+- **Ningún port tira excepciones por fallas del proveedor:** devuelven un resultado (`unavailable`, `invalid`, `{ ok: false }`) y el caller decide qué hacer.
+- **Claves del rate limit:** siempre un hash hexadecimal de 64 caracteres, nunca un email ni una IP. Si no, `InvalidRateLimitKeyError`.
+- Las reglas del rate limit están en [`src/config/rate-limits.ts`](../../config/rate-limits.ts).
+
+## Fakes para tests (`fakes/`)
+
+`FixedClock`, `FakeEmailSender` (guarda los mails y puede fallar), `FakeCaptchaVerifier` (respuesta configurable) y `FakeRateLimiter` (ventana deslizante en memoria y caída simulada). **Solo para tests:** nunca los importes desde el código de la app.
+
+```ts
+const clock = new FixedClock("2026-11-24T12:00:00Z");
+const rateLimiter = new FakeRateLimiter(clock);
+const emailSender = new FakeEmailSender();
+emailSender.failWith("network_error"); // para el caso de mail caído (FR-08)
+```
