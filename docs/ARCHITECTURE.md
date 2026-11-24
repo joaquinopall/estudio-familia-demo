@@ -53,7 +53,8 @@ flowchart LR
 | `src/content/`                | ✅ F2-07    | Áreas, preguntas, textos de cada página y de error, ayuda urgente y privacidad como datos.     |
 | `src/lib/seo/`                | ✅ F2-07    | Metadata, rutas del sitemap, datos estructurados, `<JsonLd>` seguro e íconos.                  |
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
-| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04). ⏳ actions, mails, componentes y lo del panel. |
+| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` y mails provisorios (F3-05). ⏳ plantillas de mail, formulario y lo del panel. |
+| `src/lib/security/ip.ts`      | ✅ F3-05    | IP del visitante (`x-forwarded-for` en Vercel) y HMAC-SHA256 con `IP_HASH_SALT`.               |
 | `src/features/auth/`          | ⏳ F4       | DAL (`requireStaff`), actions de login y repositorio de staff.                                 |
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
 | `src/lib/action-result.ts`    | ✅ F1-04    | Contrato `ActionResult<T>` de las Server Actions (SPEC §6.5).                                  |
@@ -81,6 +82,31 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Flujo:** Server Action → toma los ports de `lib/adapters` → se los pasa al service. Los services y sus tests solo conocen los ports, y en tests usan los fakes de `lib/ports/fakes`.
 - **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
 - **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
+
+### Enviar una consulta (F3-05)
+
+`submitInquiry` (`features/inquiries/actions.ts`) lee la IP de `x-forwarded-for`, arma las dependencias reales y delega en `submit-inquiry.ts`:
+
+```mermaid
+flowchart LR
+  F[FormData] --> H{Honeypot}
+  H -- lleno --> OKF[OK falso, sin guardar]
+  H -- vacío --> R{Rate limit IP y email}
+  R -- limitado --> E1[RATE_LIMITED]
+  R -- caído --> V
+  R -- ok --> V{Zod}
+  V -- error --> E2[VALIDATION]
+  V -- ok --> T{Turnstile}
+  T -- inválido o caído --> E3[CAPTCHA_FAILED]
+  T -- ok --> S[createInquiry]
+  S -- error --> E4[INTERNAL]
+  S -- ok --> OK["OK { reference, doNotContact }"]
+  OK -. "after()" .-> M[Aviso al estudio + acuse si el email es privado]
+```
+
+- La respuesta incluye `doNotContact` para que la confirmación no prometa contacto sin un medio seguro (US-03 CA3), aun sin JavaScript.
+- Los mails salen después de responder. Si fallan, se loguea con el `inquiryId` y la consulta ya está guardada (FR-08). El texto es provisorio hasta F3-06.
+- Logs: `inquiry.created`, `inquiry.honeypot`, `inquiry.rate_limited`, `rate_limit.unavailable`, `rate_limit.no_client_ip`, `captcha.invalid`, `captcha.unavailable`, `inquiry.store_failed`, `inquiry.firm_email_failed`, `inquiry.receipt_email_failed` y `inquiry.emails_failed`. Llevan IDs y códigos, nunca datos personales.
 
 ### Guardar una consulta (F3-04)
 
@@ -119,7 +145,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Enviar consulta (F3):** honeypot → rate limit → validación → Turnstile → `createInquiry` (consulta + evento `CREATED` en una transacción) → respuesta con número de referencia → mails con `after()` (aviso con los datos de contacto seguro; acuse neutro, solo si `emailIsPrivate`: SPEC US-03 y US-05). Diagrama en SPEC §6.3; decisiones en [ADR 0004](adr/0004-anti-abuso-honeypot-rate-limit-turnstile.md) y [ADR 0005](adr/0005-mails-despues-de-responder.md).
+- **Formulario de consulta (F3-07):** componente cliente con `useActionState(submitInquiry, null)` y Turnstile. La action ya existe (ver "Enviar una consulta").
 - **Panel admin (F4):** `proxy` refresca la sesión y redirige `/admin/*` sin sesión; el layout protegido y cada action llaman a `requireStaff()`, que verifica el usuario contra Supabase Auth y busca un `StaffMember` activo. Detalle en SPEC §6.4; datos en [ADR 0002](adr/0002-supabase-con-prisma-y-rls.md).
 
 ## Decisiones vigentes

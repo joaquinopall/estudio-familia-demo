@@ -16,7 +16,7 @@ Reglas:
 | [0002](0002-supabase-con-prisma-y-rls.md)                    | Supabase (Postgres + Auth) con Prisma, RLS sin políticas       | Aceptada (datos en F3-01; Auth en F4) |
 | [0003](0003-un-tenant-por-instalacion.md)                    | Un tenant por instalación                                      | Aceptada                       |
 | [0004](0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (adapters en F3-03; orden en F3-05) |
-| [0005](0005-mails-despues-de-responder.md)                   | Mails después de responder, sin el mensaje completo            | Aceptada (se implementa en F3) |
+| [0005](0005-mails-despues-de-responder.md)                   | Mails después de responder, sin el mensaje completo            | Aceptada (envío en F3-05; plantillas en F3-06) |
 | [0006](0006-validacion-de-variables-de-entorno.md)           | Validación de variables de entorno al arrancar                 | Aceptada                       |
 | [0007](0007-csp-report-only-sin-nonces.md)                   | CSP en report-only y sin nonces                                | Aceptada (se revisa en F5-01)  |
 | [0008](0008-politica-de-npm-audit-en-ci.md)                  | Política de `npm audit` en la CI                               | Aceptada                       |

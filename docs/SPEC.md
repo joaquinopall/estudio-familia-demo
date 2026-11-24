@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.19 (24/11/2026) |
+| Versión | 1.20 (24/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -179,7 +179,10 @@ src/
       repository.ts              # Prisma (implementa InquiryRepository)
       reference.ts               # toReference: C-XXXXXXXX (FR-09)
       errors.ts                  # InquiryStoreError, InvalidInquiryInputError
-      actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes
+      actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes ("use server", finas)
+      submit-inquiry.ts          # lógica de submitInquiry con dependencias por parámetro (FR-06)
+      notifications.ts           # contenido y envío de los mails de una consulta nueva
+      labels.ts                  # nombres en español de los enums (§8.1, FR-11)
       emails/                    # React Email: NewInquiryEmail, InquiryReceiptEmail
       components/                # InquiryForm (client), InquiryTable, StatusBadge, ...
       __tests__/
@@ -289,7 +292,7 @@ type ActionResult<T> =
 
 | Action | Input | Output OK | Errores posibles |
 |---|---|---|---|
-| `submitInquiry(prev, formData)` | campos de §8.1 + `cf-turnstile-response` + `website` (honeypot) | `{ reference: string }` | VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, INTERNAL |
+| `submitInquiry(prev, formData)` | campos de §8.1 + `cf-turnstile-response` + `website` (honeypot) | `{ reference: string; doNotContact: boolean }` (`doNotContact`: sin medio seguro, la confirmación no promete contacto, US-03 CA3) | VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, INTERNAL |
 | `updateInquiryStatus({ id, status })` | UUID + enum | `{ status }` | UNAUTHORIZED, FORBIDDEN, VALIDATION, NOT_FOUND, INTERNAL |
 | `updateInquiryNotes({ id, notes })` | UUID + string ≤ 5000 | `{ updatedAt }` | ídem |
 | `signIn(prev, formData)` | email + password | redirect `/admin` | VALIDATION, UNAUTHORIZED (mensaje genérico), RATE_LIMITED |
@@ -427,7 +430,7 @@ Etiquetas de interfaz:
 - **No se usa la service role key de Supabase** (mínimo privilegio): la DB va por Prisma y Auth por la clave pública.
 - **Conexiones a la DB cifradas y verificadas:** TLS contra la CA de Supabase (`prisma/certs/supabase-ca.crt`), configurado en el código (`lib/db-tls.ts`). `DATABASE_URL` y `DIRECT_URL` no llevan parámetros `ssl*`. Cada proyecto de Supabase tiene activado "Enforce SSL on incoming connections" (ADR-0012).
 - **Entornos:** `development` (local), `preview` (Vercel Preview) y `production`. Dos proyectos de Supabase: **dev** (usado por local y preview) y **prod**.
-- `env.ts` falla el build si falta una variable obligatoria.
+- `env.ts` falla el build si falta una variable obligatoria. Desde F3-05 son obligatorias todas las de la tabla salvo `DIRECT_URL` (solo la CLI de Prisma) y las de Supabase Auth (F4). La CI usa valores ficticios.
 
 ---
 
@@ -616,3 +619,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 24/11/2026 | 1.17 | F3-02. §8.1: mensaje para un canal faltante o inválido ("Elegí cómo preferís que te contactemos"); `fullName` acepta el apóstrofo tipográfico `’` y lo guarda como `'`; todos los errores salen a la vez; el honeypot lo revisa la action. §6.2: `contact-safety.ts` (regla de medio seguro) y `updateNotesSchema`. Política de privacidad 1.1 (`safeToContact`, `emailIsPrivate` y acuse solo a emails privados). | [tu nombre] |
 | 24/11/2026 | 1.18 | F3-03 (ADR-0013). §6.2: `ports/fakes/`, `adapters/index.ts` y `config/rate-limits.ts`. §8.2: claves de prueba de Turnstile también en Preview; con el rate limit caído se deja pasar, con Turnstile caído se rechaza; las claves del rate limit son hashes. | [tu nombre] |
 | 24/11/2026 | 1.19 | F3-04. §6.2: `reference.ts`, `errors.ts`; el service declara `InquiryRepository` y el repository lo implementa. §13: tests de integración de repositories con `npm run test:db` (proyecto `db` de Vitest), fuera de la CI hasta F5-06. | [tu nombre] |
+| 24/11/2026 | 1.20 | F3-05. §6.5: `submitInquiry` devuelve también `doNotContact`. §9: las variables de la Fase 3 (salvo `DIRECT_URL`) son obligatorias, con valores ficticios en la CI. §6.2: `submit-inquiry.ts`, `notifications.ts` y `labels.ts` en `features/inquiries`. | [tu nombre] |

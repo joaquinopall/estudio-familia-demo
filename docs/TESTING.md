@@ -35,6 +35,7 @@ Detalles de los e2e:
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas, regla de medio seguro, referencia y service con un repository falso (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
+| Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repository de consultas contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
@@ -48,7 +49,7 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - Preferí consultas por rol y nombre accesible (`getByRole("button", { name: "Menú" })`): si un test no encuentra un elemento así, probablemente un lector de pantalla tampoco.
 - Un bug arreglado = un test que lo reproduce.
 - Cobertura objetivo: 80% en `src/features/**` (services, schemas y actions), a medida que existan.
-- Vitest no carga `.env.local`: `vitest.config.mts` fija valores públicos de prueba (`NEXT_PUBLIC_SITE_URL` y modo demo prendido). Nunca pongas secretos ahí; para otro valor, usá `vi.stubEnv`.
+- Vitest no carga `.env.local`: `vitest.config.mts` fija valores públicos de prueba (`NEXT_PUBLIC_SITE_URL` y modo demo prendido) y, **solo en el proyecto `unit`**, valores ficticios para las variables obligatorias desde F3-05 (nada se conecta a ellos). Nunca pongas secretos ahí; para otro valor, usá `vi.stubEnv`.
 - En tests, `server-only` se reemplaza por un módulo vacío (`tests/stubs/server-only.ts`).
 - **Servicios externos:** los tests nunca llaman a Resend, Turnstile ni Upstash. Los services y las actions usan los fakes de `src/lib/ports/fakes` (`FakeEmailSender`, `FakeCaptchaVerifier`, `FakeRateLimiter`, `FixedClock`); los adapters se testean con clientes y `fetch` simulados. Las claves del rate limit en los tests tienen que ser hashes de 64 caracteres (por ejemplo `"a".repeat(64)`).
 
@@ -118,8 +119,8 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-01 | Navegar todas las páginas en un celular real            | F2-08         | **Detallado** |
 | MT-02 | Enviar una consulta completa                            | F3-09         | Pendiente     |
 | MT-03 | Errores de validación de cada campo                     | F3-02         | **Detallado** · se ejecuta en F3-09 |
-| MT-04 | Exceder el rate limit                                   | F3-09         | Pendiente     |
-| MT-05 | Honeypot completado (no guarda nada)                    | F3-09         | Pendiente     |
+| MT-04 | Exceder el rate limit                                   | F3-05         | **Detallado** · se ejecuta en F3-09 |
+| MT-05 | Honeypot completado (no guarda nada)                    | F3-05         | **Detallado** · se ejecuta en F3-09 |
 | MT-06 | Mails recibidos: estudio y acuse                        | F3-09         | Pendiente     |
 | MT-07 | Login y logout del admin                                | F4-08         | Pendiente     |
 | MT-08 | Entrar a `/admin` sin sesión                            | F4-08         | Pendiente     |
@@ -129,7 +130,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-12 | Lighthouse mobile en 3 páginas                          | F2-07         | **Detallado** |
 | MT-13 | Banner de modo demo                                     | F1-08         | **Detallado** |
 | MT-14 | Botón de WhatsApp                                       | F1-08         | **Detallado** |
-| MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-09         | Pendiente     |
+| MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-05         | **Detallado** · se ejecuta en F3-09 |
 | MT-16 | Inicio responsive (360 a 1440 px)                       | F2-02         | **Detallado** |
 | MT-17 | Áreas de práctica: navegación, CTA y 404                | F2-03         | **Detallado** |
 | MT-18 | Nosotros, Preguntas frecuentes y Privacidad             | F2-04         | **Detallado** |
@@ -532,6 +533,78 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 8: "Necesitamos tu consentimiento para responderte"; la casilla nunca viene marcada.
 - Todos los errores de un paso aparecen **a la vez**, no de a uno. Ningún error repite el mensaje ni muestra lo que escribiste. Lo ya escrito no se borra.
 - Paso 9: el lector anuncia los errores y cada campo inválido se lee con su mensaje.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-04 — Exceder el rate limit
+
+- **Objetivo:** que el formulario frene los envíos en ráfaga sin bloquear a otras personas, y que el mensaje se entienda.
+- **Requisitos:** SPEC §8.2, FR-06, ADR-0004, ADR-0013.
+- **Precondiciones:** formulario funcionando (F3-07), en el **preview de Vercel** (en local no hay IP y el límite por IP se saltea). Upstash configurado. Usá emails de prueba tuyos.
+
+**Pasos**
+
+1. Enviá 5 consultas válidas seguidas desde el mismo navegador, cada una con un email distinto.
+2. Enviá una sexta, también con un email nuevo.
+3. Desde otra red (por ejemplo, datos móviles), enviá una con un email nuevo.
+4. Enviá 3 consultas con el **mismo** email, cada una desde una red distinta (o esperá 10 minutos entre la primera tanda y esta). Después, una cuarta con ese email.
+5. En Supabase dev → Table Editor → `inquiries`, contá las consultas nuevas.
+6. En los logs de Vercel, buscá `inquiry.rate_limited`.
+
+**Resultado esperado**
+
+- Paso 2: "Hiciste demasiados intentos seguidos. Esperá unos minutos y volvé a probar." No se guarda.
+- Paso 3: se acepta (el límite es por IP).
+- Paso 4: las 3 primeras se aceptan y la cuarta se rechaza con el mismo mensaje.
+- Paso 5: están solo las aceptadas.
+- Paso 6: aparece `inquiry.rate_limited`, sin IP, email ni nombre.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-05 — Honeypot completado (no guarda nada)
+
+- **Objetivo:** que un bot que completa el campo oculto reciba una respuesta normal, pero sin que se guarde ni se mande nada.
+- **Requisitos:** SPEC §8.1, FR-06, ADR-0004.
+- **Precondiciones:** formulario funcionando (F3-07), en local o en el preview.
+
+**Pasos**
+
+1. Abrí el formulario y, con las DevTools (Elements), buscá el campo `website`. Escribí cualquier cosa en él (si está oculto, quitale el `hidden` o usá la consola: `document.querySelector('[name=website]').value = 'spam'`).
+2. Completá el resto del formulario y envialo.
+3. Revisá Supabase dev → `inquiries`, tu casilla y los logs (de la terminal en local, o de Vercel en el preview).
+4. Probá con el teclado y un lector de pantalla que el campo `website` no se pueda alcanzar.
+
+**Resultado esperado**
+
+- Paso 2: se ve la confirmación con un número de referencia, como en un envío real.
+- Paso 3: no hay ninguna consulta nueva, no llega ningún mail, y el log dice `inquiry.honeypot`.
+- Paso 4: el campo no recibe foco y el lector no lo anuncia.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-15 — Error de mail simulado (la consulta se guarda igual)
+
+- **Objetivo:** que un fallo de Resend no pierda la consulta ni le muestre un error a quien consulta (FR-08).
+- **Requisitos:** FR-08, ADR-0005, NFR-OBS-01.
+- **Precondiciones:** formulario funcionando (F3-07), en **local**.
+
+**Pasos**
+
+1. En `.env.local`, cambiá `RESEND_API_KEY` por un valor inválido (por ejemplo, `re_invalida`). Guardá el valor real para volver a ponerlo.
+2. Reiniciá `npm run dev` y enviá una consulta válida, con el email marcado como privado.
+3. Mirá la respuesta en pantalla, Supabase dev → `inquiries` y los logs de la terminal.
+4. Volvé a poner la API key real y reiniciá.
+
+**Resultado esperado**
+
+- Paso 3: la confirmación aparece normal, con su referencia. La consulta está en `inquiries`, con su evento `CREATED` en `inquiry_events`. En la terminal aparecen `inquiry.firm_email_failed` e `inquiry.receipt_email_failed` con el `inquiryId` y el código de Resend, y sin nombre, email ni mensaje.
+- No llega ningún mail.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

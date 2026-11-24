@@ -1,6 +1,6 @@
 # 0005. Mails después de responder (`after()`), sin el mensaje completo
 
-- **Estado:** Aceptada (se implementa en F3-05 y F3-06; desde SPEC v1.14 el acuse sale solo si el email es privado: US-03 CA5 y CA7)
+- **Estado:** Aceptada (envío con `after()` en F3-05; plantillas en F3-06; desde SPEC v1.14 el acuse sale solo si el email es privado: US-03 CA5 y CA7)
 - **Fecha:** 18/11/2026
 - **Relacionado:** SPEC FR-08, US-05, §10.2 (fuga de datos por mail)
 
