@@ -53,7 +53,7 @@ flowchart LR
 | `src/content/`                | ✅ F2-07    | Áreas, preguntas, textos de cada página y de error, ayuda urgente y privacidad como datos.     |
 | `src/lib/seo/`                | ✅ F2-07    | Metadata, rutas del sitemap, datos estructurados, `<JsonLd>` seguro e íconos.                  |
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
-| `src/features/inquiries/`     | ⏳ F3–F4    | Consultas: schema, service, repository, actions, mails y componentes.                          |
+| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04). ⏳ actions, mails, componentes y lo del panel. |
 | `src/features/auth/`          | ⏳ F4       | DAL (`requireStaff`), actions de login y repositorio de staff.                                 |
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
 | `src/lib/action-result.ts`    | ✅ F1-04    | Contrato `ActionResult<T>` de las Server Actions (SPEC §6.5).                                  |
@@ -81,6 +81,13 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Flujo:** Server Action → toma los ports de `lib/adapters` → se los pasa al service. Los services y sus tests solo conocen los ports, y en tests usan los fakes de `lib/ports/fakes`.
 - **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
 - **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
+
+### Guardar una consulta (F3-04)
+
+- `createInquiryService({ repository, clock, privacyPolicyVersion })`: el service recibe sus dependencias y declara la interfaz `InquiryRepository`. `createPrismaInquiryRepository(getDb())` la implementa: inversión de dependencias, el service no importa Prisma.
+- La consulta y su evento `CREATED` se guardan con una escritura anidada de Prisma, atómica (FR-07). Devuelve el id y la referencia `C-XXXXXXXX` (FR-09).
+- Errores: un fallo de la base sale como `InquiryStoreError`, sin datos personales en el mensaje. Un `ipHash` que no es hash sale como `InvalidInquiryInputError`.
+- La action (F3-05) arma el service con las piezas reales. Los tests usan `FakeInquiryRepository` y `FixedClock`, y el repository se prueba contra Supabase dev (`npm run test:db`).
 
 ### Acceso a datos (F3-01)
 

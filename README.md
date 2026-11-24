@@ -84,7 +84,8 @@ Reglas:
 | `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                 |
 | `npm run format`        | Formatea con Prettier (incluye el orden de clases de Tailwind)                    |
 | `npm run format:check`  | Verifica el formato sin modificar archivos                                        |
-| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida)                         |
+| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)        |
+| `npm run test:db`       | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI |
 | `npm run test:watch`    | Vitest en modo watch                                                              |
 | `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                    |
 | `npm run test:e2e`      | Tests e2e con Playwright contra el build de producción (levanta el servidor solo) |

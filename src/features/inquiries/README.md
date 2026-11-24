@@ -7,8 +7,10 @@ Todo lo relacionado con una consulta (`Inquiry`): el formulario público, el gua
 | `schema.ts`         | `inquirySchema`, `updateStatusSchema`, `updateNotesSchema`, `listFiltersSchema`, honeypot (SPEC §8) | F3-02 ✅     |
 | `types.ts`          | Enums y tipos de dominio (sincronizados con Prisma por test)                                        | F3-02 ✅     |
 | `contact-safety.ts` | `planContact`: medio seguro, "No iniciar contacto" y acuse (US-03 CA5–CA7)                          | F3-02 ✅     |
-| `repository.ts`     | Acceso a Prisma (consulta + evento `CREATED` en transacción)                                        | F3-04        |
-| `service.ts`        | `createInquiry`, `listInquiries`, `getInquiry`, `changeStatus`, `updateNotes`                       | F3-04, F4    |
+| `reference.ts`      | `toReference(id)` → `C-7F3A9B21` (FR-09)                                                            | F3-04 ✅     |
+| `errors.ts`         | Errores de dominio: `InquiryStoreError`, `InvalidInquiryInputError`                                 | F3-04 ✅     |
+| `repository.ts`     | Acceso a Prisma: consulta + evento `CREATED` en una escritura atómica                               | F3-04 ✅     |
+| `service.ts`        | `createInquiry` ✅ (F3-04); `listInquiries`, `getInquiry`, `changeStatus`, `updateNotes` (F4)       | F3-04, F4    |
 | `actions.ts`        | `submitInquiry`, `updateInquiryStatus`, `updateInquiryNotes`                                        | F3-05, F4-05 |
 | `emails/`           | Plantillas React Email: aviso al estudio y acuse al consultante                                     | F3-06        |
 | `components/`       | `InquiryForm` (cliente), `InquiryTable`, `StatusBadge`, …                                           | F3-07, F4-04 |
@@ -20,6 +22,25 @@ Todo lo relacionado con una consulta (`Inquiry`): el formulario público, el gua
 - **Todos los errores salen a la vez** (US-03 CA2), incluidas las reglas que dependen del canal. Para eso cada campo usa **una sola regla con un solo mensaje**, sin `pipe`, `abort` ni `z.stringbool`: un campo "abortado" hace que Zod saltee las reglas condicionales. `schema.test.ts` lo verifica campo por campo; si agregás un campo, sumalo a ese test.
 - Los mensajes están en `INQUIRY_MESSAGES` y no repiten lo que escribió la persona.
 - El honeypot (`website`) no pasa por el schema: la action lo revisa primero con `isHoneypotFilled` (FR-06).
+
+## Guardar una consulta (`service.ts` + `repository.ts`)
+
+```ts
+// En la action (F3-05): el único lugar que conecta las piezas reales.
+const service = createInquiryService({
+  repository: createPrismaInquiryRepository(getDb()),
+  clock: getClock(),
+  privacyPolicyVersion: privacyPolicy.version,
+});
+const { id, reference } = await service.createInquiry(data, { ipHash, source });
+```
+
+- El service declara la interfaz `InquiryRepository` y el repository la cumple: el service nunca importa Prisma.
+- La consulta y su evento `CREATED` se guardan juntos, en una escritura anidada de Prisma que es atómica (FR-07).
+- `consentAt` sale del `Clock` y `privacyPolicyVersion` de la política vigente (US-07 CA2). La casilla de consentimiento no se guarda como tal.
+- `ipHash` tiene que ser un hash de 64 caracteres (si no, `InvalidInquiryInputError`): una IP cruda nunca llega a la base. `source` se recorta a 100 caracteres.
+- Si la base falla, sale `InquiryStoreError`, sin datos personales en el mensaje; la action lo traduce a `INTERNAL`.
+- **Tests:** `service.test.ts` usa `FakeInquiryRepository` (`__tests__/fake-inquiry-repository.ts`). `repository.db.test.ts` prueba Prisma contra Supabase dev con `npm run test:db`.
 
 ## Medio seguro (`contact-safety.ts`)
 
