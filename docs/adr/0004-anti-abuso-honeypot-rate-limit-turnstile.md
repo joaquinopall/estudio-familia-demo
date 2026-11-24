@@ -1,6 +1,6 @@
 # 0004. Anti-abuso: honeypot + rate limit (Upstash) + Turnstile
 
-- **Estado:** Aceptada (se implementa en F3-03 y F3-05)
+- **Estado:** Aceptada (adapters en F3-03; orden en `submitInquiry` en F3-05). Qué hacer si un servicio se cae: ADR-0013
 - **Fecha:** 18/11/2026
 - **Relacionado:** SPEC FR-06, §8.2, §10.2
 

@@ -15,7 +15,7 @@ Reglas:
 | [0001](0001-arquitectura-en-capas-por-feature.md)            | Arquitectura en capas con ports & adapters, por feature        | Aceptada                       |
 | [0002](0002-supabase-con-prisma-y-rls.md)                    | Supabase (Postgres + Auth) con Prisma, RLS sin políticas       | Aceptada (datos en F3-01; Auth en F4) |
 | [0003](0003-un-tenant-por-instalacion.md)                    | Un tenant por instalación                                      | Aceptada                       |
-| [0004](0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (se implementa en F3) |
+| [0004](0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (adapters en F3-03; orden en F3-05) |
 | [0005](0005-mails-despues-de-responder.md)                   | Mails después de responder, sin el mensaje completo            | Aceptada (se implementa en F3) |
 | [0006](0006-validacion-de-variables-de-entorno.md)           | Validación de variables de entorno al arrancar                 | Aceptada                       |
 | [0007](0007-csp-report-only-sin-nonces.md)                   | CSP en report-only y sin nonces                                | Aceptada (se revisa en F5-01)  |
@@ -24,6 +24,7 @@ Reglas:
 | [0010](0010-seo-json-ld-seguro-y-noindex-en-demo.md) | SEO: JSON-LD seguro y noindex en modo demo | Aceptada |
 | [0011](0011-modo-demo-por-defecto.md) | Modo demo encendido por defecto | Aceptada |
 | [0012](0012-prisma-7-con-adapter-pg-y-prisma-config.md) | Prisma 7 con driver adapter `pg`, `prisma.config.ts` y TLS verificado | Aceptada |
+| [0013](0013-ports-sin-excepciones-y-caidas-de-servicios.md) | Ports sin excepciones y qué hacer si un servicio externo se cae | Aceptada |
 
 ## Plantilla
 

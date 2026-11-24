@@ -4,6 +4,14 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-03 · Ports y adapters
+
+- **Agregado:** ports `EmailSender`, `CaptchaVerifier`, `RateLimiter` y `Clock`, que no tiran excepciones por fallas del proveedor (ADR-0013).
+- **Agregado:** adapters de Resend (con idempotencia), Turnstile (`siteverify` en el servidor, hostname verificado, 5 s máximo) y Upstash (ventana deslizante; su timeout cuenta como `unavailable`; solo recibe hashes, sin analytics ni telemetría). `lib/adapters/index.ts` los crea recién cuando se usan.
+- **Agregado:** fakes para tests (`lib/ports/fakes`), contrato compartido entre el fake y el adapter del rate limiter, y `config/rate-limits.ts` con los límites de SPEC §8.2.
+- **Dependencias:** `resend` 6.39.0, `@upstash/ratelimit` 2.2.2, `@upstash/redis` 1.41.1.
+- **Decidido (ADR-0013):** con el rate limit caído se deja pasar y se registra en el log; con Turnstile caído se rechaza. Claves de prueba de Turnstile también en Preview. SPEC v1.18.
+
 ### F3-02 · Schemas y tipos
 
 - **Agregado:** `inquirySchema` (SPEC §8.1), que recibe lo que manda el formulario y devuelve tipos de dominio. Muestra todos los errores a la vez, incluidas las reglas que dependen del canal. Acepta el apóstrofo `’` del celular.

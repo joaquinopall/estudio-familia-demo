@@ -24,7 +24,7 @@ Detalles de los e2e:
 
 | Nivel       | Herramienta                  | Dónde                                        | Qué cubre hoy                                                                                     |
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas y regla de medio seguro (`src/features/inquiries`) |
+| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas y regla de medio seguro (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
@@ -40,6 +40,7 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - Cobertura objetivo: 80% en `src/features/**` (services, schemas y actions), a medida que existan.
 - Vitest no carga `.env.local`: `vitest.config.mts` fija valores públicos de prueba (`NEXT_PUBLIC_SITE_URL` y modo demo prendido). Nunca pongas secretos ahí; para otro valor, usá `vi.stubEnv`.
 - En tests, `server-only` se reemplaza por un módulo vacío (`tests/stubs/server-only.ts`).
+- **Servicios externos:** los tests nunca llaman a Resend, Turnstile ni Upstash. Los services y las actions usan los fakes de `src/lib/ports/fakes` (`FakeEmailSender`, `FakeCaptchaVerifier`, `FakeRateLimiter`, `FixedClock`); los adapters se testean con clientes y `fetch` simulados. Las claves del rate limit en los tests tienen que ser hashes de 64 caracteres (por ejemplo `"a".repeat(64)`).
 
 ### Cuando falla un test "especial"
 
@@ -51,6 +52,8 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`prisma/__tests__/rls.test.ts`:** agregaste un modelo o una tabla sin activarle RLS. Sumá `ALTER TABLE "<tabla>" ENABLE ROW LEVEL SECURITY;` en su migración (README → Base de datos). Nunca lo desactives.
 - **`schema.test.ts` → "still reports the channel rules when … is invalid":** un campo del schema quedó "abortado" (`pipe`, `abort: true` o `z.stringbool`) y Zod dejó de correr las reglas que dependen del canal. Validá ese campo con una sola regla (`refine`) en lugar de encadenar varias.
 - **`contact-safety.test.ts`:** la tabla es la definición de US-03 CA6 y CA7. Si falla, la que está mal es la regla, no la tabla, salvo que cambie el SPEC.
+- **`port-contracts.test.ts`:** el fake y el adapter real del rate limiter se comportan distinto. Corregí el que no cumpla el contrato del port; no relajes el test.
+- **`turnstile-verifier.test.ts` → hostname:** si cambiaste a claves reales de Turnstile, el hostname esperado sale de `NEXT_PUBLIC_SITE_URL`; con las de prueba es `example.com`.
 - **`enums.test.ts`:** cambiaste un enum en `prisma/schema.prisma` y no en `src/features/inquiries/types.ts` (o al revés), o un área de `practice-areas.ts` no existe en el enum.
 - **`db.test.ts` y `db-tls.test.ts`:** corren en entorno `node` (Prisma no funciona en jsdom) y no se conectan a nada. Si fallan al importar `@/generated/prisma/client`, corré `npm run db:generate`. Si falla "is a PEM certificate", falta `prisma/certs/supabase-ca.crt` o alguien puso ahí otra cosa (nunca una clave privada).
 

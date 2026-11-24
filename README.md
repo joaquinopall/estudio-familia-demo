@@ -110,6 +110,19 @@ Postgres de Supabase con Prisma 7 ([ADR 0002](docs/adr/0002-supabase-con-prisma-
 - **Código:** solo los repositories usan `getDb()` (`src/lib/db.ts`). El cliente no se conecta hasta la primera consulta, así que el build y los tests no tocan la base.
 - **Cliente generado:** vive en `src/generated/prisma` (fuera de git). Si `typecheck` no encuentra `@/generated/prisma/client`, corré `npm run db:generate`.
 
+## Servicios externos (mails, anti-bots y rate limit)
+
+Cada uno está detrás de un port (`src/lib/ports`), con su adapter en `src/lib/adapters` ([ADR 0013](docs/adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)). Las variables y su formato están en `.env.example`.
+
+| Servicio                 | Para qué                                        | Cuenta y variables                                                                                                                                              |
+| ------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Resend**               | Aviso al estudio y acuse a quien consulta       | API key con permiso solo de envío (`RESEND_API_KEY`), `EMAIL_FROM` y `FIRM_NOTIFICATION_EMAIL`. Sin dominio verificado, solo entrega a la casilla de la cuenta. |
+| **Cloudflare Turnstile** | Anti-bots, verificado en el servidor            | Claves de prueba en local y Preview (ya están en `.env.example`). Las reales (widget "Managed" con el dominio) solo en Production.                              |
+| **Upstash Redis**        | Rate limit (SPEC §8.2, `config/rate-limits.ts`) | Base Redis en `us-east`; URL y token REST de escritura (`UPSTASH_REDIS_REST_*`).                                                                                |
+
+- **Si un servicio se cae:** el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y un mail que falla no pierde la consulta (ADR-0013).
+- Mientras ninguna ruta los use, las variables son opcionales: la app arranca sin ellas y `getEmailSender()`, `getCaptchaVerifier()` y `getRateLimiter()` fallan con un mensaje que nombra la que falta.
+
 ## Estructura
 
 ```
@@ -119,11 +132,11 @@ src/
   components/
     ui/                componentes de shadcn/ui (generados)
     layout/            Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, 404 y error
-  config/              site.config.ts: todos los datos del estudio
+  config/              site.config.ts: todos los datos del estudio; rate-limits.ts: límites anti-abuso
   content/             contenido del sitio como datos
   features/            código por feature: inquiries, auth (Fases 3 y 4)
   generated/prisma/    cliente de Prisma generado (no se commitea)
-  lib/                 env, db (Prisma), ActionResult, logger, headers de seguridad, SEO, utilidades
+  lib/                 env, db (Prisma), ports y adapters, ActionResult, logger, headers de seguridad, SEO, utilidades
 prisma/                schema.prisma, migraciones, test de RLS y CA de Supabase (certs/)
 prisma.config.ts       configuración de la CLI de Prisma (URL de migraciones)
 tests/e2e/             Playwright
@@ -184,6 +197,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - Cargá las variables en Vercel → Settings → Environment Variables, en **Production y Preview**. Si falta una obligatoria, el build falla con el mensaje de la validación (útil para diagnosticar un deploy rojo).
 - Node 24 se toma de `engines` en `package.json`.
 - **Base de datos:** `DATABASE_URL` va en Preview con la URL de Supabase **dev** y en Production con la de **prod**. `DIRECT_URL` no se carga en Vercel: las migraciones no corren en el deploy.
+- **Turnstile:** en Preview, las claves de prueba de `.env.example`; en Production, las reales (ADR-0013). Resend y Upstash pueden compartir cuenta entre Preview y Production en la demo; para un estudio real, conviene separarlos.
 - **Migraciones de producción:** se aplican a mano antes de mergear cambios de schema, con aprobación y un export previo de la base (SPEC §14): `DIRECT_URL="<url de prod>" npm run db:deploy`. La variable del shell gana sobre `.env.local`.
 
 ## Flujo de trabajo
