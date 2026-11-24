@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.15 (23/11/2026) |
+| Versión | 1.16 (24/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -189,7 +189,8 @@ src/
     env.ts                       # server-only: exporta env (públicas + privadas validadas); entrada para código de servidor
     env.public.ts                # solo NEXT_PUBLIC_*, seguro para componentes cliente
     env.schema.ts                # schemas Zod puros; next.config.ts lo usa para fallar dev/build/start
-    db.ts                        # Prisma client singleton
+    db.ts                        # Prisma client singleton (getDb(), lazy, pooler)
+    db-tls.ts                    # TLS verificado contra la CA de Supabase (app y CLI de Prisma)
     supabase/server.ts           # cliente SSR (cookies)
     supabase/client.ts           # cliente browser (solo si hace falta)
     ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock
@@ -221,10 +222,14 @@ src/
     practice-areas.ts
     faqs.ts
     legal/privacy.ts             # texto de la política + versión
+  generated/prisma/              # cliente de Prisma generado (prisma generate); fuera de git
 proxy.ts                         # (o middleware.ts según la versión de Next) refresh de sesión y redirect de /admin
+prisma.config.ts                 # config de la CLI de Prisma 7: carga .env* y usa DIRECT_URL (ADR-0012)
 prisma/
   schema.prisma
   migrations/
+  __tests__/                     # rls.test.ts: toda tabla tiene RLS en una migración
+  certs/supabase-ca.crt          # CA pública de Supabase para verificar TLS
 tests/e2e/                       # Playwright
 docs/
   SPEC.md · GUIA_DE_AVANCE.md · ARCHITECTURE.md · TESTING.md · adr/
@@ -290,7 +295,7 @@ Los mensajes de error al usuario son genéricos y en español. El login nunca re
 
 ## 7. Modelo de datos
 
-Borrador del `schema.prisma`. La sintaxis exacta del generator y del datasource depende de la versión de Prisma instalada: seguir su documentación.
+Borrador del `schema.prisma`. La sintaxis exacta del generator y del datasource depende de la versión de Prisma instalada: seguir su documentación. Con Prisma 7 las URLs no van en el `datasource`: `DIRECT_URL` va en `prisma.config.ts` (migraciones) y `DATABASE_URL` en `lib/db.ts` (runtime, con `@prisma/adapter-pg`) (ADR-0012).
 
 ```prisma
 enum PracticeArea { SUCCESSION DIVORCE CHILD_SUPPORT PARENTING AGREEMENTS OTHER }
@@ -355,7 +360,7 @@ model StaffMember {
 
 **Reglas:**
 - Migraciones solo con `prisma migrate` versionadas en git. Nunca `db push` contra producción.
-- **RLS habilitado** en `inquiries`, `inquiry_events` y `staff_members`, **sin políticas** para `anon` ni `authenticated`: la Data API de Supabase no puede leerlas. Prisma accede con la conexión de Postgres. Se hace en una migración SQL.
+- **RLS habilitado en todas las tablas del esquema `public`** (`inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`, que crea Prisma), **sin políticas** para `anon` ni `authenticated`: la Data API de Supabase no puede leerlas. Prisma accede con la conexión de Postgres. Se hace en una migración SQL, y un test verifica que toda tabla nueva lo tenga.
 - Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase).
 - Retención: las consultas en `CLOSED` o `DISCARDED` con más de 24 meses se eliminan (script manual en v1; cron en v2). Documentado en la política de privacidad.
 
@@ -410,6 +415,7 @@ Etiquetas de interfaz:
 | `IP_HASH_SALT` | no | HMAC de IPs (32+ caracteres aleatorios) |
 
 - **No se usa la service role key de Supabase** (mínimo privilegio): la DB va por Prisma y Auth por la clave pública.
+- **Conexiones a la DB cifradas y verificadas:** TLS contra la CA de Supabase (`prisma/certs/supabase-ca.crt`), configurado en el código (`lib/db-tls.ts`). `DATABASE_URL` y `DIRECT_URL` no llevan parámetros `ssl*`. Cada proyecto de Supabase tiene activado "Enforce SSL on incoming connections" (ADR-0012).
 - **Entornos:** `development` (local), `preview` (Vercel Preview) y `production`. Dos proyectos de Supabase: **dev** (usado por local y preview) y **prod**.
 - `env.ts` falla el build si falta una variable obligatoria.
 
@@ -596,3 +602,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 22/11/2026 | 1.13 | Revisión de diseño. §11.5 nueva (peligro, plazos y contacto seguro). §11.3: orden del Inicio y de Contacto, paso 2 sin prometer llamadas. US-01 CA1 desde 320×568. US-03 CA6, §7 y §8: `safeToContact` (se implementa en F3). US-04: WhatsApp no tapa contenido. FR-03: jurisdicción. FR-15 y §9: modo demo encendido por defecto (ADR-0011). | [tu nombre] |
 | 22/11/2026 | 1.14 | US-05 CA1: el aviso al estudio incluye si es seguro contactar, como ya pedía US-03 CA6. US-03 CA3, CA5, CA6 y CA7 (nuevo), §2, §6.3, §7, §8, §9, §10.2 y §11.5: `emailIsPrivate`, acuse neutro solo a emails privados y contacto solo por un medio seguro. Se corrige la versión del encabezado, que había quedado en 1.12. | [tu nombre] |
 | 23/11/2026 | 1.15 | FR-03: `site.config.ts` suma el monograma del ícono. §6.2: `icon.tsx`, `apple-icon.tsx` y `lib/seo/app-icon.tsx` reemplazan el `favicon.ico` de Next.js. §11.5: los teléfonos de ayuda se definen en un solo lugar. | [tu nombre] |
+| 24/11/2026 | 1.16 | F3-01 (ADR-0012). §7: con Prisma 7 las URLs van en `prisma.config.ts` (`DIRECT_URL`) y en `lib/db.ts` (`DATABASE_URL`), no en el `datasource`. RLS en todas las tablas de `public`, incluida `_prisma_migrations`. §9: conexiones con TLS verificado contra la CA de Supabase, sin parámetros `ssl*` en las URLs, y "Enforce SSL" activado en Supabase. §6.2: `prisma.config.ts`, `lib/db-tls.ts`, `src/generated/prisma/`, `prisma/__tests__/` y `prisma/certs/`. | [tu nombre] |

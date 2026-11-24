@@ -4,6 +4,17 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-01 · Supabase y Prisma
+
+- **Agregado:** Prisma 7.10.1 con `@prisma/adapter-pg` (ADR-0012). `prisma/schema.prisma` con el modelo de SPEC §7, `prisma.config.ts` (carga `.env*` como Next y usa `DIRECT_URL` para migrar) y `src/lib/db.ts` (`getDb()`: cliente único y lazy, por el pooler con `DATABASE_URL`).
+- **Agregado:** migraciones `init` (enums, tablas, índices) y `enable_rls`: RLS sin políticas en `inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations` (NFR-SEC-03).
+- **Agregado:** scripts `db:generate`, `db:migrate` y `db:deploy`; `postinstall` y `typecheck` generan el cliente en `src/generated/prisma` (fuera de git).
+- **Agregado:** tests de `db.ts`, `db-tls.ts` y `prisma/__tests__/rls.test.ts` (toda tabla nueva necesita RLS); caso manual MT-23.
+- **Seguridad:** override de `effect` a 3.22.5 para `@prisma/config` (GHSA-7589-6fvf-x4pw, alta); quitarlo cuando Prisma lo actualice.
+- **Seguridad:** las conexiones a la base usan TLS verificado contra la CA de Supabase (`prisma/certs/supabase-ca.crt`, `src/lib/db-tls.ts`). Sin esto, `pg` conectaba en texto plano. Las URLs con parámetros `ssl*` se rechazan, y "Enforce SSL" queda activado en Supabase.
+- **Aplicado en Supabase dev:** las dos migraciones. RLS activado sin políticas en las 4 tablas de `public`. Consultas y transacciones probadas a través del pooler.
+- **Documentado:** formato de las URLs de Supabase en `.env.example`, sección "Base de datos" del README y flujo de datos en la arquitectura. SPEC v1.16.
+
 ### F2-07 · Ícono y datos en un solo lugar (después de #20)
 
 - **Corregido:** la pestaña mostraba el logo de Next.js. Ahora el ícono y el de inicio del celular se generan con el monograma del estudio (`monogram` en `site.config.ts`), y `/favicon.ico` lleva al mismo ícono.

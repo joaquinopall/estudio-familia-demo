@@ -24,7 +24,7 @@ Detalles de los e2e:
 
 | Nivel       | Herramienta                  | Dónde                                        | Qué cubre hoy                                                                                     |
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`                 | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots) |
+| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
@@ -48,6 +48,8 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`layout.spec.ts` → axe:** el mensaje lista la regla (por ejemplo `color-contrast`, `label`); la ayuda de cada regla está en <https://dequeuniversity.com/rules/axe/>.
 - **`quality.spec.ts`:** cubre lo que axe no ve. Si falla el foco, el anillo no llega a 3:1 sobre su fondo (típico: fondo primario, redefiní `--ring`). Si falla "uncovered", algo tapa el texto o el botón (típico: el botón de WhatsApp) o ya no entra en la primera pantalla. Al agregar una página, sumala a `PAGES`. Si falla "sticky index", un índice fijo quedó más alto que la ventana y no scrollea. Si falla "125%", algo no achica ni parte línea con la letra del navegador agrandada (típico: `whitespace-nowrap` en el header). Si falla "305px", algo no entra en un celular chico o con scrollbar clásico. Si falla "does not move the page", alguien puso `scroll-padding` en `html`: usá `scroll-margin`.
 - **`env.example.test.ts`:** agregaste o sacaste una variable del schema y no actualizaste `.env.example` (o al revés).
+- **`prisma/__tests__/rls.test.ts`:** agregaste un modelo o una tabla sin activarle RLS. Sumá `ALTER TABLE "<tabla>" ENABLE ROW LEVEL SECURITY;` en su migración (README → Base de datos). Nunca lo desactives.
+- **`db.test.ts` y `db-tls.test.ts`:** corren en entorno `node` (Prisma no funciona en jsdom) y no se conectan a nada. Si fallan al importar `@/generated/prisma/client`, corré `npm run db:generate`. Si falla "is a PEM certificate", falta `prisma/certs/supabase-ca.crt` o alguien puso ahí otra cosa (nunca una clave privada).
 
 ## En la CI
 
@@ -110,6 +112,7 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 | MT-20 | SEO técnico y datos estructurados                       | F2-06         | **Detallado** |
 | MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
+| MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -421,6 +424,45 @@ Al final de cada caso hay una tabla. Agregá una fila por ejecución con la fech
 - Paso 3: los números, la opción del 137 y la dirección de la OVD coinciden.
 - Paso 4: el aviso muestra el teléfono del estudio, el horario y qué hacer si el plazo vence antes.
 - Paso 5: el paso 2 no promete una llamada.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-23 — Base de datos: tablas y RLS en Supabase
+
+- **Objetivo:** que las migraciones estén aplicadas y que nadie pueda leer ni escribir las consultas con la clave pública de Supabase, que viaja en el navegador.
+- **Requisitos:** NFR-SEC-03, ADR-0002, SPEC §7.
+- **Precondiciones:** proyecto de Supabase (dev, o prod después de `db:deploy`) con las migraciones aplicadas. Su URL (`https://<project-ref>.supabase.co`) y su clave pública (publishable o anon), de Settings → API. **Nunca uses la service role key**: esa saltea RLS.
+
+**Pasos**
+
+1. En Supabase → Table Editor, esquema `public`, mirá las tablas.
+2. En Supabase → Advisors → Security Advisor, corré el análisis.
+3. Desde una terminal, pedí las consultas con la clave pública (en Windows, `curl.exe`):
+
+   ```bash
+   curl "https://<project-ref>.supabase.co/rest/v1/inquiries?select=*" -H "apikey: <clave pública>"
+   ```
+
+4. Repetí el paso 3 con `inquiry_events`, `staff_members` y `_prisma_migrations`.
+5. Intentá insertar con la clave pública:
+
+   ```bash
+   curl -X POST "https://<project-ref>.supabase.co/rest/v1/inquiries" -H "apikey: <clave pública>" -H "Content-Type: application/json" -d "{}"
+   ```
+
+6. En la terminal del proyecto, corré `npx prisma migrate status`.
+7. En Supabase → Database → SSL Configuration, mirá "Enforce SSL on incoming connections".
+
+**Resultado esperado**
+
+- Paso 1: están `inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`, y ninguna dice "RLS disabled" (o "Unrestricted").
+- Paso 2: ningún aviso de "RLS Disabled in Public" para esas tablas. Puede aparecer "RLS Enabled No Policy" como información: es lo buscado (ADR-0002).
+- Pasos 3 y 4: la respuesta es `[]` o un error, **nunca filas**, aunque la tabla tenga datos.
+- Paso 5: un error (por ejemplo `new row violates row-level security policy`). No se crea ninguna fila.
+- Paso 6: "Database schema is up to date!".
+- Paso 7: activado.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

@@ -61,15 +61,25 @@ flowchart LR
 | `src/lib/security/headers.ts` | ✅ F1-06    | Headers de seguridad y CSP ([ADR 0007](adr/0007-csp-report-only-sin-nonces.md)).               |
 | `src/lib/whatsapp.ts`, `utils.ts` | ✅ F1-07 | Link de WhatsApp (FR-13) y `cn()`.                                                           |
 | `src/lib/ports/`, `adapters/` | ⏳ F3       | Interfaces y adapters de Resend, Turnstile y Upstash.                                          |
-| `src/lib/db.ts`, `supabase/`  | ⏳ F3–F4    | Cliente Prisma y clientes de Supabase.                                                         |
+| `src/lib/db.ts`, `db-tls.ts`  | ✅ F3-01    | `getDb()`: cliente Prisma único y lazy, por el pooler, con TLS verificado ([ADR 0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)). |
+| `src/lib/supabase/`           | ⏳ F4       | Clientes de Supabase Auth.                                                                     |
+| `src/generated/prisma/`       | ✅ F3-01    | Cliente generado por `prisma generate` (fuera de git).                                         |
 | `proxy.ts`                    | ⏳ F4       | Refresh de sesión y redirect de `/admin`.                                                      |
-| `prisma/`                     | ⏳ F3       | Schema y migraciones (SPEC §7).                                                                |
+| `prisma/`, `prisma.config.ts` | ✅ F3-01    | Schema de SPEC §7, migraciones (tablas + RLS) y config de la CLI.                              |
 
 ## Flujos vigentes
 
 ### Arranque y validación de entorno
 
 Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se validan todas las variables con los schemas de `src/lib/env.schema.ts`. Si falta una obligatoria o tiene formato inválido, el proceso termina con un mensaje que nombra la variable, nunca su valor. En runtime, el código lee las variables desde `env.ts` (servidor, con `server-only`) o `env.public.ts` (cliente). Ver [ADR 0006](adr/0006-validacion-de-variables-de-entorno.md).
+
+### Acceso a datos (F3-01)
+
+- **Runtime:** repository → `getDb()` (`src/lib/db.ts`, `server-only`) → `PrismaClient` con `@prisma/adapter-pg` → pooler de Supabase en modo transacción (`DATABASE_URL`, puerto 6543). Las consultas y las transacciones interactivas andan a través del pooler (probado contra dev en F3-01, con una transacción revertida). El cliente se crea en la primera llamada y se guarda en `globalThis`. Pool de 5 conexiones por instancia (NFR-ESC-01).
+- **Migraciones:** `prisma migrate` → `prisma.config.ts`, que carga los `.env*` con `@next/env`, los valida con `env.schema.ts` y usa `DIRECT_URL` (modo sesión o conexión directa). Nunca corren en el build ni en Vercel.
+- **Cifrado:** las dos conexiones verifican el certificado contra la CA de Supabase (`prisma/certs/supabase-ca.crt`). La configuración está en `src/lib/db-tls.ts`, que es puro para que `prisma.config.ts` también pueda usarlo. Las URLs no llevan parámetros `ssl*`, y Supabase rechaza conexiones sin cifrar.
+- **Data API de Supabase:** RLS activado sin políticas en todas las tablas de `public`, así `anon` y `authenticated` no ven nada. Prisma entra como dueño de las tablas, al que RLS no restringe. La autorización está en el código (`requireStaff()`, F4).
+- Nada fuera de los repositories importa `db.ts` ni el cliente generado (capas, [ADR 0001](adr/0001-arquitectura-en-capas-por-feature.md)).
 
 ### Request a una página pública
 
@@ -101,7 +111,7 @@ sequenceDiagram
 | ADR                                                              | Decisión                                                       | Estado                     |
 | ---------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------- |
 | [0001](adr/0001-arquitectura-en-capas-por-feature.md)            | Capas con ports & adapters, organizadas por feature            | Aceptada                   |
-| [0002](adr/0002-supabase-con-prisma-y-rls.md)                    | Supabase + Prisma; RLS sin políticas; sin service role key     | Aceptada (se implementa en F3) |
+| [0002](adr/0002-supabase-con-prisma-y-rls.md)                    | Supabase + Prisma; RLS sin políticas; sin service role key     | Aceptada (datos en F3-01; Auth en F4) |
 | [0003](adr/0003-un-tenant-por-instalacion.md)                    | Un tenant por instalación                                      | Aceptada                   |
 | [0004](adr/0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (se implementa en F3) |
 | [0005](adr/0005-mails-despues-de-responder.md)                   | Mails con `after()`, sin el mensaje completo                   | Aceptada (se implementa en F3) |
@@ -111,5 +121,6 @@ sequenceDiagram
 | [0009](adr/0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con 404 real                       | Aceptada                   |
 | [0010](adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)         | JSON-LD seguro y noindex en modo demo                          | Aceptada                   |
 | [0011](adr/0011-modo-demo-por-defecto.md) | Modo demo encendido por defecto | Aceptada |
+| [0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md) | Prisma 7 con adapter `pg`, `prisma.config.ts`, TLS verificado y override de `effect` | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).
