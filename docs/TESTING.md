@@ -10,6 +10,15 @@ Cómo correr los tests automáticos, qué cubre cada nivel y la guía de **tests
 | `npm run test:watch`    | Vitest en modo watch, mientras desarrollás                                 |
 | `npm run test:coverage` | Vitest con cobertura; reporte HTML en `coverage/index.html`                |
 | `npm run test:e2e`      | E2E con Playwright (Chromium) contra el **build de producción**            |
+| `npm run test:db`       | Integración contra la base de **dev** (Vitest, proyecto `db`)              |
+
+Vitest tiene dos proyectos en `vitest.config.mts`:
+
+- **`unit`** (`npm run test`, la CI): todo `*.test.ts(x)` salvo `*.db.test.ts`. Sin red ni base.
+- **`db`** (`npm run test:db`): solo `*.db.test.ts`. Carga `.env.local` (`tests/setup/load-db-env.ts`), crea filas con prefijo `E2E-` y las borra al final.
+  - **Antes de correrlo, confirmá que `DATABASE_URL` de `.env.local` sea la de Supabase dev.** Se niega a correr con `VERCEL_ENV=production`, pero no puede saber a qué proyecto apunta la URL.
+  - No corre en la CI todavía (F5-06). Corrélo antes de abrir un PR que toque un repository.
+  - `npx vitest run` sin `--project` corre los dos: preferí los scripts de npm.
 
 Antes del primer e2e: `npx playwright install chromium`.
 
@@ -24,8 +33,9 @@ Detalles de los e2e:
 
 | Nivel       | Herramienta                  | Dónde                                        | Qué cubre hoy                                                                                     |
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas y regla de medio seguro (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter |
+| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas, regla de medio seguro, referencia y service con un repository falso (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
+| Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repository de consultas contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
@@ -54,6 +64,7 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`contact-safety.test.ts`:** la tabla es la definición de US-03 CA6 y CA7. Si falla, la que está mal es la regla, no la tabla, salvo que cambie el SPEC.
 - **`port-contracts.test.ts`:** el fake y el adapter real del rate limiter se comportan distinto. Corregí el que no cumpla el contrato del port; no relajes el test.
 - **`turnstile-verifier.test.ts` → hostname:** si cambiaste a claves reales de Turnstile, el hostname esperado sale de `NEXT_PUBLIC_SITE_URL`; con las de prueba es `example.com`.
+- **`repository.db.test.ts`:** si falla al conectar, revisá `DATABASE_URL` (y que las migraciones estén aplicadas: `npx prisma migrate status`). Si queda alguna fila `E2E-` en `inquiries`, borrala desde el Table Editor de Supabase dev.
 - **`enums.test.ts`:** cambiaste un enum en `prisma/schema.prisma` y no en `src/features/inquiries/types.ts` (o al revés), o un área de `practice-areas.ts` no existe en el enum.
 - **`db.test.ts` y `db-tls.test.ts`:** corren en entorno `node` (Prisma no funciona en jsdom) y no se conectan a nada. Si fallan al importar `@/generated/prisma/client`, corré `npm run db:generate`. Si falla "is a PEM certificate", falta `prisma/certs/supabase-ca.crt` o alguien puso ahí otra cosa (nunca una clave privada).
 

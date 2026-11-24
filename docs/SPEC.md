@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.18 (24/11/2026) |
+| Versión | 1.19 (24/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -175,8 +175,10 @@ src/
       schema.ts                  # Zod: inquirySchema, updateStatusSchema, updateNotesSchema, listFiltersSchema
       types.ts                   # enums y tipos de dominio (sin depender de Prisma)
       contact-safety.ts          # planContact: medio seguro, "No iniciar contacto" y acuse (US-03 CA5–CA7)
-      service.ts                 # createInquiry, listInquiries, getInquiry, changeStatus, updateNotes
-      repository.ts              # Prisma
+      service.ts                 # createInquiry, listInquiries, getInquiry, changeStatus, updateNotes; declara InquiryRepository
+      repository.ts              # Prisma (implementa InquiryRepository)
+      reference.ts               # toReference: C-XXXXXXXX (FR-09)
+      errors.ts                  # InquiryStoreError, InvalidInquiryInputError
       actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes
       emails/                    # React Email: NewInquiryEmail, InquiryReceiptEmail
       components/                # InquiryForm (client), InquiryTable, StatusBadge, ...
@@ -520,7 +522,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | Nivel | Herramienta | Qué cubre |
 |---|---|---|
 | Unit | Vitest | Schemas Zod, services con fakes, helpers (referencia, hash de IP, JSON-LD) |
-| Integración | Vitest | Server actions con ports simulados (validación, rate limit, captcha, auth y forbidden) |
+| Integración | Vitest | Server actions con ports simulados (validación, rate limit, captcha, auth y forbidden). Repositories contra Supabase dev con `npm run test:db` (proyecto `db`, filas `E2E-`; en CI desde F5-06) |
 | Componentes | Vitest + Testing Library | Formulario (pasos, errores, accesibilidad básica) y tabla de admin |
 | E2E | Playwright | Enviar consulta (claves de prueba de Turnstile), login admin, cambiar estado, acceso denegado, navegación pública y 404 |
 | Manual | `docs/TESTING.md` | Guía MT-xx (ver abajo) |
@@ -613,3 +615,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 24/11/2026 | 1.16 | F3-01 (ADR-0012). §7: con Prisma 7 las URLs van en `prisma.config.ts` (`DIRECT_URL`) y en `lib/db.ts` (`DATABASE_URL`), no en el `datasource`. RLS en todas las tablas de `public`, incluida `_prisma_migrations`. §9: conexiones con TLS verificado contra la CA de Supabase, sin parámetros `ssl*` en las URLs, y "Enforce SSL" activado en Supabase. §6.2: `prisma.config.ts`, `lib/db-tls.ts`, `src/generated/prisma/`, `prisma/__tests__/` y `prisma/certs/`. | [tu nombre] |
 | 24/11/2026 | 1.17 | F3-02. §8.1: mensaje para un canal faltante o inválido ("Elegí cómo preferís que te contactemos"); `fullName` acepta el apóstrofo tipográfico `’` y lo guarda como `'`; todos los errores salen a la vez; el honeypot lo revisa la action. §6.2: `contact-safety.ts` (regla de medio seguro) y `updateNotesSchema`. Política de privacidad 1.1 (`safeToContact`, `emailIsPrivate` y acuse solo a emails privados). | [tu nombre] |
 | 24/11/2026 | 1.18 | F3-03 (ADR-0013). §6.2: `ports/fakes/`, `adapters/index.ts` y `config/rate-limits.ts`. §8.2: claves de prueba de Turnstile también en Preview; con el rate limit caído se deja pasar, con Turnstile caído se rechaza; las claves del rate limit son hashes. | [tu nombre] |
+| 24/11/2026 | 1.19 | F3-04. §6.2: `reference.ts`, `errors.ts`; el service declara `InquiryRepository` y el repository lo implementa. §13: tests de integración de repositories con `npm run test:db` (proyecto `db` de Vitest), fuera de la CI hasta F5-06. | [tu nombre] |

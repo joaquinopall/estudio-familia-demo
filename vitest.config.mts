@@ -13,8 +13,6 @@ export default defineConfig({
     },
   },
   test: {
-    environment: "jsdom",
-    setupFiles: ["./vitest.setup.ts"],
     // Deterministic public values for code that reads publicEnv at import time (layouts,
     // sitemap, JSON-LD). Vitest does not load .env.local; tests can still override them with
     // vi.stubEnv. Never put secrets here.
@@ -22,8 +20,35 @@ export default defineConfig({
       NEXT_PUBLIC_SITE_URL: "https://demo.example.com",
       NEXT_PUBLIC_DEMO_MODE: "true",
     },
-    include: ["src/**/*.test.{ts,tsx}", "prisma/**/*.test.ts"],
-    exclude: ["node_modules/**", "tests/e2e/**"],
+    projects: [
+      {
+        // `npm run test` and CI: no network, no database.
+        extends: true,
+        test: {
+          name: "unit",
+          environment: "jsdom",
+          setupFiles: ["./vitest.setup.ts"],
+          include: ["src/**/*.test.{ts,tsx}", "prisma/**/*.test.ts"],
+          exclude: ["node_modules/**", "tests/e2e/**", "src/**/*.db.test.ts"],
+        },
+      },
+      {
+        // `npm run test:db`: integration against the DEVELOPMENT database (.env.local). Rows
+        // are prefixed with "E2E-" and deleted at the end (SPEC §13). Never point .env.local
+        // at production while running them.
+        extends: true,
+        test: {
+          name: "db",
+          environment: "node",
+          setupFiles: ["./tests/setup/load-db-env.ts"],
+          include: ["src/**/*.db.test.ts"],
+          // One file at a time: they share the database.
+          fileParallelism: false,
+          testTimeout: 30_000,
+          hookTimeout: 30_000,
+        },
+      },
+    ],
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],

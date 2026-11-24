@@ -4,6 +4,13 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-04 · Repository y service de consultas
+
+- **Agregado:** `createInquiryService` con `createInquiry`: guarda la consulta con la fecha del consentimiento y la versión de la política (US-07 CA2), solo el hash de la IP y `source` limpio, y devuelve el id y la referencia `C-XXXXXXXX` (FR-09).
+- **Agregado:** `createPrismaInquiryRepository`: la consulta y su evento `CREATED` en una escritura atómica (FR-07). Un fallo de la base sale como `InquiryStoreError`, sin datos personales.
+- **Agregado:** tests del service con `FakeInquiryRepository`, de la referencia, y `repository.db.test.ts` contra Supabase dev (filas `E2E-`, borradas al final).
+- **Cambiado:** Vitest tiene dos proyectos. `unit` (`npm run test`, la CI) y `db` (`npm run test:db`, integración con la base de dev). SPEC v1.19.
+
 ### F3-03 · Ports y adapters
 
 - **Agregado:** ports `EmailSender`, `CaptchaVerifier`, `RateLimiter` y `Clock`, que no tiran excepciones por fallas del proveedor (ADR-0013).
