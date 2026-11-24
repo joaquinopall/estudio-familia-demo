@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.20 (24/11/2026) |
+| Versión | 1.21 (24/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -86,7 +86,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 - CA2: Los errores se muestran junto a cada campo, en español claro, y se anuncian a lectores de pantalla.
 - CA3: Al enviar, se ve una confirmación con un número de referencia y qué va a pasar después ("Te vamos a contactar dentro de las próximas 24 a 48 horas hábiles"). Si no hay un medio seguro (CA7), no promete contacto: le pide guardar la referencia y comunicarse con el estudio cuando pueda hacerlo con seguridad.
 - CA4: Si el envío falla, los datos escritos no se pierden.
-- CA5: Solo si el email es privado (CA7), llega un acuse de recibo con remitente, asunto, texto y firma neutros: sin el área, sin la especialidad del estudio (ej. "Familia y Sucesiones") ni nada que revele el motivo de la consulta (§11.5).
+- CA5: Solo si el email es privado (CA7), llega un acuse de recibo con remitente, asunto, texto y firma neutros: sin el área, sin la especialidad del estudio (ej. "Familia y Sucesiones") ni nada que revele el motivo de la consulta (§11.5). La firma es el nombre corto del estudio (`shortName`), que no puede incluir la especialidad.
 - CA6: Si elige teléfono o WhatsApp, se le pregunta "¿Es seguro que te contactemos por ese medio?". Si responde que no, se la contacta por email solo si es privado (CA7). La respuesta se muestra destacada en el detalle del panel y en el aviso al estudio.
 - CA7: El formulario pregunta siempre "¿Este email es privado (solo lo leés vos)?" (`emailIsPrivate`), sin valor por defecto, porque una casilla compartida puede delatar la consulta. Si responde que no, no se le manda ningún email y la referencia se ve solo en pantalla. El estudio inicia el contacto solo por un **medio seguro**: teléfono o WhatsApp con `safeToContact = true`, o email con `emailIsPrivate = true`. Si no hay ninguno (incluye elegir email cuando no es privado), no lo inicia, y el panel y el aviso al estudio destacan "No iniciar contacto".
 
@@ -183,7 +183,7 @@ src/
       submit-inquiry.ts          # lógica de submitInquiry con dependencias por parámetro (FR-06)
       notifications.ts           # contenido y envío de los mails de una consulta nueva
       labels.ts                  # nombres en español de los enums (§8.1, FR-11)
-      emails/                    # React Email: NewInquiryEmail, InquiryReceiptEmail
+      emails/                    # React Email: NewInquiryEmail, InquiryReceiptEmail, render.ts, styles.ts
       components/                # InquiryForm (client), InquiryTable, StatusBadge, ...
       __tests__/
     auth/
@@ -228,6 +228,7 @@ src/
     contact-page.ts              # textos de /contacto
     urgent-help.ts               # ayuda ante peligro y plazos (§11.5)
     error-pages.ts               # textos de la 404 y de la página de error
+    emails.ts                    # textos del aviso al estudio y del acuse (neutro)
     practice-areas.ts
     faqs.ts
     legal/privacy.ts             # texto de la política + versión
@@ -620,3 +621,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 24/11/2026 | 1.18 | F3-03 (ADR-0013). §6.2: `ports/fakes/`, `adapters/index.ts` y `config/rate-limits.ts`. §8.2: claves de prueba de Turnstile también en Preview; con el rate limit caído se deja pasar, con Turnstile caído se rechaza; las claves del rate limit son hashes. | [tu nombre] |
 | 24/11/2026 | 1.19 | F3-04. §6.2: `reference.ts`, `errors.ts`; el service declara `InquiryRepository` y el repository lo implementa. §13: tests de integración de repositories con `npm run test:db` (proyecto `db` de Vitest), fuera de la CI hasta F5-06. | [tu nombre] |
 | 24/11/2026 | 1.20 | F3-05. §6.5: `submitInquiry` devuelve también `doNotContact`. §9: las variables de la Fase 3 (salvo `DIRECT_URL`) son obligatorias, con valores ficticios en la CI. §6.2: `submit-inquiry.ts`, `notifications.ts` y `labels.ts` en `features/inquiries`. | [tu nombre] |
+| 24/11/2026 | 1.21 | F3-06. US-03 CA5: el acuse se firma con `shortName`, que no puede incluir la especialidad. §6.2: `content/emails.ts` y `render.ts`/`styles.ts` en `emails/`. React Email 6: los componentes vienen del paquete `react-email` (`@react-email/components` está deprecado); preview con `npm run email:dev`. | [tu nombre] |

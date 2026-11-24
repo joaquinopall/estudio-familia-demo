@@ -13,6 +13,21 @@ describe("siteConfig", () => {
     expect(siteConfig.responseTime.trim()).not.toBe("");
   });
 
+  it("keeps shortName neutral: it signs the receipt email (US-03 CA5)", () => {
+    // A shared mailbox must not learn the reason for the inquiry from the signature.
+    for (const word of [
+      "familia",
+      "sucesi",
+      "divorc",
+      "aliment",
+      "cuidado",
+      "convenio",
+      "abogad",
+    ]) {
+      expect(siteConfig.shortName.toLowerCase()).not.toContain(word);
+    }
+  });
+
   it("states that the first conversation is confidential (SPEC §11.2)", () => {
     expect(siteConfig.confidentialityNote).toMatch(/primera conversación es confidencial/i);
   });

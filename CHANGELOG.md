@@ -4,6 +4,17 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-06 · Mails
+
+- **Agregado:** plantillas de React Email.
+  - **Aviso al estudio:** destaca "Contactar por: …" o "NO INICIAR CONTACTO", lleva todos los datos de US-05 CA1 y un botón al panel, sin el mensaje.
+  - **Acuse neutro:** el nombre, la referencia y la firma con `shortName`, sin área, especialidad ni links.
+  - Las dos llevan HTML y texto plano, con `lang="es-AR"`.
+- **Agregado:** textos en `content/emails.ts`, preview con `npm run email:dev` y un test de que `shortName` no incluya la especialidad.
+- **Cambiado:** `notifications.ts` usa las plantillas en lugar del texto provisorio; la lógica de envío no cambia.
+- **Dependencias:** `react-email` 6.11.16 (componentes; `@react-email/components` está deprecado), `@react-email/render` 2.3.1 y `@react-email/ui` 6.11.16 (desarrollo, para el preview).
+- **Agregado:** tests del contenido de los dos mails (campos, "No iniciar contacto", sin el mensaje, acuse neutro para las 6 áreas). MT-06 detallado. SPEC v1.21.
+
 ### F3-05 · Server Action `submitInquiry`
 
 - **Agregado:** `submitInquiry` con el orden de FR-06 (honeypot → rate limit por IP y por email → validación → Turnstile) y `ActionResult<{ reference, doNotContact }>`. Rate limit caído deja pasar; Turnstile caído rechaza ofreciendo WhatsApp (ADR-0013).

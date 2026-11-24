@@ -8,14 +8,17 @@
  * - Receipt to the person, only if their email is private (planContact): neutral subject,
  *   text and signature; no area, no specialty, nothing that reveals the reason (§11.5).
  *
- * F3-05 ships plain provisional texts that already follow those rules; F3-06 replaces only
- * the content with React Email templates.
+ * Content: React Email templates in ./emails (F3-06), texts in content/emails.ts.
  */
+import { createElement } from "react";
+
 import type { Logger } from "@/lib/logger";
 import type { EmailMessage, EmailSender } from "@/lib/ports/email-sender";
 
 import { planContact } from "./contact-safety";
-import { CONTACT_CHANNEL_LABELS, PRACTICE_AREA_LABELS, URGENCY_LABELS } from "./labels";
+import InquiryReceiptEmail, { receiptSubject } from "./emails/inquiry-receipt-email";
+import NewInquiryEmail, { newInquirySubject } from "./emails/new-inquiry-email";
+import { renderEmail } from "./emails/render";
 import type { InquiryData } from "./schema";
 
 export type NewInquiryForEmail = Pick<
@@ -29,54 +32,39 @@ export type NewInquiryForEmail = Pick<
   | "emailIsPrivate"
 > & { id: string; reference: string };
 
-const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
-
-const yesNo = (value: boolean | null) => (value === null ? "No aplica" : value ? "Sí" : "No");
-
-export function buildFirmNotification(
+export async function buildFirmNotification(
   inquiry: NewInquiryForEmail,
   options: { to: string; panelUrl: string },
-): EmailMessage {
-  const plan = planContact(inquiry);
-  const lines = [
-    plan.doNotContact
-      ? "NO INICIAR CONTACTO: la persona no indicó ningún medio seguro."
-      : `Contactar por: ${CONTACT_CHANNEL_LABELS[plan.channel]}`,
-    `Referencia: ${inquiry.reference}`,
-    `Nombre: ${inquiry.fullName}`,
-    `Área: ${PRACTICE_AREA_LABELS[inquiry.area]}`,
-    `Urgencia: ${URGENCY_LABELS[inquiry.urgency]}`,
-    `Canal preferido: ${CONTACT_CHANNEL_LABELS[inquiry.preferredChannel]}`,
-    `¿Es seguro contactar por ese canal?: ${yesNo(inquiry.safeToContact)}`,
-    `¿El email es privado?: ${yesNo(inquiry.emailIsPrivate)}`,
-    "",
-    "El mensaje se lee en el panel:",
-    options.panelUrl,
-  ];
-  const subject = `${plan.doNotContact ? "[No iniciar contacto] " : ""}Nueva consulta ${inquiry.reference} · ${PRACTICE_AREA_LABELS[inquiry.area]}`;
-
+): Promise<EmailMessage> {
+  const { html, text } = await renderEmail(
+    createElement(NewInquiryEmail, { inquiry, panelUrl: options.panelUrl }),
+  );
   return {
     to: options.to,
-    subject,
-    text: lines.join("\n"),
-    html: lines.map((line) => (line === "" ? "<br>" : `<p>${escapeHtml(line)}</p>`)).join("\n"),
+    subject: newInquirySubject(inquiry),
+    html,
+    text,
     idempotencyKey: `inquiry-firm/${inquiry.id}`,
   };
 }
 
-/** Neutral receipt (US-03 CA5): only the name and the reference, no reason for the inquiry. */
-export function buildReceipt(inquiry: NewInquiryForEmail): EmailMessage {
-  const lines = [
-    `Hola, ${inquiry.fullName}:`,
-    "Recibimos tu mensaje. Te vamos a responder dentro de las próximas 24 a 48 horas hábiles.",
-    `Tu número de referencia es ${inquiry.reference}.`,
-    "Saludos.",
-  ];
+/** Neutral receipt (US-03 CA5): only the name, the reference and the short firm name. */
+export async function buildReceipt(
+  inquiry: NewInquiryForEmail,
+  options: { signature: string },
+): Promise<EmailMessage> {
+  const { html, text } = await renderEmail(
+    createElement(InquiryReceiptEmail, {
+      fullName: inquiry.fullName,
+      reference: inquiry.reference,
+      signature: options.signature,
+    }),
+  );
   return {
     to: inquiry.email,
-    subject: "Recibimos tu mensaje",
-    text: lines.join("\n\n"),
-    html: lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("\n"),
+    subject: receiptSubject,
+    html,
+    text,
     idempotencyKey: `inquiry-receipt/${inquiry.id}`,
   };
 }
@@ -86,6 +74,8 @@ export type InquiryEmailsDeps = {
   logger: Logger;
   firmEmail: string;
   siteUrl: string;
+  /** Signature of the receipt: siteConfig.shortName, without the specialty. */
+  signature: string;
 };
 
 /**
@@ -93,17 +83,19 @@ export type InquiryEmailsDeps = {
  * code, never with personal data (FR-08, NFR-SEC-06). The inquiry is already stored.
  */
 export async function sendNewInquiryEmails(
-  { emailSender, logger, firmEmail, siteUrl }: InquiryEmailsDeps,
+  { emailSender, logger, firmEmail, siteUrl, signature }: InquiryEmailsDeps,
   inquiry: NewInquiryForEmail,
 ): Promise<void> {
   const panelUrl = new URL(`/admin/consultas/${inquiry.id}`, siteUrl).toString();
-  const firm = await emailSender.send(buildFirmNotification(inquiry, { to: firmEmail, panelUrl }));
+  const firm = await emailSender.send(
+    await buildFirmNotification(inquiry, { to: firmEmail, panelUrl }),
+  );
   if (!firm.ok) {
     logger.error("inquiry.firm_email_failed", { inquiryId: inquiry.id, errorCode: firm.errorCode });
   }
 
   if (!planContact(inquiry).sendReceipt) return;
-  const receipt = await emailSender.send(buildReceipt(inquiry));
+  const receipt = await emailSender.send(await buildReceipt(inquiry, { signature }));
   if (!receipt.ok) {
     logger.error("inquiry.receipt_email_failed", {
       inquiryId: inquiry.id,

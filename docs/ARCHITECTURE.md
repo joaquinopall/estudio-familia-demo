@@ -53,7 +53,7 @@ flowchart LR
 | `src/content/`                | ✅ F2-07    | Áreas, preguntas, textos de cada página y de error, ayuda urgente y privacidad como datos.     |
 | `src/lib/seo/`                | ✅ F2-07    | Metadata, rutas del sitemap, datos estructurados, `<JsonLd>` seguro e íconos.                  |
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
-| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` y mails provisorios (F3-05). ⏳ plantillas de mail, formulario y lo del panel. |
+| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06). ⏳ formulario y lo del panel. |
 | `src/lib/security/ip.ts`      | ✅ F3-05    | IP del visitante (`x-forwarded-for` en Vercel) y HMAC-SHA256 con `IP_HASH_SALT`.               |
 | `src/features/auth/`          | ⏳ F4       | DAL (`requireStaff`), actions de login y repositorio de staff.                                 |
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
@@ -105,7 +105,8 @@ flowchart LR
 ```
 
 - La respuesta incluye `doNotContact` para que la confirmación no prometa contacto sin un medio seguro (US-03 CA3), aun sin JavaScript.
-- Los mails salen después de responder. Si fallan, se loguea con el `inquiryId` y la consulta ya está guardada (FR-08). El texto es provisorio hasta F3-06.
+- Los mails salen después de responder. Si fallan, se loguea con el `inquiryId` y la consulta ya está guardada (FR-08).
+- **Plantillas (F3-06):** `notifications.ts` decide a quién va cada mail (`planContact`) y arma el `EmailMessage`. Las plantillas de React Email (`features/inquiries/emails`) dibujan el contenido, y `render.ts` las pasa a HTML y texto plano. Los textos están en `content/emails.ts`. El aviso nunca lleva el mensaje; el acuse es neutro y va firmado con `siteConfig.shortName`.
 - Logs: `inquiry.created`, `inquiry.honeypot`, `inquiry.rate_limited`, `rate_limit.unavailable`, `rate_limit.no_client_ip`, `captcha.invalid`, `captcha.unavailable`, `inquiry.store_failed`, `inquiry.firm_email_failed`, `inquiry.receipt_email_failed` y `inquiry.emails_failed`. Llevan IDs y códigos, nunca datos personales.
 
 ### Guardar una consulta (F3-04)

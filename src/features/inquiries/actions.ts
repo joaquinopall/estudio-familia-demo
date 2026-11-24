@@ -7,6 +7,7 @@
 import { headers } from "next/headers";
 import { after } from "next/server";
 
+import { siteConfig } from "@/config/site.config";
 import { privacyPolicy } from "@/content/legal/privacy";
 import { getCaptchaVerifier, getClock, getEmailSender, getRateLimiter } from "@/lib/adapters";
 import { getDb } from "@/lib/db";
@@ -35,6 +36,7 @@ function buildSubmitInquiryHandler() {
           logger,
           firmEmail: env.FIRM_NOTIFICATION_EMAIL,
           siteUrl: env.NEXT_PUBLIC_SITE_URL,
+          signature: siteConfig.shortName,
         },
         inquiry,
       ),
