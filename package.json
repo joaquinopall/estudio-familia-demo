@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --project unit --coverage",
     "test:e2e": "playwright test",
     "test:db": "vitest run --project db",
+    "email:dev": "email dev --dir src/features/inquiries/emails --port 3001",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy"
@@ -26,6 +27,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "@react-email/render": "2.3.1",
     "@upstash/ratelimit": "2.2.2",
     "@upstash/redis": "1.41.1",
     "class-variance-authority": "0.7.1",
@@ -36,6 +38,7 @@
     "radix-ui": "1.8.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-email": "6.11.16",
     "resend": "6.39.0",
     "server-only": "0.0.1",
     "sonner": "2.0.8",
@@ -45,6 +48,7 @@
     "@axe-core/playwright": "4.14.0",
     "@next/env": "16.4.6",
     "@playwright/test": "1.65.1",
+    "@react-email/ui": "6.11.16",
     "@tailwindcss/turbopack": "4.3.3",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "7.0.1",
