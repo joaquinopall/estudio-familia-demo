@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.16 (24/11/2026) |
+| Versión | 1.17 (24/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -172,8 +172,9 @@ src/
     marketing/                   # Hero, PracticeAreaCard, ProcessSteps, TrustBar, FaqList, UrgentNote, CTA
   features/
     inquiries/
-      schema.ts                  # Zod: inquirySchema, updateStatusSchema, listFiltersSchema
-      types.ts
+      schema.ts                  # Zod: inquirySchema, updateStatusSchema, updateNotesSchema, listFiltersSchema
+      types.ts                   # enums y tipos de dominio (sin depender de Prisma)
+      contact-safety.ts          # planContact: medio seguro, "No iniciar contacto" y acuse (US-03 CA5–CA7)
       service.ts                 # createInquiry, listInquiries, getInquiry, changeStatus, updateNotes
       repository.ts              # Prisma
       actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes
@@ -375,14 +376,16 @@ model StaffMember {
 | `area` | enum PracticeArea | "Elegí el tipo de consulta" |
 | `urgency` | enum Urgency | "Indicá la urgencia" |
 | `message` | trim, 20 a 2000 caracteres | "Contanos un poco más (mínimo 20 caracteres)" / "Máximo 2000 caracteres" |
-| `fullName` | trim, 2 a 120 caracteres, letras, espacios, `'` y `-` | "Ingresá tu nombre" |
+| `fullName` | trim, 2 a 120 caracteres, letras, espacios, `'` y `-`; el apóstrofo tipográfico `’` (iOS) se acepta y se guarda como `'` | "Ingresá tu nombre" |
 | `email` | trim, minúsculas, email válido, ≤ 254 | "Ingresá un email válido" |
 | `phone` | opcional; si viene, solo `+`, dígitos, espacios y `-`, entre 8 y 20 dígitos | "Ingresá un teléfono válido" |
-| `preferredChannel` | enum; si es `PHONE` o `WHATSAPP`, `phone` es obligatorio | "Para contactarte por ese medio necesitamos tu teléfono" |
+| `preferredChannel` | enum; si es `PHONE` o `WHATSAPP`, `phone` es obligatorio | "Elegí cómo preferís que te contactemos" / "Para contactarte por ese medio necesitamos tu teléfono" |
 | `safeToContact` | booleano; obligatorio si `preferredChannel` es `PHONE` o `WHATSAPP`, sin valor por defecto | "Decinos si es seguro contactarte por ese medio" |
 | `emailIsPrivate` | booleano; obligatorio siempre, sin valor por defecto | "Decinos si este email es privado" |
 | `consent` | debe ser `true` | "Necesitamos tu consentimiento para responderte" |
-| `website` | honeypot: debe venir vacío (no se muestra error) | — |
+| `website` | honeypot: debe venir vacío (no se muestra error). Lo revisa la action antes que el schema (FR-06) | — |
+
+Todos los errores se informan a la vez, incluidos los que dependen del canal (US-03 CA2). La regla de medio seguro (US-03 CA6 y CA7) vive en `contact-safety.ts` y es la única fuente para la confirmación, los mails y el panel.
 
 Etiquetas de interfaz:
 - **Urgencia:** LOW = "Sin apuro", NORMAL = "En las próximas semanas", HIGH = "Tengo un plazo o una audiencia cercana".
@@ -603,3 +606,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 22/11/2026 | 1.14 | US-05 CA1: el aviso al estudio incluye si es seguro contactar, como ya pedía US-03 CA6. US-03 CA3, CA5, CA6 y CA7 (nuevo), §2, §6.3, §7, §8, §9, §10.2 y §11.5: `emailIsPrivate`, acuse neutro solo a emails privados y contacto solo por un medio seguro. Se corrige la versión del encabezado, que había quedado en 1.12. | [tu nombre] |
 | 23/11/2026 | 1.15 | FR-03: `site.config.ts` suma el monograma del ícono. §6.2: `icon.tsx`, `apple-icon.tsx` y `lib/seo/app-icon.tsx` reemplazan el `favicon.ico` de Next.js. §11.5: los teléfonos de ayuda se definen en un solo lugar. | [tu nombre] |
 | 24/11/2026 | 1.16 | F3-01 (ADR-0012). §7: con Prisma 7 las URLs van en `prisma.config.ts` (`DIRECT_URL`) y en `lib/db.ts` (`DATABASE_URL`), no en el `datasource`. RLS en todas las tablas de `public`, incluida `_prisma_migrations`. §9: conexiones con TLS verificado contra la CA de Supabase, sin parámetros `ssl*` en las URLs, y "Enforce SSL" activado en Supabase. §6.2: `prisma.config.ts`, `lib/db-tls.ts`, `src/generated/prisma/`, `prisma/__tests__/` y `prisma/certs/`. | [tu nombre] |
+| 24/11/2026 | 1.17 | F3-02. §8.1: mensaje para un canal faltante o inválido ("Elegí cómo preferís que te contactemos"); `fullName` acepta el apóstrofo tipográfico `’` y lo guarda como `'`; todos los errores salen a la vez; el honeypot lo revisa la action. §6.2: `contact-safety.ts` (regla de medio seguro) y `updateNotesSchema`. Política de privacidad 1.1 (`safeToContact`, `emailIsPrivate` y acuse solo a emails privados). | [tu nombre] |

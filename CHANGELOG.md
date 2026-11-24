@@ -4,6 +4,15 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-02 · Schemas y tipos
+
+- **Agregado:** `inquirySchema` (SPEC §8.1), que recibe lo que manda el formulario y devuelve tipos de dominio. Muestra todos los errores a la vez, incluidas las reglas que dependen del canal. Acepta el apóstrofo `’` del celular.
+- **Agregado:** `safeToContact` (obligatorio con teléfono o WhatsApp, `null` con email) y `emailIsPrivate` (obligatorio siempre), los dos sin valor por defecto (US-03 CA6 y CA7).
+- **Agregado:** `planContact` en `contact-safety.ts`: medio seguro, "No iniciar contacto" y acuse solo a emails privados, con la tabla completa de casos en sus tests.
+- **Agregado:** `updateStatusSchema`, `updateNotesSchema` y `listFiltersSchema` (tolera filtros inválidos en la URL) para el panel; `isHoneypotFilled`; enums de dominio sincronizados con Prisma por test.
+- **Cambiado:** política de privacidad **1.1**: contacto solo por un medio seguro, las dos preguntas nuevas y acuse solo a emails privados, sin el motivo de la consulta.
+- **Documentado:** MT-03 detallado (se ejecuta en F3-09); MT-18 espera la versión vigente. SPEC v1.17.
+
 ### F3-01 · MT-23 pendiente (después de #23)
 
 - **Documentado:** MT-23 queda sin ejecutar hasta tener la URL de la API y la clave pública de Supabase en `.env.local`: pasos 1 a 5 y 7 en dev en F4-01, y el caso completo en prod en F5-08. Nueva sección "Ejecuciones pendientes" en `docs/TESTING.md`, con lo que ya se verificó en F3-01 sin la API pública.
