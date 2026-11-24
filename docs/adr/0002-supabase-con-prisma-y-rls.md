@@ -1,6 +1,6 @@
 # 0002. Supabase (Postgres + Auth) con Prisma; RLS sin políticas; sin service role key
 
-- **Estado:** Aceptada (se implementa en F3-01 y F4-01)
+- **Estado:** Aceptada (datos y RLS implementados en F3-01; Auth en F4-01). Configuración de Prisma 7: ADR-0012
 - **Fecha:** 18/11/2026
 - **Relacionado:** SPEC §7, §9, NFR-SEC-03, NFR-SEC-07, NFR-SEC-10
 
@@ -12,7 +12,7 @@ Hace falta una base de datos administrada y un login para el panel del estudio, 
 
 - **Postgres de Supabase** como base y **Prisma** como ORM y para migraciones versionadas.
 - **Supabase Auth** solo para el login del staff (sin registro público).
-- **RLS habilitado en todas las tablas y sin políticas** para `anon` ni `authenticated`: la Data API no puede leer ni escribir nada. Prisma accede con su propia conexión de Postgres.
+- **RLS habilitado en todas las tablas y sin políticas** para `anon` ni `authenticated`: la Data API no puede leer ni escribir nada. Prisma accede con su propia conexión de Postgres. Incluye `_prisma_migrations`, que Prisma crea en el esquema `public` (SPEC v1.16).
 - **No se usa la service role key** (mínimo privilegio): la base va por Prisma y Auth por la clave pública.
 - Dos proyectos: **dev** (local y previews) y **prod**.
 

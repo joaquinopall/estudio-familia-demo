@@ -20,7 +20,7 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 | Framework    | Next.js 16 (App Router) + React 19 + TypeScript estricto                      |
 | Estilos y UI | Tailwind CSS 4 + shadcn/ui (base Radix)                                       |
 | Validación   | Zod 4                                                                         |
-| Datos y auth | Supabase (Postgres + Auth) con Prisma — _desde la Fase 3_                     |
+| Datos y auth | Supabase (Postgres) con Prisma 7 — _F3_; Supabase Auth — _F4_                 |
 | Servicios    | Resend (mails), Cloudflare Turnstile (anti-bots), Upstash (rate limit) — _F3_ |
 | Tests        | Vitest + Testing Library, Playwright + axe                                    |
 | Deploy y CI  | Vercel + GitHub Actions                                                       |
@@ -36,12 +36,12 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 ```bash
 git clone https://github.com/joaquinopall/estudio-familia-demo.git
 cd estudio-familia-demo
-npm ci                              # instala exactamente lo del package-lock
+npm ci                              # instala lo del package-lock y genera el cliente de Prisma
 cp .env.example .env.local          # en Windows: copy .env.example .env.local
 npm run dev                         # http://localhost:3000
 ```
 
-Con los valores de `.env.example` alcanza para correr el proyecto hasta la Fase 2 inclusive.
+Con los valores de `.env.example` alcanza para correr el sitio público. Lo que usa la base de datos necesita un proyecto de Supabase: ver [Base de datos](#base-de-datos-supabase--prisma).
 
 Para los tests e2e, la primera vez instalá el navegador: `npx playwright install chromium`.
 
@@ -88,10 +88,27 @@ Reglas:
 | `npm run test:watch`    | Vitest en modo watch                                                              |
 | `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                    |
 | `npm run test:e2e`      | Tests e2e con Playwright contra el build de producción (levanta el servidor solo) |
+| `npm run db:generate`   | Genera el cliente de Prisma en `src/generated/prisma` (también corre en `npm ci`) |
+| `npm run db:migrate`    | `prisma migrate dev`: crea y aplica migraciones. **Solo contra Supabase dev**     |
+| `npm run db:deploy`     | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano        |
 
 Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`](docs/TESTING.md).
 
 > Si `npm run typecheck` falla con errores dentro de `.next/dev/types` sobre archivos que ya no existen, borrá la carpeta `.next/dev` (son tipos viejos que dejó `next dev`).
+
+## Base de datos (Supabase + Prisma)
+
+Postgres de Supabase con Prisma 7 ([ADR 0002](docs/adr/0002-supabase-con-prisma-y-rls.md) y [ADR 0012](docs/adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)). Hay dos proyectos de Supabase: **dev** (local y previews) y **prod**.
+
+- **Dos URLs:** `DATABASE_URL` es el pooler en modo transacción (puerto 6543) y la usa la app (`src/lib/db.ts`). `DIRECT_URL` es el pooler en modo sesión (5432) o la conexión directa, y solo la usa la CLI para migrar (`prisma.config.ts`). El formato está en `.env.example`. Con el pooler, el usuario es `postgres.<project-ref>`.
+- **Cifrado:** las dos conexiones usan TLS verificado contra la CA de Supabase (`prisma/certs/supabase-ca.crt`, pública). Las URLs van **sin** parámetros `ssl*`: el código los agrega y rechaza las URLs que los traen (`src/lib/db-tls.ts`). En Supabase, activá "Enforce SSL on incoming connections" (Database → SSL Configuration) en cada proyecto. Si un día falla con un error de certificado, Supabase rotó la CA: bajá la nueva desde esa misma pantalla y reemplazá el archivo.
+- **Primera vez:** cargá las dos URLs de dev en `.env.local` y corré `npm run db:migrate`. Aplica las migraciones de `prisma/migrations`.
+- **Cambiar el modelo:** editá `prisma/schema.prisma` y corré `npm run db:migrate -- --name <cambio>`. Commiteá la carpeta de la migración. Si agregás una tabla, activale RLS en la misma migración: `prisma/__tests__/rls.test.ts` falla si falta.
+- **SQL a mano** (como RLS): `npm run db:migrate -- --create-only --name <cambio>`, editá el `migration.sql` y volvé a correr `npm run db:migrate`.
+- **Nunca** `prisma db push` ni `prisma migrate reset` contra una base compartida (CLAUDE.md §5).
+- **RLS:** todas las tablas de `public`, incluida `_prisma_migrations`, tienen RLS activado y sin políticas: la API de Supabase no las puede leer (NFR-SEC-03). Cómo verificarlo: MT-23 en [`docs/TESTING.md`](docs/TESTING.md).
+- **Código:** solo los repositories usan `getDb()` (`src/lib/db.ts`). El cliente no se conecta hasta la primera consulta, así que el build y los tests no tocan la base.
+- **Cliente generado:** vive en `src/generated/prisma` (fuera de git). Si `typecheck` no encuentra `@/generated/prisma/client`, corré `npm run db:generate`.
 
 ## Estructura
 
@@ -105,7 +122,10 @@ src/
   config/              site.config.ts: todos los datos del estudio
   content/             contenido del sitio como datos
   features/            código por feature: inquiries, auth (Fases 3 y 4)
-  lib/                 env, ActionResult, logger, headers de seguridad, SEO, utilidades
+  generated/prisma/    cliente de Prisma generado (no se commitea)
+  lib/                 env, db (Prisma), ActionResult, logger, headers de seguridad, SEO, utilidades
+prisma/                schema.prisma, migraciones, test de RLS y CA de Supabase (certs/)
+prisma.config.ts       configuración de la CLI de Prisma (URL de migraciones)
 tests/e2e/             Playwright
 docs/                  SPEC, guía de avance, arquitectura, ADR, testing
 ```
@@ -147,6 +167,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 
 - **Headers** en todas las rutas: HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` y una CSP en modo **report-only** (no bloquea; las violaciones se ven en la consola del navegador como `[Report Only]`). Se definen en `src/lib/security/headers.ts`. Ver [ADR 0007](docs/adr/0007-csp-report-only-sin-nonces.md).
 - **Variables de entorno** validadas al arrancar; secretos solo del lado del servidor (`server-only`).
+- **Base de datos:** RLS sin políticas en todas las tablas y sin service role key ([ADR 0002](docs/adr/0002-supabase-con-prisma-y-rls.md)); conexiones con TLS verificado ([ADR 0012](docs/adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)).
 - **Logs** estructurados en JSON, sin datos personales (`src/lib/logger.ts`).
 - Detalle completo de requisitos y amenazas en SPEC §10.
 
@@ -162,7 +183,8 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - **Producción** se despliega desde `main`; cada PR genera un **preview**.
 - Cargá las variables en Vercel → Settings → Environment Variables, en **Production y Preview**. Si falta una obligatoria, el build falla con el mensaje de la validación (útil para diagnosticar un deploy rojo).
 - Node 24 se toma de `engines` en `package.json`.
-- Desde la Fase 3: las migraciones de producción se aplican a mano (`prisma migrate deploy`), con aprobación, antes de mergear cambios de schema (SPEC §14).
+- **Base de datos:** `DATABASE_URL` va en Preview con la URL de Supabase **dev** y en Production con la de **prod**. `DIRECT_URL` no se carga en Vercel: las migraciones no corren en el deploy.
+- **Migraciones de producción:** se aplican a mano antes de mergear cambios de schema, con aprobación y un export previo de la base (SPEC §14): `DIRECT_URL="<url de prod>" npm run db:deploy`. La variable del shell gana sobre `.env.local`.
 
 ## Flujo de trabajo
 
