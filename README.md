@@ -41,7 +41,7 @@ cp .env.example .env.local          # en Windows: copy .env.example .env.local
 npm run dev                         # http://localhost:3000
 ```
 
-Con los valores de `.env.example` alcanza para correr el sitio público. Lo que usa la base de datos necesita un proyecto de Supabase: ver [Base de datos](#base-de-datos-supabase--prisma).
+Desde F3-05, `npm run dev` necesita **todas las credenciales del formulario** en `.env.local`: base de datos, Resend, Turnstile (las claves de prueba ya vienen en `.env.example`), Upstash e `IP_HASH_SALT`. Sin ellas, el comando falla y nombra la que falta. Cómo conseguirlas: [Base de datos](#base-de-datos-supabase--prisma) y [Servicios externos](#servicios-externos-mails-anti-bots-y-rate-limit).
 
 Para los tests e2e, la primera vez instalá el navegador: `npx playwright install chromium`.
 
@@ -51,27 +51,29 @@ Para los tests e2e, la primera vez instalá el navegador: `npx playwright instal
 
 Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `dev`, `build` y `start`: si falta una obligatoria o tiene formato inválido, el comando falla con un mensaje que nombra la variable (nunca su valor). Detalle en [`docs/adr/0006-validacion-de-variables-de-entorno.md`](docs/adr/0006-validacion-de-variables-de-entorno.md).
 
-| Variable                                              | Pública | Obligatoria desde | Uso                               |
-| ----------------------------------------------------- | :-----: | ----------------- | --------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`                                |   sí    | **Fase 1**        | URLs absolutas, metadata, sitemap |
-| `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`true`) | Banner de demo y `noindex`        |
-| `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | Fase 4            | Supabase Auth                     |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | Fase 4            | Supabase Auth                     |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                      |   sí    | Fase 3            | Widget anti-bots                  |
-| `DATABASE_URL`                                        |   no    | Fase 3            | Prisma en runtime (pooler)        |
-| `DIRECT_URL`                                          |   no    | Fase 3            | Prisma migraciones                |
-| `RESEND_API_KEY`                                      |   no    | Fase 3            | Envío de mails                    |
-| `EMAIL_FROM`                                          |   no    | Fase 3            | Remitente                         |
-| `FIRM_NOTIFICATION_EMAIL`                             |   no    | Fase 3            | Destinatario de consultas nuevas  |
-| `TURNSTILE_SECRET_KEY`                                |   no    | Fase 3            | Verificación anti-bots            |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` |   no    | Fase 3            | Rate limit                        |
-| `IP_HASH_SALT`                                        |   no    | Fase 3            | HMAC de IPs (32+ caracteres)      |
+| Variable                                              | Pública | Obligatoria desde | Uso                                   |
+| ----------------------------------------------------- | :-----: | ----------------- | ------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                |   sí    | **Fase 1**        | URLs absolutas, metadata, sitemap     |
+| `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`true`) | Banner de demo y `noindex`            |
+| `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | Fase 4            | Supabase Auth                         |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | Fase 4            | Supabase Auth                         |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                      |   sí    | **F3-05**         | Widget anti-bots                      |
+| `DATABASE_URL`                                        |   no    | **F3-05**         | Prisma en runtime (pooler)            |
+| `DIRECT_URL`                                          |   no    | opcional          | Prisma migraciones (solo la CLI)      |
+| `RESEND_API_KEY`                                      |   no    | **F3-05**         | Envío de mails                        |
+| `EMAIL_FROM`                                          |   no    | **F3-05**         | Remitente                             |
+| `FIRM_NOTIFICATION_EMAIL`                             |   no    | **F3-05**         | Destinatario de consultas nuevas      |
+| `TURNSTILE_SECRET_KEY`                                |   no    | **F3-05**         | Verificación anti-bots                |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` |   no    | **F3-05**         | Rate limit                            |
+| `IP_HASH_SALT`                                        |   no    | **F3-05**         | HMAC de IPs y emails (32+ caracteres) |
 
 Reglas:
 
 - En el código, las variables se leen **solo** desde `src/lib/env.ts` (servidor) o `src/lib/env.public.ts` (componentes cliente). Nunca `process.env.X` suelto.
 - Las `NEXT_PUBLIC_*` terminan en el JavaScript del navegador: nunca pongas secretos en ellas.
 - `.env.example` documenta todas las variables y no tiene valores reales; un test verifica que esté sincronizado con los schemas.
+- La CI usa valores ficticios para las obligatorias (`.github/workflows/ci.yml`): el build no se conecta a nada.
+- `IP_HASH_SALT` es un secreto. Cambiarlo solo reinicia los contadores del rate limit y hace que las consultas nuevas tengan otro `ipHash`. Generalo con `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 ## Scripts
 
@@ -122,7 +124,7 @@ Cada uno está detrás de un port (`src/lib/ports`), con su adapter en `src/lib/
 | **Upstash Redis**        | Rate limit (SPEC §8.2, `config/rate-limits.ts`) | Base Redis en `us-east`; URL y token REST de escritura (`UPSTASH_REDIS_REST_*`).                                                                                |
 
 - **Si un servicio se cae:** el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y un mail que falla no pierde la consulta (ADR-0013).
-- Mientras ninguna ruta los use, las variables son opcionales: la app arranca sin ellas y `getEmailSender()`, `getCaptchaVerifier()` y `getRateLimiter()` fallan con un mensaje que nombra la que falta.
+- Desde F3-05 sus variables son obligatorias: sin ellas, `dev`, `build` y `start` fallan nombrando la que falta. Cada adapter se crea recién cuando se usa (`getEmailSender()`, `getCaptchaVerifier()`, `getRateLimiter()`).
 
 ## Estructura
 
@@ -198,6 +200,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - Cargá las variables en Vercel → Settings → Environment Variables, en **Production y Preview**. Si falta una obligatoria, el build falla con el mensaje de la validación (útil para diagnosticar un deploy rojo).
 - Node 24 se toma de `engines` en `package.json`.
 - **Base de datos:** `DATABASE_URL` va en Preview con la URL de Supabase **dev** y en Production con la de **prod**. `DIRECT_URL` no se carga en Vercel: las migraciones no corren en el deploy.
+- **Desde F3-05, todas las variables obligatorias tienen que estar en Preview y Production** antes de mergear: si falta una, el build de Vercel falla y la nombra.
 - **Turnstile:** en Preview, las claves de prueba de `.env.example`; en Production, las reales (ADR-0013). Resend y Upstash pueden compartir cuenta entre Preview y Production en la demo; para un estudio real, conviene separarlos.
 - **Migraciones de producción:** se aplican a mano antes de mergear cambios de schema, con aprobación y un export previo de la base (SPEC §14): `DIRECT_URL="<url de prod>" npm run db:deploy`. La variable del shell gana sobre `.env.local`.
 

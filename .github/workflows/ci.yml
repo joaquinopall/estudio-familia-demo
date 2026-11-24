@@ -22,8 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      # Fictitious value: src/lib/env.schema.ts requires it at build time. No secrets in CI.
+      # Fictitious values: src/lib/env.schema.ts requires them at build time (F3-05). Nothing
+      # connects to them: the build is static and unit tests use fakes. No secrets in CI.
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      DATABASE_URL: postgresql://ci:ci@db.invalid:6543/postgres
+      RESEND_API_KEY: re_ci_fake
+      EMAIL_FROM: "Estudio <onboarding@resend.dev>"
+      FIRM_NOTIFICATION_EMAIL: ci@example.com
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      UPSTASH_REDIS_REST_URL: https://ci.upstash.invalid
+      UPSTASH_REDIS_REST_TOKEN: ci-fake-token
+      IP_HASH_SALT: ci-fake-salt-not-a-secret-0123456789
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - name: Checkout

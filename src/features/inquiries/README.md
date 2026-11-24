@@ -11,7 +11,10 @@ Todo lo relacionado con una consulta (`Inquiry`): el formulario público, el gua
 | `errors.ts`         | Errores de dominio: `InquiryStoreError`, `InvalidInquiryInputError`                                 | F3-04 ✅     |
 | `repository.ts`     | Acceso a Prisma: consulta + evento `CREATED` en una escritura atómica                               | F3-04 ✅     |
 | `service.ts`        | `createInquiry` ✅ (F3-04); `listInquiries`, `getInquiry`, `changeStatus`, `updateNotes` (F4)       | F3-04, F4    |
-| `actions.ts`        | `submitInquiry`, `updateInquiryStatus`, `updateInquiryNotes`                                        | F3-05, F4-05 |
+| `actions.ts`        | `submitInquiry` ✅ (F3-05); `updateInquiryStatus`, `updateInquiryNotes` (F4-05)                     | F3-05, F4-05 |
+| `submit-inquiry.ts` | Lógica de `submitInquiry` con dependencias por parámetro (orden de FR-06)                           | F3-05 ✅     |
+| `notifications.ts`  | Aviso al estudio y acuse (texto provisorio con las reglas de privacidad) y su envío                 | F3-05 ✅     |
+| `labels.ts`         | Nombres en español de áreas, urgencias, canales y estados                                           | F3-05 ✅     |
 | `emails/`           | Plantillas React Email: aviso al estudio y acuse al consultante                                     | F3-06        |
 | `components/`       | `InquiryForm` (cliente), `InquiryTable`, `StatusBadge`, …                                           | F3-07, F4-04 |
 | `__tests__/`        | Tests unitarios y de integración de la feature                                                      | F3, F4       |
@@ -41,6 +44,21 @@ const { id, reference } = await service.createInquiry(data, { ipHash, source });
 - `ipHash` tiene que ser un hash de 64 caracteres (si no, `InvalidInquiryInputError`): una IP cruda nunca llega a la base. `source` se recorta a 100 caracteres.
 - Si la base falla, sale `InquiryStoreError`, sin datos personales en el mensaje; la action lo traduce a `INTERNAL`.
 - **Tests:** `service.test.ts` usa `FakeInquiryRepository` (`__tests__/fake-inquiry-repository.ts`). `repository.db.test.ts` prueba Prisma contra Supabase dev con `npm run test:db`.
+
+## Enviar una consulta (`actions.ts` + `submit-inquiry.ts`)
+
+`submitInquiry(prev, formData)` es la Server Action del formulario (`useActionState(submitInquiry, null)`). Devuelve `ActionResult<{ reference, doNotContact }>`: con `doNotContact` la confirmación sabe si puede prometer contacto, aun sin JavaScript (US-03 CA3).
+
+Orden (FR-06, de lo más barato a lo más caro):
+
+1. **Honeypot** (`website`) lleno → éxito falso, sin guardar ni mandar nada.
+2. **Rate limit** por IP (5 cada 10 minutos) y por email (3 por hora), con claves HMAC (`lib/security/ip.ts`) → `RATE_LIMITED`. Si Upstash no responde, se deja pasar y se loguea `rate_limit.unavailable`. Sin IP (desarrollo local), se saltea esa regla.
+3. **Validación** con `inquirySchema` → `VALIDATION` con los errores por campo.
+4. **Turnstile** (token `cf-turnstile-response`) → `CAPTCHA_FAILED`. Si Cloudflare no responde, también, pero con un mensaje que ofrece WhatsApp (ADR-0013).
+5. **`createInquiry`** con el hash de la IP → si la base falla, `INTERNAL`.
+6. **Mails con `after()`**, después de responder: el aviso al estudio siempre, y el acuse solo si el email es privado. Un fallo se loguea con el `inquiryId` y la consulta ya está guardada (FR-08).
+
+`actions.ts` solo lee la IP de los headers y arma las dependencias reales. Toda la lógica está en `submit-inquiry.ts`, y sus tests cubren cada rama con fakes, incluido que ningún log tenga datos personales.
 
 ## Medio seguro (`contact-safety.ts`)
 

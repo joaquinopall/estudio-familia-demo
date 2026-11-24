@@ -4,6 +4,14 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-05 · Server Action `submitInquiry`
+
+- **Agregado:** `submitInquiry` con el orden de FR-06 (honeypot → rate limit por IP y por email → validación → Turnstile) y `ActionResult<{ reference, doNotContact }>`. Rate limit caído deja pasar; Turnstile caído rechaza ofreciendo WhatsApp (ADR-0013).
+- **Agregado:** mails con `after()`: aviso al estudio siempre (sin el mensaje; con "No iniciar contacto" cuando corresponde) y acuse solo a emails privados. Texto provisorio hasta F3-06. Un fallo se loguea con el ID y no pierde la consulta (FR-08).
+- **Agregado:** `lib/security/ip.ts` (IP de `x-forwarded-for` y HMAC con `IP_HASH_SALT`, separado para IP y email) y `labels.ts`.
+- **Cambiado:** las variables de la Fase 3 (salvo `DIRECT_URL`) son **obligatorias**: `dev`, `build` y `start` fallan si falta una. La CI usa valores ficticios. `prisma.config.ts` lee solo `DIRECT_URL`.
+- **Agregado:** tests de cada rama de la action (OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales), de los mails y de la IP. MT-04, MT-05 y MT-15 detallados. SPEC v1.20.
+
 ### F3-04 · Repository y service de consultas
 
 - **Agregado:** `createInquiryService` con `createInquiry`: guarda la consulta con la fecha del consentimiento y la versión de la política (US-07 CA2), solo el hash de la IP y `source` limpio, y devuelve el id y la referencia `C-XXXXXXXX` (FR-09).
