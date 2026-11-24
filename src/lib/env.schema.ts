@@ -34,25 +34,27 @@ export const publicEnvSchema = z.object({
   // Phase 4 (Supabase Auth).
   NEXT_PUBLIC_SUPABASE_URL: optional(httpUrl()),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optional(nonEmpty()),
-  // Phase 3 (Turnstile widget).
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: optional(nonEmpty()),
+  // Required from F3-05 (Turnstile widget). Test key in dev, CI and Preview (ADR-0013).
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: required(nonEmpty()),
 });
 
 export const serverEnvSchema = z.object({
-  // Phase 3 (Prisma).
-  DATABASE_URL: optional(postgresUrl()),
+  // Required from F3-05: the inquiry form uses all of them.
+  // Prisma at runtime (pooler).
+  DATABASE_URL: required(postgresUrl()),
+  // Prisma CLI only (migrations); not set in Vercel (ADR-0012).
   DIRECT_URL: optional(postgresUrl()),
-  // Phase 3 (Resend). EMAIL_FROM accepts "Name <email@domain>".
-  RESEND_API_KEY: optional(nonEmpty()),
-  EMAIL_FROM: optional(nonEmpty()),
-  FIRM_NOTIFICATION_EMAIL: optional(z.email({ error: "debe ser un email válido" })),
-  // Phase 3 (Turnstile verification).
-  TURNSTILE_SECRET_KEY: optional(nonEmpty()),
-  // Phase 3 (Upstash rate limit).
-  UPSTASH_REDIS_REST_URL: optional(httpUrl()),
-  UPSTASH_REDIS_REST_TOKEN: optional(nonEmpty()),
-  // Phase 3 (IP HMAC).
-  IP_HASH_SALT: optional(z.string().min(32, { error: "debe tener al menos 32 caracteres" })),
+  // Resend. EMAIL_FROM accepts "Name <email@domain>".
+  RESEND_API_KEY: required(nonEmpty()),
+  EMAIL_FROM: required(nonEmpty()),
+  FIRM_NOTIFICATION_EMAIL: required(z.email({ error: "debe ser un email válido" })),
+  // Turnstile verification.
+  TURNSTILE_SECRET_KEY: required(nonEmpty()),
+  // Upstash rate limit.
+  UPSTASH_REDIS_REST_URL: required(httpUrl()),
+  UPSTASH_REDIS_REST_TOKEN: required(nonEmpty()),
+  // IP and email HMAC (lib/security/ip.ts).
+  IP_HASH_SALT: required(z.string().min(32, { error: "debe tener al menos 32 caracteres" })),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -91,6 +93,15 @@ function parseWith<T extends z.ZodType>(schema: T, source: EnvSource): z.infer<T
 export const parsePublicEnv = (source: EnvSource): PublicEnv => parseWith(publicEnvSchema, source);
 
 export const parseServerEnv = (source: EnvSource): ServerEnv => parseWith(serverEnvSchema, source);
+
+const directUrlSchema = serverEnvSchema.pick({ DIRECT_URL: true });
+
+/**
+ * Only DIRECT_URL, for prisma.config.ts: `prisma generate` runs on every `npm ci` (CI, Vercel,
+ * a fresh clone) and must not require the credentials of the other services.
+ */
+export const parseDirectUrl = (source: EnvSource): string | undefined =>
+  parseWith(directUrlSchema, source).DIRECT_URL;
 
 /** Validates public and server variables together and reports every problem at once. */
 export function validateEnv(source: EnvSource): void {

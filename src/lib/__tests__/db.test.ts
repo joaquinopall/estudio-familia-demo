@@ -30,12 +30,10 @@ describe("db (Prisma client singleton)", () => {
     vi.resetModules();
   });
 
-  it("throws a clear error when DATABASE_URL is missing", async () => {
+  it("fails on import, naming DATABASE_URL, when it is missing", async () => {
     vi.stubEnv("DATABASE_URL", "");
-    const { getDb, DatabaseConfigError } = await import("@/lib/db");
 
-    expect(() => getDb()).toThrow(DatabaseConfigError);
-    expect(() => getDb()).toThrow(/DATABASE_URL no está definida/);
+    await expect(import("@/lib/db")).rejects.toThrow(/DATABASE_URL: es obligatoria/);
   });
 
   it("creates the client lazily and reuses the same instance", async () => {

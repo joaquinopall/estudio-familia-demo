@@ -29,7 +29,32 @@ describe(".env.example", () => {
     expect(Object.keys(example).sort()).toEqual(schemaKeys);
   });
 
-  it("is valid as-is, so copying it to .env.local is enough to start", () => {
-    expect(() => validateEnv(example)).not.toThrow();
+  it("is valid once the empty credentials are filled (F3-05: the form needs them)", () => {
+    const filled: Record<string, string> = {
+      DATABASE_URL: "postgresql://user:pass@host:6543/postgres",
+      DIRECT_URL: "postgresql://user:pass@host:5432/postgres",
+      RESEND_API_KEY: "re_fake",
+      EMAIL_FROM: "Estudio <onboarding@resend.dev>",
+      FIRM_NOTIFICATION_EMAIL: "estudio@example.com",
+      UPSTASH_REDIS_REST_URL: "https://fake.upstash.invalid",
+      UPSTASH_REDIS_REST_TOKEN: "fake",
+      IP_HASH_SALT: "x".repeat(32),
+    };
+    const withCredentials = Object.fromEntries(
+      Object.entries(example).map(([key, value]) => [key, value || filled[key] || ""]),
+    );
+
+    expect(() => validateEnv(withCredentials)).not.toThrow();
+  });
+
+  it("leaves every secret empty: it is committed", () => {
+    for (const key of [
+      "DATABASE_URL",
+      "RESEND_API_KEY",
+      "UPSTASH_REDIS_REST_TOKEN",
+      "IP_HASH_SALT",
+    ]) {
+      expect(example[key]).toBe("");
+    }
   });
 });

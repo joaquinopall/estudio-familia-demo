@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   EnvValidationError,
+  parseDirectUrl,
   parsePublicEnv,
   parseServerEnv,
   publicEnvSchema,
@@ -9,7 +10,22 @@ import {
   validateEnv,
 } from "@/lib/env.schema";
 
-const validPublic = { NEXT_PUBLIC_SITE_URL: "http://localhost:3000" };
+const validPublic = {
+  NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+};
+
+/** Every server variable required since F3-05, with fictitious values. */
+const validServer = {
+  DATABASE_URL: "postgresql://user:pass@host:6543/postgres",
+  RESEND_API_KEY: "re_test",
+  EMAIL_FROM: "Estudio Demo <no-reply@example.com>",
+  FIRM_NOTIFICATION_EMAIL: "estudio@example.com",
+  TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+  UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+  UPSTASH_REDIS_REST_TOKEN: "token",
+  IP_HASH_SALT: "a".repeat(32),
+};
 
 function errorMessageOf(fn: () => unknown): string {
   try {
@@ -71,6 +87,14 @@ describe("parsePublicEnv", () => {
     expect(env.NEXT_PUBLIC_DEMO_MODE).toBe(expected);
   });
 
+  it("requires the Turnstile site key (F3-05)", () => {
+    const message = errorMessageOf(() =>
+      parsePublicEnv({ NEXT_PUBLIC_SITE_URL: "http://localhost:3000" }),
+    );
+
+    expect(message).toContain("NEXT_PUBLIC_TURNSTILE_SITE_KEY: es obligatoria");
+  });
+
   it("rejects an unexpected NEXT_PUBLIC_DEMO_MODE value", () => {
     const message = errorMessageOf(() =>
       parsePublicEnv({ ...validPublic, NEXT_PUBLIC_DEMO_MODE: "yes" }),
@@ -81,13 +105,22 @@ describe("parsePublicEnv", () => {
 });
 
 describe("parseServerEnv", () => {
-  it("accepts an empty environment while later-phase variables are optional", () => {
-    expect(parseServerEnv({})).toEqual({});
+  it("requires every variable the inquiry form uses (F3-05), naming each one", () => {
+    const message = errorMessageOf(() => parseServerEnv({}));
+
+    for (const key of Object.keys(validServer)) {
+      expect(message).toContain(`${key}: es obligatoria`);
+    }
   });
 
-  it("validates the format of optional variables when present", () => {
+  it("keeps DIRECT_URL optional: only the Prisma CLI uses it", () => {
+    expect(parseServerEnv(validServer).DIRECT_URL).toBeUndefined();
+  });
+
+  it("validates the format of each variable", () => {
     const message = errorMessageOf(() =>
       parseServerEnv({
+        ...validServer,
         IP_HASH_SALT: "too-short",
         DATABASE_URL: "http://not-postgres",
         FIRM_NOTIFICATION_EMAIL: "not-an-email",
@@ -102,18 +135,24 @@ describe("parseServerEnv", () => {
 
   it("accepts valid values for every variable", () => {
     const env = parseServerEnv({
-      DATABASE_URL: "postgresql://user:pass@host:6543/postgres",
+      ...validServer,
       DIRECT_URL: "postgres://user:pass@host:5432/postgres",
-      RESEND_API_KEY: "re_test",
-      EMAIL_FROM: "Estudio Demo <no-reply@example.com>",
-      FIRM_NOTIFICATION_EMAIL: "estudio@example.com",
-      TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
-      UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
-      UPSTASH_REDIS_REST_TOKEN: "token",
-      IP_HASH_SALT: "a".repeat(32),
     });
 
     expect(env.IP_HASH_SALT).toHaveLength(32);
+  });
+});
+
+describe("parseDirectUrl (prisma.config.ts)", () => {
+  it("does not require the app's other variables, so `prisma generate` runs anywhere", () => {
+    expect(parseDirectUrl({})).toBeUndefined();
+  });
+
+  it("returns DIRECT_URL and validates its format", () => {
+    expect(parseDirectUrl({ DIRECT_URL: "postgres://u:p@h:5432/db" })).toBe(
+      "postgres://u:p@h:5432/db",
+    );
+    expect(() => parseDirectUrl({ DIRECT_URL: "http://nope" })).toThrow(EnvValidationError);
   });
 });
 
@@ -126,7 +165,7 @@ describe("validateEnv", () => {
   });
 
   it("passes with a valid environment", () => {
-    expect(() => validateEnv(validPublic)).not.toThrow();
+    expect(() => validateEnv({ ...validPublic, ...validServer })).not.toThrow();
   });
 });
 

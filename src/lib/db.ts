@@ -31,10 +31,6 @@ export const POOL_MAX_CONNECTIONS = 5;
 /** next.config.ts ships the CA with the server bundle (outputFileTracingIncludes). */
 export const DATABASE_CA_PATH = databaseCaPath();
 
-export class DatabaseConfigError extends Error {
-  override readonly name = "DatabaseConfigError";
-}
-
 export function createDb(
   connectionString: string,
   ca: string = readFileSync(DATABASE_CA_PATH, "utf8"),
@@ -55,14 +51,8 @@ export function createDb(
 
 const globalForDb = globalThis as typeof globalThis & { __prismaClient?: PrismaClient };
 
+/** DATABASE_URL is required by env.ts: a missing value fails when the app starts, naming it. */
 export function getDb(): PrismaClient {
-  if (globalForDb.__prismaClient) return globalForDb.__prismaClient;
-
-  if (!env.DATABASE_URL) {
-    throw new DatabaseConfigError(
-      "DATABASE_URL no está definida. Configurala en .env.local (ver .env.example).",
-    );
-  }
-  globalForDb.__prismaClient = createDb(env.DATABASE_URL);
+  globalForDb.__prismaClient ??= createDb(env.DATABASE_URL);
   return globalForDb.__prismaClient;
 }

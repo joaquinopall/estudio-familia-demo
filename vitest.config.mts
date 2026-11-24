@@ -26,6 +26,20 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
+          // Fictitious values for the variables env.ts requires since F3-05. Nothing connects
+          // to them: unit tests use fakes. Only here, never in the "db" project (it would
+          // shadow the real DATABASE_URL from .env.local).
+          env: {
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+            DATABASE_URL: "postgresql://user:fake-password@db.invalid:6543/postgres",
+            RESEND_API_KEY: "re_fake_key_for_tests",
+            EMAIL_FROM: "Estudio <avisos@example.com>",
+            FIRM_NOTIFICATION_EMAIL: "estudio@example.com",
+            TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+            UPSTASH_REDIS_REST_URL: "https://fake.upstash.invalid",
+            UPSTASH_REDIS_REST_TOKEN: "fake-upstash-token",
+            IP_HASH_SALT: "fake-salt-for-unit-tests-only-0123456789",
+          },
           environment: "jsdom",
           setupFiles: ["./vitest.setup.ts"],
           include: ["src/**/*.test.{ts,tsx}", "prisma/**/*.test.ts"],
