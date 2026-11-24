@@ -29,9 +29,10 @@ export const AAIP_AUTHORITY_NOTICE =
   "La AGENCIA DE ACCESO A LA INFORMACIÓN PÚBLICA, en su carácter de Órgano de Control de la Ley Nº 25.326, tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.";
 
 export const privacyPolicy = {
-  version: "1.0",
+  // 1.1: safe contact (safeToContact, emailIsPrivate) and receipt only to a private email.
+  version: "1.1",
   /** ISO date (YYYY-MM-DD). */
-  effectiveDate: "2026-11-21",
+  effectiveDate: "2026-11-24",
   breadcrumbs: [homeBreadcrumb, { label: "Política de privacidad", href: "/privacidad" }],
   title: "Política de privacidad",
   lead: "Te contamos qué datos recolectamos cuando nos escribís, para qué los usamos, con quién los compartimos y cómo podés ejercer tus derechos, conforme a la Ley 25.326 de Protección de los Datos Personales.",
@@ -57,7 +58,8 @@ export const privacyPolicy = {
         "Tu nombre y apellido.",
         "Tu email y, si lo indicás, tu teléfono.",
         "El tipo de consulta, la urgencia y el mensaje que nos escribís.",
-        "El medio por el que preferís que te contactemos.",
+        "El medio por el que preferís que te contactemos y, si elegís teléfono o WhatsApp, si es seguro contactarte por ese medio.",
+        "Si tu email es privado, es decir, si solo lo leés vos.",
         "La fecha en que aceptaste esta política y su versión.",
         "Un código derivado de tu dirección IP (no la IP en sí), que usamos solo para prevenir abusos.",
       ],
@@ -70,6 +72,7 @@ export const privacyPolicy = {
       title: "Para qué los usamos",
       paragraphs: [
         "Usamos tus datos únicamente para responder tu consulta, contactarte por el medio que elegiste y llevar el seguimiento interno de la consulta. No los usamos con fines publicitarios ni los vendemos.",
+        "Solo iniciamos el contacto por un medio que nos indicaste como seguro: el teléfono o WhatsApp, si nos dijiste que es seguro, o tu email, si nos dijiste que es privado. Si no hay ningún medio seguro, no te contactamos nosotros: guardá el número de referencia y comunicate con el estudio cuando puedas hacerlo con tranquilidad.",
         "La base para tratarlos es tu consentimiento libre, expreso e informado, que das al marcar la casilla del formulario (art. 5, Ley 25.326).",
       ],
     },
@@ -77,7 +80,7 @@ export const privacyPolicy = {
       id: "caracter",
       title: "Qué datos son obligatorios",
       paragraphs: [
-        "El nombre, el email, el tipo de consulta, la urgencia, el mensaje y el consentimiento son obligatorios: sin ellos no podemos responderte. El teléfono es opcional, salvo que elijas que te contactemos por teléfono o por WhatsApp. Darnos datos inexactos puede impedir que te respondamos (art. 6, Ley 25.326).",
+        "El nombre, el email, el tipo de consulta, la urgencia, el mensaje, el consentimiento y la respuesta a si tu email es privado son obligatorios: sin ellos no podemos responderte. El teléfono es opcional, salvo que elijas que te contactemos por teléfono o por WhatsApp; en ese caso también te preguntamos si es seguro contactarte por ese medio. Darnos datos inexactos puede impedir que te respondamos (art. 6, Ley 25.326).",
       ],
     },
     {
@@ -89,7 +92,7 @@ export const privacyPolicy = {
       items: [
         "Vercel Inc. (Estados Unidos): alojamiento del sitio.",
         "Supabase Inc. (Estados Unidos): base de datos donde se guardan las consultas y acceso al panel interno del estudio.",
-        "Resend (Estados Unidos): envío de los emails de aviso al estudio y de acuse de recibo a vos.",
+        "Resend (Estados Unidos): envío de los emails de aviso al estudio y del acuse de recibo a vos. El acuse se envía solo si nos indicaste que tu email es privado, y no menciona el motivo de tu consulta.",
         "Cloudflare Inc. (Estados Unidos), con su servicio Turnstile: verificación anti-spam del formulario, que analiza datos técnicos de tu navegador.",
         "Upstash Inc. (Estados Unidos): control de la cantidad de envíos, con identificadores técnicos temporales.",
       ],

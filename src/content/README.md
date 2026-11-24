@@ -36,7 +36,7 @@ Contenido del sitio como datos tipados, separado de los componentes (SPEC §6.1,
 
 ## Política de privacidad
 
-- `privacyPolicy.version` (hoy `1.0`) se guarda con cada consulta junto con la fecha del consentimiento (US-07 CA2). **Cualquier cambio en el texto exige subir la versión y actualizar `effectiveDate`**, y registrarlo en el CHANGELOG.
+- `privacyPolicy.version` (hoy `1.1`) se guarda con cada consulta junto con la fecha del consentimiento (US-07 CA2). **Cualquier cambio en el texto exige subir la versión y actualizar `effectiveDate`**, y registrarlo en el CHANGELOG.
 - Los avisos de la AAIP (`AAIP_ACCESS_NOTICE`, `AAIP_AUTHORITY_NOTICE`) son textos obligatorios: no se editan; un test los verifica literal.
 - Los datos del responsable (nombre, domicilio, email) salen de `site.config.ts`.
 - Si cambia un proveedor (hosting, base de datos, mails, anti-spam o rate limit), hay que actualizar la sección "Con quién los compartimos" y subir la versión.

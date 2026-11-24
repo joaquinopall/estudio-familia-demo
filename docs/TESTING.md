@@ -24,7 +24,7 @@ Detalles de los e2e:
 
 | Nivel       | Herramienta                  | Dónde                                        | Qué cubre hoy                                                                                     |
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones |
+| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas y regla de medio seguro (`src/features/inquiries`) |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
@@ -49,6 +49,9 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`quality.spec.ts`:** cubre lo que axe no ve. Si falla el foco, el anillo no llega a 3:1 sobre su fondo (típico: fondo primario, redefiní `--ring`). Si falla "uncovered", algo tapa el texto o el botón (típico: el botón de WhatsApp) o ya no entra en la primera pantalla. Al agregar una página, sumala a `PAGES`. Si falla "sticky index", un índice fijo quedó más alto que la ventana y no scrollea. Si falla "125%", algo no achica ni parte línea con la letra del navegador agrandada (típico: `whitespace-nowrap` en el header). Si falla "305px", algo no entra en un celular chico o con scrollbar clásico. Si falla "does not move the page", alguien puso `scroll-padding` en `html`: usá `scroll-margin`.
 - **`env.example.test.ts`:** agregaste o sacaste una variable del schema y no actualizaste `.env.example` (o al revés).
 - **`prisma/__tests__/rls.test.ts`:** agregaste un modelo o una tabla sin activarle RLS. Sumá `ALTER TABLE "<tabla>" ENABLE ROW LEVEL SECURITY;` en su migración (README → Base de datos). Nunca lo desactives.
+- **`schema.test.ts` → "still reports the channel rules when … is invalid":** un campo del schema quedó "abortado" (`pipe`, `abort: true` o `z.stringbool`) y Zod dejó de correr las reglas que dependen del canal. Validá ese campo con una sola regla (`refine`) en lugar de encadenar varias.
+- **`contact-safety.test.ts`:** la tabla es la definición de US-03 CA6 y CA7. Si falla, la que está mal es la regla, no la tabla, salvo que cambie el SPEC.
+- **`enums.test.ts`:** cambiaste un enum en `prisma/schema.prisma` y no en `src/features/inquiries/types.ts` (o al revés), o un área de `practice-areas.ts` no existe en el enum.
 - **`db.test.ts` y `db-tls.test.ts`:** corren en entorno `node` (Prisma no funciona en jsdom) y no se conectan a nada. Si fallan al importar `@/generated/prisma/client`, corré `npm run db:generate`. Si falla "is a PEM certificate", falta `prisma/certs/supabase-ca.crt` o alguien puso ahí otra cosa (nunca una clave privada).
 
 ## En la CI
@@ -100,7 +103,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | ----- | ------------------------------------------------------- | ------------- | ------------- |
 | MT-01 | Navegar todas las páginas en un celular real            | F2-08         | **Detallado** |
 | MT-02 | Enviar una consulta completa                            | F3-09         | Pendiente     |
-| MT-03 | Errores de validación de cada campo                     | F3-09         | Pendiente     |
+| MT-03 | Errores de validación de cada campo                     | F3-02         | **Detallado** · se ejecuta en F3-09 |
 | MT-04 | Exceder el rate limit                                   | F3-09         | Pendiente     |
 | MT-05 | Honeypot completado (no guarda nada)                    | F3-09         | Pendiente     |
 | MT-06 | Mails recibidos: estudio y acuse                        | F3-09         | Pendiente     |
@@ -304,7 +307,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 1: se ven el enfoque, las tarjetas de profesionales (nombre, formación y matrícula marcada como ficticia, sin fotos) y los 4 valores. No hay promesas de resultado ni comparaciones con otros estudios.
 - Paso 2: el índice baja hasta el grupo elegido; hay 4 grupos con sus preguntas.
 - Paso 3: el link lleva a `/areas/<slug>`.
-- Paso 4: lleva a `/privacidad`, con versión **1.0** y fecha de vigencia bajo el título y el aviso de que el estudio es ficticio.
+- Paso 4: lleva a `/privacidad`, con la versión vigente (**1.1** desde F3-02) y su fecha de vigencia bajo el título y el aviso de que el estudio es ficticio.
 - Paso 5: el índice baja a la sección. La sección "Quién es responsable" muestra el nombre, el domicilio y el email del estudio; "Con quién los compartimos" nombra a Vercel, Supabase, Resend, Cloudflare y Upstash; están los avisos de la AAIP. A 1440 px, el índice queda fijo al costado mientras leés.
 - Paso 6: el foco se ve siempre y los índices funcionan con Enter.
 
@@ -480,6 +483,41 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 5: un error (por ejemplo `new row violates row-level security policy`). No se crea ninguna fila.
 - Paso 6: "Database schema is up to date!".
 - Paso 7: activado.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-03 — Errores de validación de cada campo
+
+- **Objetivo:** que cada error se entienda, aparezca junto a su campo y lo anuncie un lector de pantalla, sin perder lo que la persona ya escribió. Las reglas están cubiertas por `src/features/inquiries/__tests__/schema.test.ts`; acá se mira cómo se viven en el formulario.
+- **Requisitos:** SPEC §8.1, US-03 CA2, CA4, CA6 y CA7, NFR-A11Y-01.
+- **Precondiciones:** formulario de Contacto funcionando (F3-07). Se ejecuta en el cierre de F3 (F3-09). Para el paso 9, un lector de pantalla (NVDA, VoiceOver o TalkBack).
+
+**Pasos**
+
+1. Paso 1 del formulario: tocá "Siguiente" sin completar nada.
+2. Escribí un mensaje de 19 caracteres (con espacios al principio y al final) y seguí. Después, pegá uno de más de 2000.
+3. Paso 2: dejá el nombre vacío, después probá `Ana2` y por último `O’Brien` (con el apóstrofo curvo del celular).
+4. Probá el email `ana@example` y después `  Ana@Example.COM  `.
+5. Elegí WhatsApp sin teléfono. Después cargá `(011) 4555-1234` y por último `+54 9 11 5555-1234`.
+6. Con WhatsApp elegido, no respondas "¿Es seguro que te contactemos por ese medio?".
+7. No respondas "¿Este email es privado (solo lo leés vos)?". Cambiá a email como canal y fijate si la pregunta de seguridad sigue apareciendo.
+8. Enviá sin marcar el consentimiento.
+9. Repetí los pasos 1, 6 y 8 con el lector de pantalla.
+
+**Resultado esperado**
+
+- Paso 1: "Elegí el tipo de consulta", "Indicá la urgencia" y "Contanos un poco más (mínimo 20 caracteres)", cada uno junto a su campo.
+- Paso 2: con 19 caracteres útiles, el mismo error de mínimo; con más de 2000, "Máximo 2000 caracteres".
+- Paso 3: "Ingresá tu nombre" para vacío y `Ana2`; `O’Brien` se acepta.
+- Paso 4: "Ingresá un email válido" para `ana@example`; el segundo se acepta.
+- Paso 5: "Para contactarte por ese medio necesitamos tu teléfono"; `(011) 4555-1234` da "Ingresá un teléfono válido" (los paréntesis no están permitidos, SPEC §8.1); el último se acepta.
+- Paso 6: "Decinos si es seguro contactarte por ese medio". Ninguna opción viene marcada.
+- Paso 7: "Decinos si este email es privado", sin opción marcada. Con email como canal, la pregunta de seguridad no aparece.
+- Paso 8: "Necesitamos tu consentimiento para responderte"; la casilla nunca viene marcada.
+- Todos los errores de un paso aparecen **a la vez**, no de a uno. Ningún error repite el mensaje ni muestra lo que escribiste. Lo ya escrito no se borra.
+- Paso 9: el lector anuncia los errores y cada campo inválido se lee con su mensaje.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
