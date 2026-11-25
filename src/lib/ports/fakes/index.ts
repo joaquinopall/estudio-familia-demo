@@ -8,6 +8,12 @@ import type {
   CaptchaVerifyInput,
   CaptchaVerifyResult,
 } from "@/lib/ports/captcha-verifier";
+import type {
+  AuthGateway,
+  SignInCredentials,
+  SignInOutcome,
+  SignOutOutcome,
+} from "@/lib/ports/auth-gateway";
 import type { Clock } from "@/lib/ports/clock";
 import type { EmailMessage, EmailSendResult, EmailSender } from "@/lib/ports/email-sender";
 import {
@@ -68,6 +74,42 @@ export class FakeCaptchaVerifier implements CaptchaVerifier {
   async verify(input: CaptchaVerifyInput): Promise<CaptchaVerifyResult> {
     this.calls.push(input);
     return this.result;
+  }
+}
+
+/**
+ * Accepts one account (or answers with a forced outcome) and records every attempt. It keeps
+ * the passwords it receives only in memory, for assertions.
+ */
+export class FakeAuthGateway implements AuthGateway {
+  readonly signInCalls: SignInCredentials[] = [];
+  signOutCalls = 0;
+  private forced: SignInOutcome | null = null;
+  private signOutResult: SignOutOutcome = { ok: true };
+
+  constructor(private readonly account: SignInCredentials | null = null) {}
+
+  respondWith(outcome: SignInOutcome | null): void {
+    this.forced = outcome;
+  }
+
+  failSignOut(errorCode: string): void {
+    this.signOutResult = { ok: false, errorCode };
+  }
+
+  async signInWithPassword(credentials: SignInCredentials): Promise<SignInOutcome> {
+    this.signInCalls.push(credentials);
+    if (this.forced) return this.forced;
+    const matches =
+      this.account?.email === credentials.email && this.account.password === credentials.password;
+    return matches
+      ? { status: "ok" }
+      : { status: "invalid_credentials", errorCode: "invalid_credentials" };
+  }
+
+  async signOut(): Promise<SignOutOutcome> {
+    this.signOutCalls += 1;
+    return this.signOutResult;
   }
 }
 
