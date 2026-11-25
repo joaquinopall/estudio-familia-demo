@@ -69,8 +69,14 @@ afterEach(() => {
 });
 
 describe("resolveAdminRedirect", () => {
-  it.each(["/admin", "/admin/consultas/123"])("sends %s to the login without a session", (path) => {
-    expect(resolveAdminRedirect(path, false)).toBe("/admin/login");
+  it("sends /admin to the plain login without a session", () => {
+    expect(resolveAdminRedirect("/admin", false)).toBe("/admin/login");
+  });
+
+  it("sends any other panel page to the login with a next to come back (F4-06)", () => {
+    expect(resolveAdminRedirect("/admin/consultas/123", false, "?x=1")).toBe(
+      `/admin/login?next=${encodeURIComponent("/admin/consultas/123?x=1")}`,
+    );
   });
 
   it("never redirects the login itself (no loop)", () => {
@@ -87,12 +93,23 @@ describe("resolveAdminRedirect", () => {
 });
 
 describe("updateSession", () => {
-  it("redirects /admin to /admin/login without a session, dropping the query", async () => {
+  it("redirects a panel page to the login, remembering it in next (F4-06)", async () => {
     supabaseAnswering(NO_SESSION);
 
     const response = await run("/admin/consultas/123?estado=NEW");
 
     expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location") ?? "");
+    expect(location.origin).toBe("https://demo.example.com");
+    expect(location.pathname).toBe("/admin/login");
+    expect(location.searchParams.get("next")).toBe("/admin/consultas/123?estado=NEW");
+  });
+
+  it("redirects /admin to the plain login", async () => {
+    supabaseAnswering(NO_SESSION);
+
+    const response = await run("/admin");
+
     expect(response.headers.get("location")).toBe("https://demo.example.com/admin/login");
   });
 
