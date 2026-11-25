@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { PASSWORD_MAX_LENGTH, signInMessages, signInSchema } from "@/features/auth/schema";
+import {
+  FULL_NAME_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  signInMessages,
+  signInSchema,
+  staffMemberInputSchema,
+  staffMemberMessages,
+} from "@/features/auth/schema";
 
 const valid = { email: "staff@example.com", password: "una-clave-larga-y-segura" };
 
@@ -52,4 +59,32 @@ describe("signInSchema", () => {
   it("reports both fields at once", () => {
     expect(fieldErrors({}).map((issue) => issue.path)).toEqual(["email", "password"]);
   });
+});
+
+describe("staffMemberInputSchema (staff:add)", () => {
+  const valid = { email: "Titular@Example.com ", fullName: "  Laura Gómez " };
+
+  it("normalizes the email and trims the name", () => {
+    expect(staffMemberInputSchema.parse(valid)).toEqual({
+      email: "titular@example.com",
+      fullName: "Laura Gómez",
+    });
+  });
+
+  it.each([undefined, "", "no-es-un-email"])("rejects the email %j naming --email", (email) => {
+    const result = staffMemberInputSchema.safeParse({ ...valid, email });
+
+    expect(result.error?.issues.map((issue) => issue.message)).toEqual([staffMemberMessages.email]);
+  });
+
+  it.each([undefined, " A ", "x".repeat(FULL_NAME_MAX_LENGTH + 1)])(
+    "rejects the name %j naming --name",
+    (fullName) => {
+      const result = staffMemberInputSchema.safeParse({ ...valid, fullName });
+
+      expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+        staffMemberMessages.fullName,
+      ]);
+    },
+  );
 });

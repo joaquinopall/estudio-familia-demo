@@ -5,6 +5,8 @@
 export const adminPaths = {
   home: "/admin",
   login: "/admin/login",
+  /** A valid session that is not active staff (SPEC §6.4). The login page explains it (F4-03). */
+  loginForbidden: "/admin/login?error=forbidden",
 } as const;
 
 /** True for /admin and anything below it, never for paths like /administracion. */
