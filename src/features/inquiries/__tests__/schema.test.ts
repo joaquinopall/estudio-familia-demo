@@ -319,6 +319,12 @@ describe("inquirySchema (SPEC §8.1)", () => {
   });
 });
 
+describe("Zod configuration", () => {
+  it("runs jitless, so the browser never evaluates strings (no CSP 'unsafe-eval', F3-08)", () => {
+    expect(z.config().jitless).toBe(true);
+  });
+});
+
 describe("isHoneypotFilled (SPEC §8.1, FR-06)", () => {
   const formWith = (value?: string | Blob) => {
     const formData = new FormData();
