@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.30 (25/11/2026) |
+| Versión | 1.31 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -293,7 +293,7 @@ sequenceDiagram
 ```
 
 ### 6.4 Flujo: admin
-1. `proxy` refresca la sesión de Supabase y redirige `/admin/*` a `/admin/login` si no hay sesión (primera barrera, optimista).
+1. `proxy` refresca la sesión de Supabase y redirige `/admin/*` a `/admin/login` si no hay sesión (primera barrera, optimista). Salvo para `/admin`, agrega `?next=<ruta y query pedidas>`, así el link del mail al detalle vuelve a esa consulta después del login (F4-06). `next` solo se acepta si es una ruta del panel (`safeNextPath`, §10.2).
 2. `app/admin/(protected)/layout.tsx` y **cada** action admin llaman a `requireStaff()`:
    - obtiene el usuario verificado con el servidor de Supabase Auth (no confiar en la sesión de cookies sin verificar);
    - busca `StaffMember` activo por `authUserId`;
@@ -317,7 +317,7 @@ type ActionResult<T> =
 | `submitInquiry(prev, formData)` | campos de §8.1 + `cf-turnstile-response` + `website` (honeypot) | `{ reference: string; doNotContact: boolean }` (`doNotContact`: sin medio seguro, la confirmación no promete contacto, US-03 CA3). Con un error devuelve además `values` (lo que escribió la persona, sin el token ni el honeypot) para no perderlo (US-03 CA4) | VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, INTERNAL |
 | `updateInquiryStatus(prev, formData)` | `id` (UUID) + `status` (enum) | `{ status, changed }`. El mismo estado devuelve `changed: false` y no crea un evento | UNAUTHORIZED, FORBIDDEN, VALIDATION, NOT_FOUND, INTERNAL |
 | `updateInquiryNotes(prev, formData)` | `id` (UUID) + `notes` (string ≤ 5000; vacío = sin notas) | `{ updatedAt, changed }`. Con un error devuelve además `values.notes` para no perder lo escrito | ídem |
-| `signIn(prev, formData)` | email + password | redirect `/admin`. Con un error devuelve además `values.email` (lo escrito, nunca la contraseña) para no perderlo | VALIDATION, UNAUTHORIZED (mensaje genérico), RATE_LIMITED, INTERNAL |
+| `signIn(prev, formData)` | email + password + `next` opcional (campo oculto) | redirect a `next` si es una ruta del panel; si no, a `/admin`. Con un error devuelve además `values.email` (lo escrito, nunca la contraseña) para no perderlo | VALIDATION, UNAUTHORIZED (mensaje genérico), RATE_LIMITED, INTERNAL |
 | `signOut()` | — | redirect `/admin/login` | — |
 
 Los mensajes de error al usuario son genéricos y en español. El login nunca revela si el email existe. Las actions del panel validan el acceso (`requireStaffForAction`) antes que el input, y toman el actor de la sesión.
@@ -484,6 +484,7 @@ Etiquetas de interfaz:
 | XSS | Escape de React; sin `dangerouslySetInnerHTML` salvo JSON-LD serializado de forma segura; CSP |
 | CSRF en actions | Chequeo de origen de Server Actions + cookies SameSite |
 | Acceso al panel sin permiso | Proxy + `requireStaff()` en layout y actions + allowlist en `StaffMember` |
+| Redirect abierto con `?next=` (un link a `/admin/login?next=https://otro-sitio` para phishing) | `safeNextPath`: solo rutas del panel, comparadas después de parsear y normalizar la URL (rechaza `//`, `\`, esquemas, codificaciones, `..` y el propio login), en el proxy, el login y `signIn` |
 | Lectura directa de la DB vía Supabase API | RLS habilitado sin políticas |
 | Fuerza bruta en el login | Rate limit + mensajes genéricos + protección propia de Supabase |
 | Fuga de datos por mail | Mail al estudio sin el mensaje completo; link al panel |
@@ -659,3 +660,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.28 | F4-04. FR-03: `site.config.ts` suma la zona horaria del estudio (`timeZone`), que usan las fechas del panel. §6.2: `features/inquiries/server.ts` (`getInquiryService()`), `list-href.ts`, los componentes del listado y `app/admin/(protected)/error.tsx`. El listado muestra el email (pedido del dueño), pero no el mensaje ni el teléfono; la búsqueda trata `%` y `_` como texto. | [tu nombre] |
 | 25/11/2026 | 1.29 | F4-05. §6.5: `updateInquiryStatus` y `updateInquiryNotes` reciben `(prev, formData)`, para `useActionState` y para funcionar sin JavaScript. Devuelven `changed`: el mismo valor no crea un evento. Las notas vuelven en `values` si el guardado falla. El acceso se valida antes que el input. §6.2: `update-inquiry.ts`, los componentes del detalle y `not-found.tsx` del detalle. En el detalle, teléfono y email van sin links (§11.5). | [tu nombre] |
 | 25/11/2026 | 1.30 | §15: nueva pregunta abierta para F5-02, el cifrado a nivel de aplicación del mensaje y de las notas internas (no es extremo a extremo). No cambia ningún requisito vigente. | [tu nombre] |
+| 25/11/2026 | 1.31 | F4-06. §6.4 paso 1: el proxy agrega `?next=` con la página pedida (salvo `/admin`). §6.5: `signIn` recibe `next` (campo oculto) y redirige ahí si es una ruta del panel. §10.2: amenaza nueva, el redirect abierto, mitigada con `safeNextPath`. | [tu nombre] |

@@ -31,8 +31,8 @@ Detalles de los e2e:
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
   - **Turnstile:** necesita la clave de prueba que aprueba sola (`1x00000000000000000000AA`). Con otra clave, o sin `DATABASE_URL`, los dos escenarios se saltean con su motivo: nunca resuelven un desafío real.
   - Cubre: llegar desde un área con el área preseleccionada, los dos pasos, Turnstile, la confirmación con y sin medio seguro, lo guardado en la base (con su evento `CREATED`) y que no haya violaciones de la CSP.
-- **`admin-login.spec.ts`** (F4-03): la página de login con `noindex`, sin violaciones de axe ni de la CSP, el orden de teclado, el aviso de `?error=forbidden` y credenciales incorrectas (mensaje genérico con foco, email conservado). Ese último escenario **consulta a Supabase dev** con una cuenta que no existe, y cuenta un intento del rate limit con una IP de documentación propia de la corrida. El login exitoso llega en F4-07.
-- **`admin-redirect.spec.ts`** (F4-01, F4-02): sin sesión o con una cookie de sesión falsificada, `/admin` y `/admin/consultas/…` responden 307 a `/admin/login`; el login no se redirige, y `/contacto` no recibe cookies de sesión. No inicia sesión ni toca Supabase Auth: alcanza con que las dos variables de Supabase estén definidas.
+- **`admin-login.spec.ts`** (F4-03, F4-06): `next` en el formulario (y conservado después de un error) e ignorado si es externo; la página de login con `noindex`, sin violaciones de axe ni de la CSP, el orden de teclado, el aviso de `?error=forbidden` y credenciales incorrectas (mensaje genérico con foco, email conservado). Ese último escenario **consulta a Supabase dev** con una cuenta que no existe, y cuenta un intento del rate limit con una IP de documentación propia de la corrida. El login exitoso llega en F4-07.
+- **`admin-redirect.spec.ts`** (F4-01, F4-02, F4-06): sin sesión o con una cookie de sesión falsificada, `/admin` y `/admin/consultas/…` responden 307 a `/admin/login`, con `?next=` para volver a la página pedida; el login no se redirige, y `/contacto` no recibe cookies de sesión. No inicia sesión ni toca Supabase Auth: alcanza con que las dos variables de Supabase estén definidas.
 - Reporte HTML de la última corrida: `npx playwright show-report`.
 - Correr un archivo o un test: `npx playwright test tests/e2e/layout.spec.ts` o `-g "nombre del test"`.
 
@@ -81,6 +81,7 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`site-config.test.ts` → "keeps shortName neutral":** el nombre corto del estudio incluye la especialidad, y ese nombre firma el acuse. Elegí un nombre corto sin la especialidad.
 - **`inquiry-submit.spec.ts`:** si se saltea, mirá el motivo (falta `DATABASE_URL` o la clave de Turnstile no es la de prueba). Si falla esperando el token de Turnstile, revisá la conexión a `challenges.cloudflare.com`. Si falla en la confirmación, mirá el snapshot del error (`test-results/…/error-context.md`): el resumen de errores dice qué respondió la action. Cada escenario manda su propia IP de documentación (`2001:db8:…`) en `x-forwarded-for`, así no comparte el rate limit con otras corridas ni con tus pruebas a mano; si ves "Hiciste demasiados intentos seguidos", revisá que eso siga así. Si queda alguna fila `E2E-`, la próxima corrida la borra cuando tenga más de un día, o borrala desde el Table Editor de Supabase dev.
 - **`features/auth/__tests__/repository.db.test.ts` → "can read auth.users":** si da "permission denied", Supabase le quitó a `postgres` la lectura de `auth.users` y `staff:add` no puede buscar usuarios. Mirá el plan B en ADR-0015 (`--auth-user-id`). Si queda alguna fila `E2E-` en `staff_members`, borrala desde el Table Editor de dev.
+- **`safe-next-path.test.ts`:** si un caso de la tabla de ataques empieza a pasar, el login quedó como redirect abierto: corregí `safeNextPath`, nunca la tabla (SPEC §10.2).
 - **`access.test.ts` o `dal.test.ts`:** si un caso que debería ser `forbidden` o `unauthenticated` pasa como `ok`, es un agujero de seguridad: corregí el código, nunca el test (NFR-SEC-02).
 - **`repository.db.test.ts`:** si falla al conectar, revisá `DATABASE_URL` (y que las migraciones estén aplicadas: `npx prisma migrate status`). Si queda alguna fila `E2E-` en `inquiries`, borrala desde el Table Editor de Supabase dev.
 - **`sign-in.test.ts` → "same answer" o "never writes":** el login empezó a distinguir un email inexistente de una contraseña incorrecta, o a loguear el email o la contraseña. Las dos cosas están prohibidas (SPEC §6.5, NFR-SEC-06): corregí el código, no el test.
@@ -164,6 +165,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-24 | Configuración de Supabase Auth (registro y contraseñas) | F4-01         | **Detallado** · dev en F4-01, prod en F5-08 |
 | MT-25 | Alta de staff con `npm run staff:add`                   | F4-02         | **Detallado** · dev en F4-02, prod en F5-08 |
 | MT-26 | Listado de consultas: orden, filtros, búsqueda y páginas | F4-04        | **Detallado** · se ejecuta en F4-04 y F4-08 |
+| MT-27 | Del mail al detalle, pasando por el login                | F4-06         | **Detallado** · se ejecuta en F4-06 y F4-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -615,6 +617,34 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 8: el lector anuncia los nombres de los campos y lee el mensaje de error apenas aparece.
 - Paso 9: funciona igual (la página se recarga en cada envío).
 - Si hacés más de 5 intentos en 15 minutos: "Hiciste demasiados intentos seguidos…".
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-27 — Del mail al detalle, pasando por el login
+
+- **Objetivo:** que el aviso de una consulta nueva lleve al estudio directo a esa consulta, aunque tenga que iniciar sesión, y que el login no se pueda usar para mandar a alguien a otro sitio.
+- **Requisitos:** US-05 CA1, FR-10, SPEC §6.4 paso 1, §6.5, §10.2.
+- **Precondiciones:** una consulta nueva enviada desde `/contacto` y su mail de aviso en tu casilla (MT-06). Tu usuario es staff en dev (MT-25). Una ventana privada, sin sesión.
+
+**Pasos**
+
+1. En el mail de aviso, tocá "Ver en el panel" y abrí el link en la ventana privada.
+2. Ingresá con una contraseña incorrecta y después con la correcta.
+3. Con la sesión abierta, abrí de nuevo el link del mail.
+4. Cerrá sesión. Abrí `/admin?status=NEW&area=DIVORCE`, ingresá y mirá la URL.
+5. Cerrá sesión. Abrí `/admin/login?next=https://example.com`, ingresá y mirá adónde vas. Repetí con `?next=//example.com` y `?next=/contacto`.
+6. Con la sesión abierta, abrí `/admin/login?next=/admin/consultas/<id de la consulta>`.
+
+**Resultado esperado**
+
+- Paso 1: terminás en `/admin/login?next=%2Fadmin%2Fconsultas%2F<id>`.
+- Paso 2: con la contraseña incorrecta, el mensaje genérico, y la URL sigue con `next`. Con la correcta llegás **al detalle de esa consulta**, no al listado.
+- Paso 3: el detalle se abre directo, sin pasar por el login.
+- Paso 4: después de ingresar, el listado conserva el filtro (`?status=NEW&area=DIVORCE`).
+- Paso 5: en los tres casos terminás en `/admin`. **Nunca** en otro sitio ni en una página pública.
+- Paso 6: vas directo al detalle.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
