@@ -4,6 +4,21 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-04 · Listado
+
+- **Agregado:** el listado de consultas en `/admin` (US-06 CA2).
+  - 20 por página, paginadas en el servidor, de la más nueva a la más vieja.
+  - Columnas: fecha y hora del estudio, referencia (link al detalle), nombre y email, área, urgencia, estado y contacto.
+  - Badges de estado y urgencia, siempre con texto. **"No iniciar contacto"** destacado cuando no hay un medio seguro (US-03 CA7).
+  - Filtros por estado, área y urgencia y búsqueda por nombre o email en un formulario `GET`: quedan en la URL y se pueden compartir. Sin JavaScript.
+  - Estados vacíos, paginación que conserva los filtros y un mensaje de error propio del panel si la base no responde.
+- **Agregado:** `listInquiries` en el service y `list()` en el repository (`count` + `findMany` en una transacción, sin traer el mensaje, el teléfono ni las notas). `getInquiryService()` en `features/inquiries/server.ts` arma el service con Prisma; también lo usa `submitInquiry`.
+- **Agregado:** `siteConfig.timeZone` y `formatDateTime`: el panel muestra la hora del estudio, no la del servidor.
+- **Agregado:** `adminPaths.inquiry(id)`, la ruta del detalle, que ahora usa también el mail al estudio.
+- **Corregido (lo encontró el test contra dev):** la búsqueda trataba `%` y `_` como comodines, porque Prisma no escapa `contains`. Ahora se escapan (`escapeLike`).
+- **Agregado:** tests del service, de las URLs, de `escapeLike`, de los componentes y de `formatDateTime`, y `list.db.test.ts` contra dev.
+- **Documentado:** ARCHITECTURE, README, TESTING (MT-26 nuevo) y SPEC v1.28.
+
 ### Corrección F4-02 · `staff:add` con un usuario de Auth recreado
 
 - **Corregido:** si un usuario se borraba y se volvía a crear en Supabase Auth (mismo email, id nuevo), `staff:add` fallaba con "StaffStoreError: PrismaClientKnownRequestError": la fila vieja de `staff_members` conservaba el email, que es único. Ahora el script vincula esa fila al usuario nuevo y la reactiva (`relinked`), sin perder su `id`. Si el usuario viejo sigue existiendo, no toca nada y avisa (`email_in_use`).

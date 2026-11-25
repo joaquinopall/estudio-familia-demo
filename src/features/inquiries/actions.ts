@@ -8,27 +8,20 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 
 import { siteConfig } from "@/config/site.config";
-import { privacyPolicy } from "@/content/legal/privacy";
-import { getCaptchaVerifier, getClock, getEmailSender, getRateLimiter } from "@/lib/adapters";
-import { getDb } from "@/lib/db";
+import { getCaptchaVerifier, getEmailSender, getRateLimiter } from "@/lib/adapters";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { getClientIp } from "@/lib/security/ip";
 
 import { sendNewInquiryEmails } from "./notifications";
-import { createPrismaInquiryRepository } from "./repository";
-import { createInquiryService } from "./service";
+import { getInquiryService } from "./server";
 import { type SubmitInquiryState, createSubmitInquiryHandler } from "./submit-inquiry";
 
 function buildSubmitInquiryHandler() {
   return createSubmitInquiryHandler({
     rateLimiter: getRateLimiter(),
     captchaVerifier: getCaptchaVerifier(),
-    inquiryService: createInquiryService({
-      repository: createPrismaInquiryRepository(getDb()),
-      clock: getClock(),
-      privacyPolicyVersion: privacyPolicy.version,
-    }),
+    inquiryService: getInquiryService(),
     sendEmails: (inquiry) =>
       sendNewInquiryEmails(
         {

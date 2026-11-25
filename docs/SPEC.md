@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.27 (25/11/2026) |
+| Versión | 1.28 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -114,7 +114,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 |---|---|
 | FR-01 | Rutas públicas: `/`, `/areas`, `/areas/[slug]`, `/nosotros`, `/preguntas-frecuentes`, `/contacto`, `/privacidad`. |
 | FR-02 | Las áreas v1 son: Sucesiones, Divorcios, Alimentos, Cuidado personal y régimen de comunicación, Convenios y acuerdos familiares. Se definen en `src/content/practice-areas.ts`. |
-| FR-03 | Todo dato del estudio sale de `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, teléfono, WhatsApp, email público, redes, coordenadas, jurisdicción donde litiga y monograma del ícono). |
+| FR-03 | Todo dato del estudio sale de `src/config/site.config.ts` (nombre, profesionales y matrículas, dirección, horarios, teléfono, WhatsApp, email público, redes, coordenadas, jurisdicción donde litiga, zona horaria del estudio y monograma del ícono). |
 | FR-04 | El formulario de consulta usa una Server Action `submitInquiry` con mejora progresiva (`useActionState`). |
 | FR-05 | Validación compartida cliente/servidor con un único schema Zod (`inquirySchema`). |
 | FR-06 | Anti-abuso en el envío, en este orden: honeypot → rate limit → validación → Turnstile. |
@@ -158,6 +158,7 @@ src/
       login/page.tsx
       (protected)/layout.tsx     # llama a requireStaff()
       (protected)/page.tsx       # listado
+      (protected)/error.tsx      # error del panel (mensaje genérico y reintento)
       (protected)/consultas/[id]/page.tsx
     sitemap.ts
     robots.ts
@@ -187,7 +188,9 @@ src/
       labels.ts                  # nombres en español de los enums (§8.1, FR-11)
       emails/                    # React Email: NewInquiryEmail, InquiryReceiptEmail, render.ts, styles.ts
       form-values.ts             # valores del formulario que la action devuelve al fallar
-      components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, StatusBadge (F4)
+      server.ts                  # getInquiryService(): el service con Prisma, para páginas y actions
+      list-href.ts               # buildListHref: URLs del listado con los filtros
+      components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, InquiryFilters, InquiryPagination, badges (F4-04)
       __tests__/
     auth/
       dal.ts                     # requireStaff() (páginas), requireStaffForAction() (actions), getCurrentStaff()
@@ -647,3 +650,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.25 | F4-02 (ADR-0015). §6.2: `features/auth` suma `access.ts`, `types.ts`, `staff-service.ts`, `staff-add-args.ts` y `errors.ts`; `dal.ts` agrega `requireStaffForAction()` para las actions; se agrega `scripts/staff-add.ts` (con `tsx`). §7: cómo `staff:add` encuentra al usuario (`auth.users` por SQL), su idempotencia y la baja con `active = false`. | [tu nombre] |
 | 25/11/2026 | 1.26 | F4-03. §6.5: `signIn` devuelve `values.email` cuando falla (React 19 reinicia el formulario) y puede devolver `INTERNAL` si Supabase no responde. §6.2: `app/admin/layout.tsx` (noindex y encabezado propio para todo el panel), `features/auth/components/` (`LoginForm`, `LoginSessionCheck`, `SignOutButton`) y `components/forms/field-styles.ts`. | [tu nombre] |
 | 25/11/2026 | 1.27 | Corrección de F4-02. §7: `staff:add` vincula un staff existente a un usuario de Auth recreado con el mismo email (conserva su `id`) y no toca nada si el usuario viejo sigue existiendo. | [tu nombre] |
+| 25/11/2026 | 1.28 | F4-04. FR-03: `site.config.ts` suma la zona horaria del estudio (`timeZone`), que usan las fechas del panel. §6.2: `features/inquiries/server.ts` (`getInquiryService()`), `list-href.ts`, los componentes del listado y `app/admin/(protected)/error.tsx`. El listado muestra el email (pedido del dueño), pero no el mensaje ni el teléfono; la búsqueda trata `%` y `_` como texto. | [tu nombre] |

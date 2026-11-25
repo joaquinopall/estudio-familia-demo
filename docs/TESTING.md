@@ -44,9 +44,10 @@ Detalles de los e2e:
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Auth        | Vitest + fakes               | `src/features/auth/__tests__/`, `src/lib/supabase/__tests__/` | `signIn`: OK, VALIDATION, mismo UNAUTHORIZED para email inexistente y contraseña incorrecta, rate limit propio (5 en 15 min) y de Supabase, Upstash caído, Supabase caído, logs sin email ni contraseña. `signOut` aunque Supabase falle. Traducción de errores de Supabase. Proxy: redirect sin sesión, sin loop en el login, cookies y headers de no-caché, cookies httpOnly/Secure/Lax |
+| Listado del panel | Vitest + fakes + Testing Library | `src/features/inquiries/__tests__/list-inquiries.test.ts`, `list-href.test.ts`, `escape-like.test.ts`, `components/__tests__/inquiry-list.test.tsx` | Paginación (20, página fuera de rango), filtros y búsqueda hacia el repository, filtros inválidos ignorados, referencia, `doNotContact` con `planContact`, URLs con filtros, tabla (encabezados, hora del estudio, badges, "No iniciar contacto", sin mensaje ni teléfono), filtros (`GET`, labels, valores actuales) y paginación |
 | Login (UI)  | Vitest + Testing Library     | `src/features/auth/components/__tests__/`    | `LoginForm`: labels y `autocomplete`, funciona sin JavaScript, error general en `role="alert"` con foco, errores de campo con `aria-describedby`, email conservado y contraseña no, botón pendiente. `LoginSessionCheck`: redirect del staff a `/admin`, aviso de `?error=forbidden` sin detalles |
 | Autorización | Vitest + fakes              | `src/features/auth/__tests__/access.test.ts`, `dal.test.ts`, `staff-service.test.ts`, `staff-add-args.test.ts` | `requireStaff()`: sin sesión, sesión sin staff, staff inactivo, staff OK, Supabase y base caídos (falla cerrado), redirects de páginas y `ActionResult` de actions, logs sin datos personales. `staff:add`: usuario inexistente, alta, reactivación idempotente y argumentos |
-| Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
+| Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; listado (`list.db.test.ts`: orden, cada filtro, búsqueda sin distinguir mayúsculas en nombre y email, `%` como texto, paginación y campos del `select`); staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
@@ -161,6 +162,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** · sin ejecutar (pendiente: F4-01 y F5-08) |
 | MT-24 | Configuración de Supabase Auth (registro y contraseñas) | F4-01         | **Detallado** · dev en F4-01, prod en F5-08 |
 | MT-25 | Alta de staff con `npm run staff:add`                   | F4-02         | **Detallado** · dev en F4-02, prod en F5-08 |
+| MT-26 | Listado de consultas: orden, filtros, búsqueda y páginas | F4-04        | **Detallado** · se ejecuta en F4-04 y F4-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -612,6 +614,44 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 8: el lector anuncia los nombres de los campos y lee el mensaje de error apenas aparece.
 - Paso 9: funciona igual (la página se recarga en cada envío).
 - Si hacés más de 5 intentos en 15 minutos: "Hiciste demasiados intentos seguidos…".
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-26 — Listado de consultas: orden, filtros, búsqueda y páginas
+
+- **Objetivo:** que el estudio encuentre rápido una consulta, vea primero lo nuevo y lo urgente, y que nunca se le pase un "No iniciar contacto".
+- **Requisitos:** US-06 CA2, US-03 CA7, FR-10, NFR-ESC-01, NFR-A11Y-01.
+- **Precondiciones:** sesión de staff en dev (MT-07). Cuatro consultas nuevas enviadas desde `/contacto`, todas con tu email o con direcciones `@example.com`:
+  - A: Sucesiones, urgencia alta, WhatsApp y "sí, es seguro";
+  - B: Divorcio, sin apuro, email privado;
+  - C: Alimentos, en las próximas semanas, teléfono y "no es seguro" con un email **no** privado;
+  - D: Divorcio, urgencia alta, con "ñ" o una tilde en el nombre.
+  - Para el paso 7 hacen falta más de 20 consultas: si no las tenés, pedímelo y creo filas `E2E-` en dev.
+
+**Pasos**
+
+1. Entrá a `/admin`.
+2. Mirá la fila de C.
+3. Filtrá por área "Divorcio" y después agregá la urgencia "Alta".
+4. Copiá la URL, abrila en otra pestaña y después tocá "Limpiar filtros".
+5. Buscá parte del nombre de B en minúsculas, después parte de su email y después un texto que no exista (por ejemplo `zzz%`).
+6. Escribí `?status=CUALQUIERA&page=999` en la URL.
+7. Con más de 20 consultas, andá a la página 2 con algún filtro puesto.
+8. Hacé todo con el teclado, incluido el desplazamiento lateral de la tabla en un celular o con la ventana angosta.
+
+**Resultado esperado**
+
+- Paso 1: las consultas aparecen de la más nueva a la más vieja, con la fecha y la hora de Argentina (no 3 horas corridas). Cada fila muestra la referencia (link), nombre y email, área, urgencia (badge "Alta", "Normal" o "Baja"), estado ("Nueva") y el canal preferido.
+- Paso 2: en Contacto dice **"No iniciar contacto"**, destacado, en lugar del canal.
+- Paso 3: primero quedan B y D, después solo D. La URL cambia (`?area=DIVORCE&urgency=HIGH`).
+- Paso 4: la otra pestaña muestra exactamente lo mismo. "Limpiar filtros" vuelve a todas.
+- Paso 5: encuentra a B por el nombre y por el email. Con el texto inexistente, "Ninguna consulta coincide con los filtros." El `%` no funciona como comodín.
+- Paso 6: no hay error: se ignora el estado inválido y se muestra la última página.
+- Paso 7: "Página 2 de N · M consultas". "Anterior" y "Siguiente" conservan el filtro.
+- Paso 8: se llega a todos los filtros, al botón, a los links y a la tabla con Tab, con el foco visible.
+- El link de la referencia lleva a `/admin/consultas/<id>`, que da 404 hasta F4-05.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
