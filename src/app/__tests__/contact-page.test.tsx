@@ -1,11 +1,15 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import ContactPage, { metadata } from "@/app/(public)/contacto/page";
 import { siteConfig } from "@/config/site.config";
 import { contactPageContent } from "@/content/contact-page";
 import { getFeaturedFaqs } from "@/content/faqs";
+import { inquiryFormContent } from "@/content/inquiry-form";
 import { deadlineContent, safetyContent } from "@/content/urgent-help";
+
+vi.mock("@/features/inquiries/actions", () => ({ submitInquiry: vi.fn() }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
 
 describe("/contacto (FR-01, SPEC §11.3)", () => {
   it("has its own metadata", () => {
@@ -24,12 +28,12 @@ describe("/contacto (FR-01, SPEC §11.3)", () => {
     expect(within(breadcrumbs).getByText("Contacto")).toHaveAttribute("aria-current", "page");
   });
 
-  it("puts the channels that work before the form, with the response time", () => {
-    const { container } = render(<ContactPage />);
+  it("puts the working form first and keeps the contact details with the response time (F3-07)", () => {
+    render(<ContactPage />);
 
+    const form = screen.getByRole("region", { name: inquiryFormContent.title });
     const details = screen.getByRole("region", { name: contactPageContent.details.title });
-    const slot = container.querySelector("#formulario") as Element;
-    expect(details.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(form.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(details).getByText(siteConfig.responseTime)).toBeInTheDocument();
   });
 
@@ -40,13 +44,13 @@ describe("/contacto (FR-01, SPEC §11.3)", () => {
     expect(screen.getByText(deadlineContent.title)).toBeInTheDocument();
   });
 
-  it("reserves the place of the inquiry form (#formulario) for F3", () => {
+  it("renders the inquiry form at #formulario, where the CTAs of the site lead", () => {
     const { container } = render(<ContactPage />);
 
-    const slot = container.querySelector("#formulario");
-    expect(slot).not.toBeNull();
-    expect(slot).toHaveTextContent(contactPageContent.formSlot.title);
-    expect(slot).toHaveTextContent(contactPageContent.formSlot.notice);
+    const section = container.querySelector("#formulario");
+    expect(section).not.toBeNull();
+    expect(section?.querySelector("form")).not.toBeNull();
+    expect(section).toHaveTextContent(inquiryFormContent.title);
   });
 
   it("shows the contact details and the featured questions", () => {

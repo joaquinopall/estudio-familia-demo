@@ -37,7 +37,6 @@ describe("institutional pages content", () => {
     for (const label of Object.values(contactPageContent.details)) {
       expect(label.trim()).not.toBe("");
     }
-    expect(contactPageContent.formSlot.notice.trim()).not.toBe("");
   });
 });
 

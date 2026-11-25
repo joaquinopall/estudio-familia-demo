@@ -53,7 +53,7 @@ flowchart LR
 | `src/content/`                | ✅ F2-07    | Áreas, preguntas, textos de cada página y de error, ayuda urgente y privacidad como datos.     |
 | `src/lib/seo/`                | ✅ F2-07    | Metadata, rutas del sitemap, datos estructurados, `<JsonLd>` seguro e íconos.                  |
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
-| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06). ⏳ formulario y lo del panel. |
+| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06), formulario (F3-07). ⏳ lo del panel. |
 | `src/lib/security/ip.ts`      | ✅ F3-05    | IP del visitante (`x-forwarded-for` en Vercel) y HMAC-SHA256 con `IP_HASH_SALT`.               |
 | `src/features/auth/`          | ⏳ F4       | DAL (`requireStaff`), actions de login y repositorio de staff.                                 |
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
@@ -82,6 +82,15 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Flujo:** Server Action → toma los ports de `lib/adapters` → se los pasa al service. Los services y sus tests solo conocen los ports, y en tests usan los fakes de `lib/ports/fakes`.
 - **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
 - **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
+
+### Formulario de consulta (F3-07)
+
+- `/contacto` sigue **estática**. `InquiryFormSection` (servidor) dibuja `#formulario`; adentro, `InquiryFormFromQuery` (cliente, dentro de `Suspense`) lee `?area=` y preselecciona el área. La página le pasa un mapa slug → área, así el navegador no carga los textos de las áreas.
+- `InquiryForm` usa `useActionState(submitInquiry, null)`. Son dos pasos en un solo `<form>`: sin JavaScript se ven juntos y la action valida igual, pero Turnstile necesita JavaScript (hay un `<noscript>` con los otros canales).
+- El cliente valida con el mismo `inquirySchema` antes de enviar (FR-05), así no gasta rate limit; el servidor valida igual.
+- Cuando falla, la action devuelve `values` y el formulario los usa como valores por defecto: así no se pierde lo escrito, aunque React 19 vacíe el formulario y aun sin JavaScript (US-03 CA4).
+- Turnstile se dibuja con su script oficial (la CSP ya lo permite) y se reinicia después de cada error, porque el token sirve una sola vez.
+- Usa controles nativos, que funcionan sin JavaScript, con el contorno de foco global del sitio.
 
 ### Enviar una consulta (F3-05)
 
@@ -133,7 +142,7 @@ sequenceDiagram
   participant N as Next.js
   B->>V: GET /
   V-->>B: HTML prerenderizado en el build (SSG)<br/>+ headers de seguridad (next.config headers())
-  Note over B: Hidrata solo los componentes cliente<br/>(hoy: MobileMenu y NavLinks)
+  Note over B: Hidrata solo los componentes cliente<br/>(MobileMenu, NavLinks y, en /contacto, el formulario)
 ```
 
 - Los headers (HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`, CSP report-only) se aplican a **todas** las rutas desde `next.config.ts`.
@@ -146,7 +155,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Formulario de consulta (F3-07):** componente cliente con `useActionState(submitInquiry, null)` y Turnstile. La action ya existe (ver "Enviar una consulta").
+- **E2E del envío (F3-08):** Playwright de punta a punta con las claves de prueba de Turnstile.
 - **Panel admin (F4):** `proxy` refresca la sesión y redirige `/admin/*` sin sesión; el layout protegido y cada action llaman a `requireStaff()`, que verifica el usuario contra Supabase Auth y busca un `StaffMember` activo. Detalle en SPEC §6.4; datos en [ADR 0002](adr/0002-supabase-con-prisma-y-rls.md).
 
 ## Decisiones vigentes

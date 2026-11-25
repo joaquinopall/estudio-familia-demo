@@ -4,12 +4,12 @@ import Link from "next/link";
 import { SafetyNotice } from "@/components/layout/safety-notice";
 import { ContactDetails } from "@/components/marketing/contact-details";
 import { FaqList } from "@/components/marketing/faq-list";
-import { InquiryFormSlot } from "@/components/marketing/inquiry-form-slot";
 import { PageHeader } from "@/components/marketing/page-header";
 import { UrgentNote } from "@/components/marketing/urgent-note";
 import { siteConfig } from "@/config/site.config";
 import { contactPageContent } from "@/content/contact-page";
 import { getFeaturedFaqs } from "@/content/faqs";
+import { InquiryFormSection } from "@/features/inquiries/components/inquiry-form-section";
 import { publicEnv } from "@/lib/env.public";
 import { JsonLd } from "@/lib/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
@@ -21,11 +21,11 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 /**
- * /contacto (FR-01, SPEC §11.3). Static: the form (F3) will read ?area= on the client, so the
- * page does not need server-side searchParams.
+ * /contacto (FR-01, SPEC §11.3). Static: the form reads ?area= on the client, so the page does
+ * not need server-side searchParams.
  */
 export default function ContactPage() {
-  const { breadcrumbs, title, lead, formSlot, details, faqs } = contactPageContent;
+  const { breadcrumbs, title, lead, details, faqs } = contactPageContent;
 
   return (
     <>
@@ -34,10 +34,12 @@ export default function ContactPage() {
       <SafetyNotice compact />
 
       {/*
-       * The channels that work go first (the response time is in that card). Phones: details,
-       * form, questions. Desktop: details left, form and questions right.
+       * Since F3-07 the form works, so it goes first: it is what the "Contanos tu caso" CTAs
+       * lead to. WhatsApp and the phone stay reachable in the header. Phones: form, details,
+       * questions. Desktop: form and questions left (wider), details right.
        */}
-      <div className="mx-auto grid max-w-6xl items-start gap-6 px-4 pt-3 pb-14 sm:pt-6 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:grid-rows-[auto_1fr] lg:gap-10">
+      <div className="mx-auto grid max-w-6xl items-start gap-6 px-4 pt-3 pb-14 sm:pt-6 sm:pb-20 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-10">
+        <InquiryFormSection />
         <div className="lg:row-span-2">
           <ContactDetails
             contact={siteConfig.contact}
@@ -49,7 +51,6 @@ export default function ContactPage() {
             notice={<UrgentNote contact={siteConfig.contact} hours={siteConfig.hours[0]} />}
           />
         </div>
-        <InquiryFormSlot title={formSlot.title} notice={formSlot.notice} />
         <section aria-labelledby="contact-faqs-title" className="pt-4">
           <h2 id="contact-faqs-title" className="text-2xl font-semibold text-primary sm:text-3xl">
             {faqs.title}

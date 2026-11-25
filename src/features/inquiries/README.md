@@ -16,7 +16,8 @@ Todo lo relacionado con una consulta (`Inquiry`): el formulario público, el gua
 | `notifications.ts`  | Aviso al estudio y acuse (texto provisorio con las reglas de privacidad) y su envío                                                           | F3-05 ✅     |
 | `labels.ts`         | Nombres en español de áreas, urgencias, canales y estados                                                                                     | F3-05 ✅     |
 | `emails/`           | Plantillas React Email: aviso al estudio (`new-inquiry-email.tsx`) y acuse (`inquiry-receipt-email.tsx`); `render.ts` las pasa a HTML y texto | F3-06 ✅     |
-| `components/`       | `InquiryForm` (cliente), `InquiryTable`, `StatusBadge`, …                                                                                     | F3-07, F4-04 |
+| `form-values.ts`    | Lo que escribió la persona, para devolverlo cuando hay error (US-03 CA4)                                                                      | F3-07 ✅     |
+| `components/`       | `InquiryFormSection`, `InquiryForm` y sus partes ✅ (F3-07); `InquiryTable`, `StatusBadge`, … (F4-04)                                         | F3-07, F4-04 |
 | `__tests__/`        | Tests unitarios y de integración de la feature                                                                                                | F3, F4       |
 
 ## Reglas de validación (`schema.ts`)
@@ -59,6 +60,21 @@ Orden (FR-06, de lo más barato a lo más caro):
 6. **Mails con `after()`**, después de responder: el aviso al estudio siempre, y el acuse solo si el email es privado (ver "Mails"). Un fallo se loguea con el `inquiryId` y la consulta ya está guardada (FR-08).
 
 `actions.ts` solo lee la IP de los headers y arma las dependencias reales. Toda la lógica está en `submit-inquiry.ts`, y sus tests cubren cada rama con fakes, incluido que ningún log tenga datos personales.
+
+## Formulario (`components/`)
+
+`InquiryFormSection` (servidor) es la sección `#formulario` de `/contacto`. Adentro, `InquiryFormFromQuery` lee `?area=<slug>` en el cliente (la página sigue estática) y dibuja `InquiryForm`.
+
+- **Dos pasos en un solo `<form>`:** "Tu consulta" (área, urgencia y mensaje) y "Tus datos". Los pasos solo ocultan partes, así que volver no borra nada. **Sin JavaScript** se ven los dos juntos y la action valida igual; Turnstile necesita JavaScript, por eso hay un `<noscript>` con WhatsApp, teléfono y email.
+- **Validación:** "Siguiente" y "Enviar" validan en el cliente con el mismo `inquirySchema` (`form-validation.ts`). Si hay errores no se envía nada, así no se gasta rate limit; el servidor valida igual.
+- **Errores (US-03 CA2):** cada uno junto a su campo (`aria-invalid` y `aria-describedby`), y un resumen arriba con `role="alert"`, links a cada campo y foco. Si un error es del paso 1, el formulario vuelve a ese paso.
+- **Nada se pierde (CA4):** cuando falla, la action devuelve `values` y el formulario los usa como valores por defecto. React 19 vacía el formulario después de enviar, y sin JavaScript la página se vuelve a dibujar desde cero.
+- **Preguntas de seguridad (CA6, CA7):** sin respuesta marcada por defecto. "¿Es seguro…?" aparece solo con teléfono o WhatsApp.
+- **Confirmación (CA3):** la referencia y, si `doNotContact`, el pedido de guardarla, sin prometer contacto. Recibe el foco.
+- **Controles nativos** (`<select>`, radios, casilla): funcionan sin JavaScript. Usan el contorno de foco global del sitio: no les pongas `outline-none` (lo controla `tests/e2e/quality.spec.ts`).
+- **Turnstile:** `turnstile-widget.tsx` carga el script de Cloudflare y se reinicia después de un error, porque el token sirve una sola vez.
+- **Honeypot:** campo `website` fuera de la vista, fuera del orden del teclado y con `aria-hidden`.
+- **Textos** en `src/content/inquiry-form.ts`. Tests en `components/__tests__/inquiry-form.test.tsx`.
 
 ## Mails (`emails/`)
 

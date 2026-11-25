@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { ContactDetails } from "@/components/marketing/contact-details";
-import { InquiryFormSlot } from "@/components/marketing/inquiry-form-slot";
 import { siteConfig } from "@/config/site.config";
 import { contactPageContent } from "@/content/contact-page";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -76,15 +75,5 @@ describe("ContactDetails", () => {
     }
     expect(screen.getByText(siteConfig.confidentialityNote)).toBeInTheDocument();
     expect(screen.getByText(siteConfig.responseTime)).toBeInTheDocument();
-  });
-});
-
-describe("InquiryFormSlot", () => {
-  it("is a labelled section reachable at #formulario", () => {
-    render(<InquiryFormSlot title="Contanos tu caso" notice="Pronto." />);
-
-    const slot = screen.getByRole("region", { name: "Contanos tu caso" });
-    expect(slot).toHaveAttribute("id", "formulario");
-    expect(slot).toHaveTextContent("Pronto.");
   });
 });

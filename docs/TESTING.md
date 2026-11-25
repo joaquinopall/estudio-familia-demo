@@ -119,7 +119,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | ID    | Caso                                                    | Se detalla en | Estado        |
 | ----- | ------------------------------------------------------- | ------------- | ------------- |
 | MT-01 | Navegar todas las páginas en un celular real            | F2-08         | **Detallado** |
-| MT-02 | Enviar una consulta completa                            | F3-09         | Pendiente     |
+| MT-02 | Enviar una consulta completa                            | F3-07         | **Detallado** · se ejecuta en F3-09 |
 | MT-03 | Errores de validación de cada campo                     | F3-02         | **Detallado** · se ejecuta en F3-09 |
 | MT-04 | Exceder el rate limit                                   | F3-05         | **Detallado** · se ejecuta en F3-09 |
 | MT-05 | Honeypot completado (no guarda nada)                    | F3-05         | **Detallado** · se ejecuta en F3-09 |
@@ -136,7 +136,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-16 | Inicio responsive (360 a 1440 px)                       | F2-02         | **Detallado** |
 | MT-17 | Áreas de práctica: navegación, CTA y 404                | F2-03         | **Detallado** |
 | MT-18 | Nosotros, Preguntas frecuentes y Privacidad             | F2-04         | **Detallado** |
-| MT-19 | Contacto: canales, mapa y lugar del formulario          | F2-05         | **Detallado** |
+| MT-19 | Contacto: formulario, canales y mapa                    | F2-05, F3-07  | **Detallado** |
 | MT-20 | SEO técnico y datos estructurados                       | F2-06         | **Detallado** |
 | MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
@@ -332,9 +332,9 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | ----- | ------- | --------- | ----- |
 |       |         |           |       |
 
-### MT-19 — Contacto: canales, mapa y lugar del formulario
+### MT-19 — Contacto: formulario, canales y mapa
 
-- **Objetivo:** que alguien pueda contactar al estudio por el canal que prefiera, sin fricción, mientras el formulario no está disponible.
+- **Objetivo:** que alguien pueda contactar al estudio por el canal que prefiera, sin fricción: el formulario o WhatsApp, teléfono y email.
 - **Requisitos:** FR-01, FR-13, US-04, SPEC §11.2 y §11.3.
 - **Precondiciones:** sitio levantado (`npm run dev` o la URL de preview). DevTools a 360 px y a 1440 px. Para el paso 3, un celular con WhatsApp (opcional).
 
@@ -348,8 +348,8 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 **Resultado esperado**
 
-- Paso 1: siempre se abre Contacto; desde un área, la URL termina en `?area=<slug>` y la página se ve igual.
-- Paso 2: arriba está la franja de ayuda. A 360 px primero aparecen los datos de contacto (WhatsApp sin hacer scroll, aviso de plazos, tiempo de respuesta) y después la tarjeta "Contanos tu caso" (con el aviso de que el formulario llega pronto); a 1440 px van lado a lado, con los datos a la izquierda. "Antes de escribirnos" va al final en 360 px y debajo de la tarjeta del formulario en 1440 px, con 3 preguntas y el link a todas. No hay ningún mapa embebido.
+- Paso 1: siempre se abre Contacto; desde un área, la URL termina en `?area=<slug>` y el formulario trae esa área elegida.
+- Paso 2: arriba está la franja de ayuda. A 360 px, sin hacer scroll se ven el título "Contanos tu caso" y WhatsApp en el header; después vienen el formulario, los datos de contacto (aviso de plazos y tiempo de respuesta) y "Antes de escribirnos". A 1440 px, el formulario va a la izquierda y los datos a la derecha, con "Antes de escribirnos" debajo del formulario (3 preguntas y el link a todas). No hay ningún mapa embebido. El envío del formulario se prueba en MT-02.
 - Paso 3: se abre WhatsApp (o `wa.me`) en otra pestaña, con el mensaje "Hola, quisiera hacer una consulta." y sin datos personales.
 - Paso 4: el teléfono abre el marcador, el email abre el cliente de correo y el mapa se abre en otra pestaña.
 - Paso 5: el foco se ve siempre y todos los links funcionan con Enter.
@@ -637,6 +637,41 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - En todos los acuses: asunto "Recibimos tu mensaje", el nombre, la referencia y la firma con el nombre corto del estudio. **Ni en la bandeja ni abierto** aparecen el área, la urgencia, "Familia", "Sucesiones", el nombre completo del estudio ni links.
 - Los mails se leen bien en celular y en computadora, sin texto cortado ni colores sin contraste.
 - Paso 6: lleva a `/admin/consultas/<id>`. Hasta F4 da 404; desde F4, pide el login y muestra la consulta.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-02 — Enviar una consulta completa
+
+- **Objetivo:** que una persona angustiada, desde el celular, pueda contar su caso en menos de 2 minutos, entienda cada pregunta y sepa qué va a pasar después.
+- **Requisitos:** US-03 CA1 a CA7, US-07 CA1 y CA2, FR-04, FR-06, SPEC §1 (menos de 2 minutos) y §11.5.
+- **Precondiciones:** preview de Vercel (o `npm run dev`) con Turnstile de prueba y los servicios de dev. Un celular real y una computadora. Un lector de pantalla para el paso 8.
+- **Ojo con el acuse:** sin dominio verificado en Resend (`EMAIL_FROM` con `onboarding@resend.dev`), el acuse **solo llega si el email de la consulta es la casilla de la cuenta de Resend**. Con otro email, Resend lo rechaza y el log muestra `inquiry.receipt_email_failed` con `validation_error`; la consulta se guarda igual. Usá esa casilla en el paso 3.
+
+**Pasos**
+
+1. Desde la página de Divorcio, tocá "Contanos tu caso".
+2. Paso 1: elegí la urgencia, escribí un mensaje de unas líneas y tocá "Siguiente". Medí el tiempo desde acá.
+3. Paso 2: completá nombre, email, "¿Este email es privado?" = Sí y el teléfono. Elegí WhatsApp y respondé "¿Es seguro…?" = Sí. Tocá "Volver" y revisá el paso 1; volvé al paso 2.
+4. Abrí "política de privacidad", leé y volvé a la pestaña del formulario.
+5. Marcá el consentimiento y enviá.
+6. Enviá otra consulta eligiendo Email como canal y "¿Este email es privado?" = No.
+7. Revisá Supabase dev → `inquiries` y tu casilla.
+8. Repetí el envío completo solo con teclado y con el lector de pantalla.
+9. Desactivá JavaScript en el navegador y volvé a abrir `/contacto`.
+
+**Resultado esperado**
+
+- Paso 1: el área ya viene elegida (Divorcio).
+- Paso 2: con un mensaje corto, el error aparece junto al campo y en el resumen; con uno válido, pasa al paso 2 y el foco va a su título.
+- Paso 3: la pregunta de seguridad aparece solo al elegir teléfono o WhatsApp. Ninguna respuesta viene marcada. "Volver" no borra nada.
+- Paso 4: la política se abre en otra pestaña y el formulario sigue completo.
+- Paso 5: "Enviando…" mientras espera; después, la confirmación con el número de referencia y "Te vamos a contactar por el medio que nos indicaste como seguro", con el tiempo de respuesta. Todo en menos de 2 minutos.
+- Paso 6: la confirmación **no promete contacto**: pide guardar la referencia y comunicarse cuando sea seguro.
+- Paso 7: las dos consultas están guardadas. Llegaron el aviso de cada una y el acuse solo de la primera (MT-06).
+- Paso 8: el foco se ve siempre, el lector anuncia los errores, el título del paso 2 y la confirmación. El campo oculto anti-spam no se alcanza.
+- Paso 9: se ven los dos pasos juntos y un aviso con WhatsApp, teléfono y email, porque la verificación anti-spam necesita JavaScript.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
