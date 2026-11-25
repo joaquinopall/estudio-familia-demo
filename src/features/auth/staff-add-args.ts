@@ -14,6 +14,35 @@ export const STAFF_ADD_USAGE = [
   "Usa la base de DATABASE_URL (.env.local, o la variable del shell, que gana).",
 ].join("\n");
 
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Column names only: anything that does not look like an identifier could be a value. */
+function columnsOf(value: unknown): string[] {
+  const list = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+  return list.filter((item): item is string => typeof item === "string" && IDENTIFIER.test(item));
+}
+
+/**
+ * A short, safe description of a staff:add failure: error names, the Prisma code (e.g. P2002)
+ * and the columns involved, never messages or values (they may contain emails or URLs).
+ */
+export function describeStaffAddError(error: unknown): string {
+  if (!(error instanceof Error)) return "error desconocido";
+  const cause = error.cause as
+    { name?: unknown; code?: unknown; meta?: Record<string, unknown> } | undefined;
+  const parts = [error.name];
+  if (cause && typeof cause.name === "string") parts.push(cause.name);
+  const code = typeof cause?.code === "string" && /^P\d{4}$/.test(cause.code) ? cause.code : null;
+  if (!code) return parts.join(": ");
+
+  // Prisma puts the columns in meta.target; with driver adapters, inside driverAdapterError.
+  const adapterCause = (
+    cause?.meta?.driverAdapterError as { cause?: { constraint?: { fields?: unknown } } }
+  )?.cause;
+  const columns = columnsOf(cause?.meta?.target ?? adapterCause?.constraint?.fields);
+  return `${parts.join(": ")} ${code}${columns.length > 0 ? ` (${columns.join(", ")})` : ""}`;
+}
+
 export type StaffAddArgs =
   | { status: "ok"; input: StaffMemberInput }
   | { status: "help" }

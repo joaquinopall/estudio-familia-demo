@@ -11,7 +11,11 @@
  */
 import { loadEnvConfig } from "@next/env";
 
-import { STAFF_ADD_USAGE, parseStaffAddArgs } from "../src/features/auth/staff-add-args";
+import {
+  STAFF_ADD_USAGE,
+  describeStaffAddError,
+  parseStaffAddArgs,
+} from "../src/features/auth/staff-add-args";
 
 /** postgres.<project-ref> → <project-ref>, to show which Supabase project is being written. */
 function projectRefOf(databaseUrl: string | undefined): string {
@@ -64,13 +68,22 @@ async function main(): Promise<number> {
           `Staff actualizado y activo: ${result.member.fullName} <${result.member.email}> (id ${result.member.id}).`,
         );
         return 0;
+      case "relinked":
+        console.info(
+          `El usuario de Auth se había vuelto a crear: se vinculó el staff existente al usuario nuevo y quedó activo.\n` +
+            `${result.member.fullName} <${result.member.email}> (id ${result.member.id}).`,
+        );
+        return 0;
+      case "email_in_use":
+        console.error(
+          `Ya hay un staff con el email ${args.input.email}, vinculado a otro usuario de Supabase Auth que sigue existiendo\n` +
+            "(probablemente cambió su email en Auth). No se modificó nada: revisá staff_members en el Table Editor.",
+        );
+        return 1;
     }
   } catch (error) {
-    // Only the error names: messages may contain connection details or values.
-    const cause = error instanceof Error && error.cause instanceof Error ? error.cause.name : "";
-    console.error(
-      `No se pudo dar de alta el staff (${error instanceof Error ? error.name : "error"}${cause ? `: ${cause}` : ""}).`,
-    );
+    // Error names, Prisma code and columns only: messages may contain connection details or values.
+    console.error(`No se pudo dar de alta el staff (${describeStaffAddError(error)}).`);
     return 1;
   } finally {
     await db.$disconnect();

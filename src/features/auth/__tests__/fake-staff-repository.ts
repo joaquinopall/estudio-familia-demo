@@ -1,4 +1,5 @@
 /** In-memory StaffRepository for tests (SPEC §13: services tested with fakes). */
+import { StaffStoreError } from "@/features/auth/errors";
 import type { NewStaffRecord, StaffRepository } from "@/features/auth/staff-service";
 import type { AuthUser, StaffMember } from "@/features/auth/types";
 
@@ -40,21 +41,43 @@ export class FakeStaffRepository implements StaffRepository {
     return this.members.find((member) => member.authUserId === authUserId) ?? null;
   }
 
+  async findByEmail(email: string): Promise<StaffMember | null> {
+    this.check();
+    return this.members.find((member) => member.email === email) ?? null;
+  }
+
   async findAuthUserByEmail(email: string): Promise<AuthUser | null> {
     this.check();
     return this.authUsers.find((user) => user.email.toLowerCase() === email.toLowerCase()) ?? null;
   }
 
+  async authUserExists(authUserId: string): Promise<boolean> {
+    this.check();
+    return this.authUsers.some((user) => user.id === authUserId);
+  }
+
+  /** Same unique constraints as staff_members (auth_user_id and email), like the database. */
+  private assertUnique(record: NewStaffRecord, exceptId?: string): void {
+    const clash = this.members.find(
+      (member) =>
+        member.id !== exceptId &&
+        (member.authUserId === record.authUserId || member.email === record.email),
+    );
+    if (clash) throw new StaffStoreError({ cause: new Error("P2002 unique constraint") });
+  }
+
   async create(record: NewStaffRecord): Promise<StaffMember> {
     this.check();
+    this.assertUnique(record);
     return this.addMember(record);
   }
 
-  async reactivate(id: string, changes: { email: string; fullName: string }): Promise<StaffMember> {
+  async reactivate(id: string, record: NewStaffRecord): Promise<StaffMember> {
     this.check();
     const member = this.members.find((candidate) => candidate.id === id);
     if (!member) throw new Error("not found");
-    Object.assign(member, changes, { active: true });
+    this.assertUnique(record, id);
+    Object.assign(member, record, { active: true });
     return { ...member };
   }
 }

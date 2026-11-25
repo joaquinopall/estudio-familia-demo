@@ -42,6 +42,21 @@ export function createPrismaStaffRepository(db: PrismaClient): StaffRepository {
         return row ? toDomain(row) : null;
       }),
 
+    findByEmail: (email) =>
+      guard(async () => {
+        const row = await db.staffMember.findUnique({ where: { email } });
+        return row ? toDomain(row) : null;
+      }),
+
+    authUserExists: (authUserId) =>
+      guard(async () => {
+        const rows = await db.$queryRaw<{ found: number }[]>`
+          select 1 as found from auth.users
+          where id = ${authUserId}::uuid and deleted_at is null
+          limit 1`;
+        return rows.length > 0;
+      }),
+
     findAuthUserByEmail: (email) =>
       guard(async () => {
         // Tagged template: Prisma sends the email as a parameter, never as SQL text.
@@ -56,11 +71,9 @@ export function createPrismaStaffRepository(db: PrismaClient): StaffRepository {
     create: (record: NewStaffRecord) =>
       guard(async () => toDomain(await db.staffMember.create({ data: record }))),
 
-    reactivate: (id, changes) =>
+    reactivate: (id, record: NewStaffRecord) =>
       guard(async () =>
-        toDomain(
-          await db.staffMember.update({ where: { id }, data: { ...changes, active: true } }),
-        ),
+        toDomain(await db.staffMember.update({ where: { id }, data: { ...record, active: true } })),
       ),
   };
 }

@@ -50,6 +50,44 @@ describe("addStaffMember (staff:add, SPEC §7)", () => {
     expect(repository.members).toHaveLength(1);
   });
 
+  it("relinks the member when the Auth user was deleted and created again (bug: P2002 on email)", async () => {
+    // The old Auth user is gone; the member still points to it, with the same unique email.
+    const repository = new FakeStaffRepository().addAuthUser(AUTH_USER);
+    const orphan = repository.addMember({
+      authUserId: "11111111-1111-4111-8111-111111111111",
+      email: "titular@example.com",
+      fullName: "Nombre viejo",
+      active: false,
+    });
+
+    const result = await addStaffMember(INPUT, repository);
+
+    expect(result).toEqual({
+      status: "relinked",
+      member: expect.objectContaining({
+        id: orphan.id,
+        authUserId: AUTH_USER.id,
+        fullName: "Laura Gómez",
+        active: true,
+      }),
+    });
+    expect(repository.members).toHaveLength(1);
+  });
+
+  it("never takes over a member whose Auth user still exists", async () => {
+    const other = { id: "22222222-2222-4222-8222-222222222222", email: "otra@example.com" };
+    const repository = new FakeStaffRepository().addAuthUser(AUTH_USER).addAuthUser(other);
+    // That user changed its email in Auth after staff:add; the member kept the old one.
+    const member = repository.addMember({
+      authUserId: other.id,
+      email: "titular@example.com",
+      fullName: "Otra persona",
+    });
+
+    expect(await addStaffMember(INPUT, repository)).toEqual({ status: "email_in_use" });
+    expect(repository.members).toEqual([member]);
+  });
+
   it("lets a database error reach the caller (the script reports it)", async () => {
     const repository = new FakeStaffRepository().addAuthUser(AUTH_USER);
     repository.failWith(new Error("db down"));
