@@ -12,9 +12,15 @@ import { createHmac } from "node:crypto";
 type HeaderReader = { get(name: string): string | null };
 
 /**
- * IP of the visitor. On Vercel, x-forwarded-for holds the client IP and is overwritten by the
- * platform, so it cannot be spoofed; its first entry is the client. Returns null if unknown
- * (e.g. local development), and the caller skips the per-IP rule.
+ * IP of the visitor; its first x-forwarded-for entry. Returns null only if no header has it,
+ * and then the caller skips the per-IP rule.
+ *
+ * - On Vercel the platform overwrites x-forwarded-for with the client IP: it cannot be spoofed.
+ * - Locally (`next dev` / `next start`), Next fills it with the socket address (::1) only when
+ *   the request has none, so every local submission shares one rate limit bucket, and a client
+ *   can set it. The e2e use that to get their own bucket.
+ * - Self-hosted without Vercel (ADR-0003 assumes Vercel): put a proxy that overwrites the
+ *   header, or the per-IP limit can be bypassed by sending a fake one.
  */
 export function getClientIp(headers: HeaderReader): string | null {
   const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();

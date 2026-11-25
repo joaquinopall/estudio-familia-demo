@@ -32,7 +32,7 @@ Contenido del sitio como datos tipados, separado de los componentes (SPEC §6.1,
 ## Contacto (nota para F3)
 
 - El formulario (`#formulario`) toma sus textos de `inquiry-form.ts`, y los mails, de `emails.ts`. Los mensajes de validación están con el schema (`src/features/inquiries/schema.ts`).
-- Las áreas linkean a `/contacto?area=<slug>`. Para preseleccionar el área **sin volver dinámica la página**, leé el parámetro en el formulario (componente cliente, `useSearchParams` dentro de `<Suspense>`), no con `searchParams` del servidor.
+- Las áreas linkean a `/contacto?area=<slug>`. El formulario preselecciona el área en el navegador, sobre el mismo `<select>` y solo si sigue vacío (`src/features/inquiries/components/area-from-query.ts`). Así la página sigue estática y no se pierde nada de lo que la persona ya eligió.
 
 ## Política de privacidad
 
