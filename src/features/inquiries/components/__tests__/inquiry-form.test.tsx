@@ -8,7 +8,6 @@ import type { SubmitInquiryState } from "@/features/inquiries/submit-inquiry";
 const mocks = vi.hoisted(() => ({
   submitInquiry: vi.fn(),
   turnstileProps: [] as { resetKey: number }[],
-  searchParams: new URLSearchParams(),
 }));
 
 vi.mock("@/features/inquiries/actions", () => ({ submitInquiry: mocks.submitInquiry }));
@@ -20,11 +19,10 @@ vi.mock("@/features/inquiries/components/turnstile-widget", () => ({
     );
   },
 }));
-vi.mock("next/navigation", () => ({ useSearchParams: () => mocks.searchParams }));
-
 const { InquiryForm } = await import("@/features/inquiries/components/inquiry-form");
-const { InquiryFormFromQuery } =
-  await import("@/features/inquiries/components/inquiry-form-from-query");
+const { applyAreaFromQuery } = await import("@/features/inquiries/components/area-from-query");
+
+const AREA_BY_SLUG = { sucesiones: "SUCCESSION" } as const;
 
 const RESPONSE_TIME = "Te respondemos dentro de las próximas 24 a 48 horas hábiles.";
 const props = {
@@ -88,7 +86,7 @@ describe("InquiryForm (US-03)", () => {
   beforeEach(() => {
     mocks.submitInquiry.mockReset();
     mocks.turnstileProps.length = 0;
-    mocks.searchParams = new URLSearchParams();
+    window.history.replaceState(null, "", "/contacto");
   });
 
   describe("steps (CA1)", () => {
@@ -300,18 +298,52 @@ describe("InquiryForm (US-03)", () => {
       expect(honeypot.closest('[aria-hidden="true"]')).not.toBeNull();
     });
 
-    it("preselects the area from ?area=<slug>", () => {
-      mocks.searchParams = new URLSearchParams("area=sucesiones");
-      render(<InquiryFormFromQuery {...props} areaBySlug={{ sucesiones: "SUCCESSION" }} />);
+    it("preselects the area from ?area=<slug> once it runs in the browser", () => {
+      window.history.replaceState(null, "", "/contacto?area=sucesiones");
+      render(<InquiryForm {...props} areaBySlug={AREA_BY_SLUG} />);
 
       expect(screen.getByLabelText(copy.fields.area.label)).toHaveValue("SUCCESSION");
     });
 
     it.each(["inventada", "constructor", "__proto__"])("ignores an unknown slug (%s)", (slug) => {
-      mocks.searchParams = new URLSearchParams(`area=${slug}`);
-      render(<InquiryFormFromQuery {...props} areaBySlug={{ sucesiones: "SUCCESSION" }} />);
+      window.history.replaceState(null, "", `/contacto?area=${slug}`);
+      render(<InquiryForm {...props} areaBySlug={AREA_BY_SLUG} />);
 
       expect(screen.getByLabelText(copy.fields.area.label)).toHaveValue("");
+    });
+  });
+
+  // Regression (F3-08 e2e): the static HTML was swapped for another form on load, wiping a
+  // choice made before JavaScript loaded.
+  describe("applyAreaFromQuery", () => {
+    function formWithArea(value: string) {
+      const html = renderToStaticMarkup(<InquiryForm {...props} />);
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      const form = container.querySelector("form") as HTMLFormElement;
+      (form.elements.namedItem("area") as HTMLSelectElement).value = value;
+      return form;
+    }
+
+    it("fills an empty area", () => {
+      const form = formWithArea("");
+      applyAreaFromQuery(form, "?area=sucesiones", AREA_BY_SLUG);
+      expect((form.elements.namedItem("area") as HTMLSelectElement).value).toBe("SUCCESSION");
+    });
+
+    it("never overwrites an area the person already chose", () => {
+      const form = formWithArea("DIVORCE");
+      applyAreaFromQuery(form, "?area=sucesiones", AREA_BY_SLUG);
+      expect((form.elements.namedItem("area") as HTMLSelectElement).value).toBe("DIVORCE");
+    });
+
+    it("keeps the very same form element after loading (nothing is swapped)", () => {
+      window.history.replaceState(null, "", "/contacto?area=sucesiones");
+      const { container, rerender } = render(<InquiryForm {...props} areaBySlug={AREA_BY_SLUG} />);
+      const form = container.querySelector("form");
+
+      rerender(<InquiryForm {...props} areaBySlug={AREA_BY_SLUG} />);
+      expect(container.querySelector("form")).toBe(form);
     });
   });
 

@@ -9,7 +9,6 @@ import { inquiryFormContent } from "@/content/inquiry-form";
 import { deadlineContent, safetyContent } from "@/content/urgent-help";
 
 vi.mock("@/features/inquiries/actions", () => ({ submitInquiry: vi.fn() }));
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
 
 describe("/contacto (FR-01, SPEC §11.3)", () => {
   it("has its own metadata", () => {
