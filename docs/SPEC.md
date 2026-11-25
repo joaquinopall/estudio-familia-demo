@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.29 (25/11/2026) |
+| Versión | 1.30 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -601,6 +601,11 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 - Dominio de la demo (¿subdominio de la SAS?) y dominio verificado en Resend.
 - Nombre ficticio del estudio y textos finales (se definen en la Fase 2).
 - ¿Sentry o solo los logs de Vercel en la Fase 5?
+- **Para F5-02: cifrado a nivel de aplicación del mensaje y de las notas internas** (`Inquiry.message` e `internalNotes`).
+  - **Qué sería:** AES-256-GCM en el servidor, con una clave en las variables de Vercel y no en la base. Se cifra antes de guardar y se descifra solo para el detalle. Hoy hay TLS en tránsito y cifrado de disco del proveedor en reposo, pero quien ve la base (dashboard, Table Editor, un backup o export) ve esos textos en claro.
+  - **Protege** contra quien accede a la base sin la clave. **No protege** de un servidor comprometido ni de una sesión de staff robada.
+  - **Alcance:** nombre, email y teléfono quedan en claro, porque se usan para buscar y para el aviso al estudio. **No es extremo a extremo**, y no hay que presentarlo así: el servidor necesita leer los datos.
+  - **A decidir en F5-02:** gestión y rotación de la clave, qué pasa si se pierde (esos campos serían irrecuperables) y la migración de las filas existentes. Requiere una ADR y cambios en §7 y §10.
 
 ---
 
@@ -653,3 +658,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.27 | Corrección de F4-02. §7: `staff:add` vincula un staff existente a un usuario de Auth recreado con el mismo email (conserva su `id`) y no toca nada si el usuario viejo sigue existiendo. | [tu nombre] |
 | 25/11/2026 | 1.28 | F4-04. FR-03: `site.config.ts` suma la zona horaria del estudio (`timeZone`), que usan las fechas del panel. §6.2: `features/inquiries/server.ts` (`getInquiryService()`), `list-href.ts`, los componentes del listado y `app/admin/(protected)/error.tsx`. El listado muestra el email (pedido del dueño), pero no el mensaje ni el teléfono; la búsqueda trata `%` y `_` como texto. | [tu nombre] |
 | 25/11/2026 | 1.29 | F4-05. §6.5: `updateInquiryStatus` y `updateInquiryNotes` reciben `(prev, formData)`, para `useActionState` y para funcionar sin JavaScript. Devuelven `changed`: el mismo valor no crea un evento. Las notas vuelven en `values` si el guardado falla. El acceso se valida antes que el input. §6.2: `update-inquiry.ts`, los componentes del detalle y `not-found.tsx` del detalle. En el detalle, teléfono y email van sin links (§11.5). | [tu nombre] |
+| 25/11/2026 | 1.30 | §15: nueva pregunta abierta para F5-02, el cifrado a nivel de aplicación del mensaje y de las notas internas (no es extremo a extremo). No cambia ningún requisito vigente. | [tu nombre] |
