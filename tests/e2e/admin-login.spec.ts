@@ -78,6 +78,31 @@ test.describe("admin login page", () => {
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
+  test("carries next in the form, and keeps it after wrong credentials (F4-06)", async ({
+    page,
+  }) => {
+    const detail = "/admin/consultas/7f3a9b21-4c5d-4e6f-8a7b-9c0d1e2f3a4b";
+    await page.setExtraHTTPHeaders({ "x-forwarded-for": `${CLIENT_IP.slice(0, -1)}4` });
+    await page.goto(`/admin/login?next=${encodeURIComponent(detail)}`);
+    const next = page.locator('input[name="next"][form="login-form"]');
+
+    await expect(next).toHaveValue(detail);
+
+    await page.getByLabel(copy.login.email).fill(`e2e-${RUN}@example.com`);
+    await page.getByLabel(copy.login.password).fill("una-clave-que-no-existe");
+    await page.getByRole("button", { name: copy.login.submit }).click();
+
+    await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
+    await expect(next).toHaveValue(detail);
+  });
+
+  test("ignores a next outside the panel (no open redirect)", async ({ page }) => {
+    await page.goto("/admin/login?next=//evil.example");
+
+    await expect(page.getByRole("heading", { level: 1, name: copy.login.title })).toBeVisible();
+    await expect(page.locator('input[name="next"]')).toHaveCount(0);
+  });
+
   test("?error=forbidden explains it and offers another account", async ({ page }) => {
     await page.goto("/admin/login?error=forbidden");
 

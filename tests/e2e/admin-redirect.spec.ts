@@ -16,6 +16,18 @@ test.describe("admin without a session", () => {
     });
   }
 
+  test("remembers the requested page in next, so the login comes back to it (F4-06)", async ({
+    request,
+  }) => {
+    const detail = "/admin/consultas/7f3a9b21-4c5d-4e6f-8a7b-9c0d1e2f3a4b";
+
+    const response = await request.get(detail, { maxRedirects: 0 });
+    const location = new URL(response.headers()["location"] ?? "", "http://x");
+
+    expect(location.pathname).toBe("/admin/login");
+    expect(location.searchParams.get("next")).toBe(detail);
+  });
+
   test("does not redirect the login page (no loop)", async ({ request }) => {
     const response = await request.get("/admin/login", { maxRedirects: 0 });
 
