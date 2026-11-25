@@ -26,6 +26,7 @@ Reglas:
 | [0012](0012-prisma-7-con-adapter-pg-y-prisma-config.md) | Prisma 7 con driver adapter `pg`, `prisma.config.ts` y TLS verificado | Aceptada |
 | [0013](0013-ports-sin-excepciones-y-caidas-de-servicios.md) | Ports sin excepciones y qué hacer si un servicio externo se cae | Aceptada |
 | [0014](0014-auth-supabase-ssr-solo-servidor.md) | Supabase Auth solo del lado del servidor, con el proxy limitado al panel | Aceptada |
+| [0015](0015-autorizacion-del-panel-y-alta-de-staff.md) | Autorización del panel con `requireStaff()` y alta de staff por script | Aceptada |
 
 ## Plantilla
 

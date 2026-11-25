@@ -31,7 +31,7 @@ Detalles de los e2e:
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
   - **Turnstile:** necesita la clave de prueba que aprueba sola (`1x00000000000000000000AA`). Con otra clave, o sin `DATABASE_URL`, los dos escenarios se saltean con su motivo: nunca resuelven un desafío real.
   - Cubre: llegar desde un área con el área preseleccionada, los dos pasos, Turnstile, la confirmación con y sin medio seguro, lo guardado en la base (con su evento `CREATED`) y que no haya violaciones de la CSP.
-- **`admin-redirect.spec.ts`** (F4-01): sin sesión, `/admin` y `/admin/consultas/…` responden 307 a `/admin/login`; el login no se redirige, y `/contacto` no recibe cookies de sesión. No inicia sesión ni toca Supabase Auth: alcanza con que las dos variables de Supabase estén definidas.
+- **`admin-redirect.spec.ts`** (F4-01, F4-02): sin sesión o con una cookie de sesión falsificada, `/admin` y `/admin/consultas/…` responden 307 a `/admin/login`; el login no se redirige, y `/contacto` no recibe cookies de sesión. No inicia sesión ni toca Supabase Auth: alcanza con que las dos variables de Supabase estén definidas.
 - Reporte HTML de la última corrida: `npx playwright show-report`.
 - Correr un archivo o un test: `npx playwright test tests/e2e/layout.spec.ts` o `-g "nombre del test"`.
 
@@ -43,7 +43,8 @@ Detalles de los e2e:
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Auth        | Vitest + fakes               | `src/features/auth/__tests__/`, `src/lib/supabase/__tests__/` | `signIn`: OK, VALIDATION, mismo UNAUTHORIZED para email inexistente y contraseña incorrecta, rate limit propio (5 en 15 min) y de Supabase, Upstash caído, Supabase caído, logs sin email ni contraseña. `signOut` aunque Supabase falle. Traducción de errores de Supabase. Proxy: redirect sin sesión, sin loop en el login, cookies y headers de no-caché, cookies httpOnly/Secure/Lax |
-| Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repository de consultas contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base |
+| Autorización | Vitest + fakes              | `src/features/auth/__tests__/access.test.ts`, `dal.test.ts`, `staff-service.test.ts`, `staff-add-args.test.ts` | `requireStaff()`: sin sesión, sesión sin staff, staff inactivo, staff OK, Supabase y base caídos (falla cerrado), redirects de páginas y `ActionResult` de actions, logs sin datos personales. `staff:add`: usuario inexistente, alta, reactivación idempotente y argumentos |
+| Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
@@ -75,6 +76,8 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`emails.test.tsx` → "never reveals the reason":** alguien agregó al acuse un dato que delata el motivo de la consulta (el área, la urgencia, la especialidad, un link o el nombre completo del estudio). Sacalo: el acuse tiene que ser neutro (US-03 CA5). No relajes el test.
 - **`site-config.test.ts` → "keeps shortName neutral":** el nombre corto del estudio incluye la especialidad, y ese nombre firma el acuse. Elegí un nombre corto sin la especialidad.
 - **`inquiry-submit.spec.ts`:** si se saltea, mirá el motivo (falta `DATABASE_URL` o la clave de Turnstile no es la de prueba). Si falla esperando el token de Turnstile, revisá la conexión a `challenges.cloudflare.com`. Si falla en la confirmación, mirá el snapshot del error (`test-results/…/error-context.md`): el resumen de errores dice qué respondió la action. Cada escenario manda su propia IP de documentación (`2001:db8:…`) en `x-forwarded-for`, así no comparte el rate limit con otras corridas ni con tus pruebas a mano; si ves "Hiciste demasiados intentos seguidos", revisá que eso siga así. Si queda alguna fila `E2E-`, la próxima corrida la borra cuando tenga más de un día, o borrala desde el Table Editor de Supabase dev.
+- **`features/auth/__tests__/repository.db.test.ts` → "can read auth.users":** si da "permission denied", Supabase le quitó a `postgres` la lectura de `auth.users` y `staff:add` no puede buscar usuarios. Mirá el plan B en ADR-0015 (`--auth-user-id`). Si queda alguna fila `E2E-` en `staff_members`, borrala desde el Table Editor de dev.
+- **`access.test.ts` o `dal.test.ts`:** si un caso que debería ser `forbidden` o `unauthenticated` pasa como `ok`, es un agujero de seguridad: corregí el código, nunca el test (NFR-SEC-02).
 - **`repository.db.test.ts`:** si falla al conectar, revisá `DATABASE_URL` (y que las migraciones estén aplicadas: `npx prisma migrate status`). Si queda alguna fila `E2E-` en `inquiries`, borrala desde el Table Editor de Supabase dev.
 - **`sign-in.test.ts` → "same answer" o "never writes":** el login empezó a distinguir un email inexistente de una contraseña incorrecta, o a loguear el email o la contraseña. Las dos cosas están prohibidas (SPEC §6.5, NFR-SEC-06): corregí el código, no el test.
 - **`session.test.ts` o `admin-redirect.spec.ts`:** si `/admin` deja de redirigir, revisá que `src/proxy.ts` siga en `src/` (en la raíz Next no lo ejecuta) y que su `matcher` incluya `/admin/:path*`. Si `/contacto` recibe cookies `sb-`, el matcher se amplió de más (ADR-0014).
@@ -101,6 +104,8 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | ----- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
 | MT-23 | Pasos 1 a 5 y 7 en **dev**; el caso completo en **prod** | Dev: en **F4-01**, apenas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` estén en `.env.local`. Prod: en **F5-08**, después de `db:deploy`. | En F3-01 no estaban cargadas la URL de la API ni la clave pública (son de F4). |
 | MT-24 | El caso en **prod** | En **F5-08**. | En F4-01 se configura y verifica dev; prod se verifica antes del lanzamiento. |
+| MT-25 | El caso en **prod** | En **F5-08**, después de `db:deploy`. | En F4-02 se da de alta el staff de dev; el de prod, antes del lanzamiento. |
+| MT-09 | El caso completo | Desde **F4-03** (y en el cierre, F4-08). | Hasta F4-03 no hay página de login para iniciar sesión. |
 
 ### Plantilla
 
@@ -137,7 +142,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-06 | Mails recibidos: estudio y acuse                        | F3-06         | **Detallado** · se ejecuta en F3-09 |
 | MT-07 | Login y logout del admin                                | F4-08         | Pendiente     |
 | MT-08 | Entrar a `/admin` sin sesión                            | F4-01         | **Detallado** · se ejecuta en F4-01 y F4-08 |
-| MT-09 | Usuario autenticado que no es staff                     | F4-08         | Pendiente     |
+| MT-09 | Usuario autenticado que no es staff                     | F4-02         | **Detallado** · se ejecuta desde F4-03 (necesita el login) |
 | MT-10 | Cambio de estado, notas e historial                     | F4-08         | Pendiente     |
 | MT-11 | Navegación completa solo con teclado                    | F1-08         | **Detallado** |
 | MT-12 | Lighthouse mobile en 3 páginas                          | F2-07         | **Detallado** |
@@ -153,6 +158,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
 | MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** · sin ejecutar (pendiente: F4-01 y F5-08) |
 | MT-24 | Configuración de Supabase Auth (registro y contraseñas) | F4-01         | **Detallado** · dev en F4-01, prod en F5-08 |
+| MT-25 | Alta de staff con `npm run staff:add`                   | F4-02         | **Detallado** · dev en F4-02, prod en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -570,6 +576,60 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 3: tu usuario existe y está **confirmado** (creado con Add user → "Auto Confirm User").
 - Paso 4: un error del tipo `signup_disabled` ("Signups not allowed for this instance"). Nunca un usuario creado.
 - Paso 5: no existe.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-25 — Alta de staff con `npm run staff:add`
+
+- **Objetivo:** dar de alta como staff a un usuario de Supabase Auth, sin duplicarlo y sin poder vincular a alguien que no existe. Es el único camino para entrar al panel.
+- **Requisitos:** SPEC §7, US-06 CA4, ADR-0015.
+- **Precondiciones:** `.env.local` apuntando a Supabase **dev**. Tu usuario creado en Authentication → Users (MT-24).
+
+**Pasos**
+
+1. `npm run staff:add -- --help`.
+2. `npm run staff:add -- --email no-existe@example.com --name "Nadie"`.
+3. `npm run staff:add -- --email <tu email> --name "<Tu nombre>"`.
+4. Supabase → Table Editor → `staff_members`.
+5. Repetí el paso 3 con otro nombre (por ejemplo, agregando tu segundo nombre).
+6. En el Table Editor, poné `active = false` en tu fila y repetí el paso 3.
+
+**Resultado esperado**
+
+- Paso 1: muestra el uso y sale sin tocar la base.
+- Paso 2: "No existe un usuario de Supabase Auth con el email…" y sale con error. No se crea ninguna fila.
+- Paso 3: primero muestra "Proyecto de Supabase: `<project-ref de dev>`" y después "Staff dado de alta: …".
+- Paso 4: hay **una** fila con tu email, tu nombre, `role = ADMIN`, `active = true` y `auth_user_id` igual al id de tu usuario en Authentication → Users.
+- Paso 5: "Staff actualizado y activo: …". Sigue habiendo una sola fila, con el nombre nuevo.
+- Paso 6: la fila vuelve a `active = true`.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-09 — Usuario autenticado que no es staff
+
+- **Objetivo:** que una sesión válida de Supabase no alcance para ver el panel: hace falta ser staff activo (US-06 CA4). Es la barrera real, más allá del proxy (MT-08).
+- **Requisitos:** US-06 CA4, SPEC §6.4 paso 2, NFR-SEC-02, ADR-0015.
+- **Precondiciones:** página de login (F4-03). En Supabase **dev**, un segundo usuario de prueba creado con Add user y **sin** `staff:add`. Tu usuario dado de alta como staff (MT-25).
+
+**Pasos**
+
+1. Iniciá sesión con el usuario de prueba (sin staff).
+2. Entrá a `/admin` y a `/admin/consultas/<id de una consulta>`.
+3. En la terminal, corré `npm run staff:add -- --email <email del usuario de prueba> --name "Prueba"` y volvé a entrar a `/admin`.
+4. En el Table Editor, poné `active = false` en su fila y recargá `/admin`.
+5. Cerrá sesión e iniciá con tu usuario (staff activo). Entrá a `/admin`.
+6. Al terminar, borrá el usuario de prueba de Authentication → Users y su fila de `staff_members`.
+
+**Resultado esperado**
+
+- Pasos 1 y 2: terminás en `/admin/login?error=forbidden`, con un aviso de que la cuenta no tiene acceso. Nunca se ve ningún dato del panel, ni por un instante.
+- Paso 3: ahora sí ve el panel.
+- Paso 4: vuelve a `/admin/login?error=forbidden` sin tener que cerrar sesión.
+- Paso 5: ves "Panel de consultas" y tu nombre (hasta F4-04; después, el listado).
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

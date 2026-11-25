@@ -11,7 +11,7 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 - Aviso por mail al estudio y acuse de recibo neutro a quien consulta, solo si su email es privado.
 - Panel de administración para gestionar las consultas.
 
-**Estado actual:** Fase 1 (fundaciones) completa. Fases 2 (sitio público) y 3 (formulario y backend de consultas) implementadas, pendientes de sus tests manuales de cierre. En curso: Fase 4 (panel admin), con la sesión y el login del lado del servidor (F4-01). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
+**Estado actual:** Fase 1 (fundaciones) completa. Fases 2 (sitio público) y 3 (formulario y backend de consultas) implementadas, pendientes de sus tests manuales de cierre. En curso: Fase 4 (panel admin): sesión y login del lado del servidor (F4-01) y autorización con `requireStaff()` y alta de staff (F4-02). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Stack
 
@@ -77,24 +77,25 @@ Reglas:
 
 ## Scripts
 
-| Script                  | Qué hace                                                                                                                                                   |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`           | Servidor de desarrollo en `http://localhost:3000`                                                                                                          |
-| `npm run build`         | Build de producción                                                                                                                                        |
-| `npm run start`         | Sirve el build de producción                                                                                                                               |
-| `npm run lint`          | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                                                                                             |
-| `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                                                                                          |
-| `npm run format`        | Formatea con Prettier (incluye el orden de clases de Tailwind)                                                                                             |
-| `npm run format:check`  | Verifica el formato sin modificar archivos                                                                                                                 |
-| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)                                                                                 |
-| `npm run test:db`       | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI                                                                          |
-| `npm run email:dev`     | Preview de los mails en `http://localhost:3001`, con datos de ejemplo ficticios                                                                            |
-| `npm run test:watch`    | Vitest en modo watch                                                                                                                                       |
-| `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                                                                                             |
-| `npm run test:e2e`      | E2E con Playwright contra el build de producción. Cerrá `npm run dev` antes (usa el puerto 3000). Envía consultas reales a la base de **dev**: ver TESTING |
-| `npm run db:generate`   | Genera el cliente de Prisma en `src/generated/prisma` (también corre en `npm ci`)                                                                          |
-| `npm run db:migrate`    | `prisma migrate dev`: crea y aplica migraciones. **Solo contra Supabase dev**                                                                              |
-| `npm run db:deploy`     | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano                                                                                 |
+| Script                  | Qué hace                                                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`           | Servidor de desarrollo en `http://localhost:3000`                                                                                                               |
+| `npm run build`         | Build de producción                                                                                                                                             |
+| `npm run start`         | Sirve el build de producción                                                                                                                                    |
+| `npm run lint`          | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                                                                                                  |
+| `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                                                                                               |
+| `npm run format`        | Formatea con Prettier (incluye el orden de clases de Tailwind)                                                                                                  |
+| `npm run format:check`  | Verifica el formato sin modificar archivos                                                                                                                      |
+| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)                                                                                      |
+| `npm run test:db`       | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI                                                                               |
+| `npm run email:dev`     | Preview de los mails en `http://localhost:3001`, con datos de ejemplo ficticios                                                                                 |
+| `npm run test:watch`    | Vitest en modo watch                                                                                                                                            |
+| `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                                                                                                  |
+| `npm run test:e2e`      | E2E con Playwright contra el build de producción. Cerrá `npm run dev` antes (usa el puerto 3000). Envía consultas reales a la base de **dev**: ver TESTING      |
+| `npm run db:generate`   | Genera el cliente de Prisma en `src/generated/prisma` (también corre en `npm ci`)                                                                               |
+| `npm run db:migrate`    | `prisma migrate dev`: crea y aplica migraciones. **Solo contra Supabase dev**                                                                                   |
+| `npm run db:deploy`     | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano                                                                                      |
+| `npm run staff:add`     | Da de alta (o reactiva) un usuario de Supabase Auth como staff: `npm run staff:add -- --email x --name "Nombre"`. Ver [Panel admin](#panel-admin-supabase-auth) |
 
 Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`](docs/TESTING.md).
 
@@ -139,13 +140,20 @@ Login del staff con email y contraseña, todo del lado del servidor ([ADR 0014](
 - **Configuración en cada proyecto de Supabase** (NFR-SEC-10):
   1. Authentication → Sign In / Providers → Email: **desactivá "Allow new users to sign up"**. Nadie puede registrarse.
   2. Contraseña mínima de **12 caracteres**.
-  3. Creá cada usuario del staff con Authentication → Users → Add user, con "Auto Confirm User". Desde F4-02, además hay que darlo de alta como staff con `npm run staff:add`: sin eso, el usuario no ve nada del panel.
+  3. Creá cada usuario del staff con Authentication → Users → Add user, con "Auto Confirm User".
   4. Verificalo con MT-24 en [`docs/TESTING.md`](docs/TESTING.md).
+- **Alta de staff** (SPEC §7, [ADR 0015](docs/adr/0015-autorizacion-del-panel-y-alta-de-staff.md)): un usuario de Auth **no ve nada del panel** hasta que es staff activo.
+  - **Dev:** `npm run staff:add -- --email <email del usuario> --name "<Nombre y apellido>"`. Usa `DATABASE_URL` de `.env.local`.
+  - **Prod:** `DATABASE_URL="<url de prod>" npm run staff:add -- --email ... --name "..."`. La variable del shell gana sobre `.env.local`.
+  - El script muestra el proyecto de Supabase en el que escribe: revisalo.
+  - Busca al usuario en Auth por email. Si no existe, avisa y no crea nada. Si ya era staff, lo reactiva y le actualiza el nombre.
+  - **Dar de baja:** en el Table Editor, `staff_members` → `active = false`. Desde la próxima página que abra, esa persona no ve el panel.
 - **Cómo funciona:**
-  - `src/proxy.ts` corre solo en `/admin/*`: refresca la sesión y, sin sesión, redirige a `/admin/login`. Es la primera barrera; la autorización real es `requireStaff()` (F4-02).
+  - `src/proxy.ts` corre solo en `/admin/*`: refresca la sesión y, sin sesión, redirige a `/admin/login`. Es la primera barrera.
+  - La autorización real es `requireStaff()` (`src/features/auth/dal.ts`), en el layout del panel y en **cada** página. Las actions usan `requireStaffForAction()`. Verifica el usuario con el servidor de Supabase y exige un `StaffMember` activo.
   - `signIn`/`signOut` son Server Actions (`src/features/auth/actions.ts`). El login permite 5 intentos por IP cada 15 minutos y responde siempre lo mismo ante cualquier credencial rechazada.
   - Las cookies de sesión son httpOnly, SameSite=Lax y Secure en https.
-- **Hasta F4-03 no existe la página de login:** `/admin` redirige a `/admin/login`, que todavía da 404.
+- **Hasta F4-03 no existe la página de login:** `/admin` redirige a `/admin/login`, que todavía da 404. `/admin` muestra por ahora solo un título y el nombre del staff; el listado llega en F4-04.
 
 ## Estructura
 
@@ -164,6 +172,7 @@ src/
   proxy.ts             proxy de Next (ex middleware): sesión y redirect de /admin. Tiene que estar en src/, al lado de app/
 prisma/                schema.prisma, migraciones, test de RLS y CA de Supabase (certs/)
 prisma.config.ts       configuración de la CLI de Prisma (URL de migraciones)
+scripts/               scripts de operación (staff-add.ts), corren con tsx
 tests/e2e/             Playwright
 docs/                  SPEC, guía de avance, arquitectura, ADR, testing
 ```
@@ -207,7 +216,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - **Variables de entorno** validadas al arrancar; secretos solo del lado del servidor (`server-only`).
 - **Base de datos:** RLS sin políticas en todas las tablas y sin service role key ([ADR 0002](docs/adr/0002-supabase-con-prisma-y-rls.md)); conexiones con TLS verificado ([ADR 0012](docs/adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)).
 - **Logs** estructurados en JSON, sin datos personales (`src/lib/logger.ts`).
-- **Panel:** registro público deshabilitado en Supabase, login con rate limit y mensaje genérico, cookies httpOnly y proxy como primera barrera ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)).
+- **Panel:** registro público deshabilitado en Supabase, login con rate limit y mensaje genérico, cookies httpOnly y proxy como primera barrera ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)). `requireStaff()` en cada página y action, con el usuario verificado contra Supabase y una lista de staff activo ([ADR 0015](docs/adr/0015-autorizacion-del-panel-y-alta-de-staff.md)).
 - Detalle completo de requisitos y amenazas en SPEC §10.
 
 ## Calidad y CI

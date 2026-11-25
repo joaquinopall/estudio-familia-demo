@@ -42,7 +42,7 @@ flowchart LR
 | `src/app/layout.tsx`          | ✅ F1-07    | Layout raíz: `lang="es-AR"`, fuentes (`next/font`), metadata base.                             |
 | `src/app/globals.css`         | ✅ F1-07    | Tokens de diseño (SPEC §11.1).                                                                 |
 | `src/app/(public)/`           | ✅ F2-07    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
-| `src/app/admin/`              | ⏳ F4-03+   | Login, listado y detalle de consultas. Hasta F4-03, `/admin/login` responde 404.               |
+| `src/app/admin/`              | 🟨 F4       | ✅ `(protected)/layout.tsx` con `requireStaff()` y un `/admin` mínimo (F4-02). ⏳ login (F4-03; hasta entonces `/admin/login` da 404), listado (F4-04) y detalle (F4-05). |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
 | `src/app/icon.tsx`, `apple-icon.tsx` | ✅ F2-07 | Íconos con el monograma de `site.config.ts`, generados en el build. `/favicon.ico` se reescribe a `/icon`. |
 | `src/app/not-found.tsx`, `error.tsx` y los de `(public)/` | ✅ F2-07 | Páginas de error amigables (FR-16). |
@@ -55,7 +55,8 @@ flowchart LR
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
 | `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06), formulario (F3-07). ⏳ lo del panel. |
 | `src/lib/security/ip.ts`      | ✅ F3-05    | IP del visitante (`x-forwarded-for` en Vercel) y HMAC-SHA256 con `IP_HASH_SALT`.               |
-| `src/features/auth/`          | 🟨 F4       | ✅ `signIn`/`signOut` con rate limit y su schema (F4-01). ⏳ DAL (`requireStaff`) y repositorio de staff (F4-02). |
+| `src/features/auth/`          | ✅ F4-02    | `signIn`/`signOut` con rate limit (F4-01); reglas de acceso (`access.ts`), DAL (`requireStaff`, `requireStaffForAction`), alta de staff y repositorio (F4-02). |
+| `scripts/staff-add.ts`        | ✅ F4-02    | `npm run staff:add`: vincula un usuario de Supabase Auth como staff activo ([ADR 0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md)). |
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
 | `src/lib/action-result.ts`    | ✅ F1-04    | Contrato `ActionResult<T>` de las Server Actions (SPEC §6.5).                                  |
 | `src/lib/logger.ts`           | ✅ F1-04    | Logger JSON sin datos personales.                                                              |
@@ -92,14 +93,14 @@ Todo Supabase Auth corre en el servidor; el navegador nunca habla con Supabase (
 flowchart LR
   B[GET /admin/*] --> P{"src/proxy.ts<br/>getClaims()"}
   P -- sin sesión o error --> L[307 a /admin/login]
-  P -- sesión válida --> G["Página (F4-02: requireStaff)"]
+  P -- sesión válida --> G["Layout y página: requireStaff()"]
   P -. refresca .-> C[Set-Cookie httpOnly + Cache-Control no-store]
 ```
 
 - **Proxy** (`src/proxy.ts` → `lib/supabase/session.ts`): solo en `/admin/:path*`, así las páginas públicas siguen estáticas y sin cookies.
   - Llama a `getClaims()`, que verifica el JWT y lo refresca si está por vencer. Sin sesión, redirige a `/admin/login`, que nunca se redirige (no hay loop).
   - Las cookies nuevas y los headers de no-caché que pasa Supabase van en la respuesta, también en el redirect.
-  - Es optimista: la autorización real es `requireStaff()` en cada página y action (F4-02, NFR-SEC-02).
+  - Es optimista: la autorización real es `requireStaff()` en cada página y action (ver abajo, NFR-SEC-02).
 - **Cookies** (`lib/supabase/cookie-options.ts`): httpOnly, SameSite=Lax, y Secure cuando el sitio es https (NFR-SEC-07).
 - **`signIn(prev, formData)`** (`features/auth/actions.ts` → `sign-in.ts`):
   - Pasos: rate limit por IP (`loginByIp`, 5 cada 15 minutos) → `signInSchema` → `AuthGateway.signInWithPassword` → redirect a `/admin`.
@@ -110,6 +111,34 @@ flowchart LR
 - **`AuthGateway`** (`lib/ports/auth-gateway.ts`): port sin excepciones. El adapter (`lib/supabase/auth-gateway.ts`) traduce los errores de Supabase y nunca devuelve su mensaje, que puede incluir el email. Los tests usan `FakeAuthGateway`.
 - **CSRF:** Next compara el `Origin` de cada Server Action con el host, y las cookies son SameSite=Lax.
 - **Logs:** `auth.signed_in`, `auth.sign_in_rejected` (con el código de Supabase), `auth.sign_in_rate_limited`, `auth.sign_in_rate_limited_by_provider`, `auth.sign_in_unavailable`, `auth.signed_out`, `auth.sign_out_failed` y `auth.session_check_failed`. Nunca llevan el email ni la contraseña.
+
+### Autorización del panel (F4-02)
+
+Quién puede usar el panel ([ADR 0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md), SPEC §6.4 paso 2):
+
+```mermaid
+flowchart LR
+  R[Página o action admin] --> U{"getUser()<br/>servidor de Auth"}
+  U -- sin sesión --> N[unauthenticated]
+  U -- caído --> X[unavailable]
+  U -- usuario --> S{StaffMember por authUserId}
+  S -- no existe o inactivo --> F[forbidden]
+  S -- activo --> OK[ok + staff]
+```
+
+- **`checkStaffAccess`** (`features/auth/access.ts`): la regla, pura, testeada con `FakeAuthGateway` y `FakeStaffRepository`. Falla cerrado: si Supabase o la base no responden, `unavailable`.
+- **`dal.ts`** (`server-only`): conecta la regla con Supabase y Prisma. Con `cache()` de React, una sola verificación por request.
+
+  | Función | Para | Sin sesión / caído | Sin acceso | OK |
+  | --- | --- | --- | --- | --- |
+  | `requireStaff()` | páginas y layouts | redirect `/admin/login` | redirect `/admin/login?error=forbidden` | `StaffMember` |
+  | `requireStaffForAction()` | Server Actions | `UNAUTHORIZED` / `INTERNAL` | `FORBIDDEN` | `ok(staff)` |
+  | `getCurrentStaff()` | mostrar datos opcionales | `null` | `null` | `StaffMember` |
+
+- **Layout** `app/admin/(protected)/layout.tsx`: `StaffGate` dentro de `<Suspense>` (Cache Components exige el límite para leer cookies) espera a `requireStaff()` antes de dibujar nada. **Cada página llama también a `requireStaff()`**: Next puede dibujar una página sin volver a ejecutar el layout. El redirect por `forbidden` sucede en el streaming; el 307 sin sesión lo hace el proxy.
+- **Toda action admin** empieza con `const auth = await requireStaffForAction(); if (!auth.ok) return auth;`.
+- **Alta de staff:** `npm run staff:add -- --email x --name y` (`scripts/staff-add.ts`, con `tsx`) busca al usuario en `auth.users` con un `$queryRaw` parametrizado (la conexión de Prisma puede leerla; sin service role key) y crea o reactiva el `StaffMember` mediante `addStaffMember` (`staff-service.ts`). Idempotente. Para desactivar a alguien: `active = false` en el Table Editor.
+- **Logs:** `auth.forbidden` (`no_staff` o `inactive`, con `staffId` si existe), `auth.user_check_unavailable` y `auth.staff_lookup_failed`. Sin emails ni nombres.
 
 ### Formulario de consulta (F3-07)
 
@@ -184,7 +213,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Panel admin (F4-02 en adelante):** el layout protegido y cada action llaman a `requireStaff()`, que verifica el usuario contra Supabase Auth (`getUser()`) y busca un `StaffMember` activo. Detalle en SPEC §6.4; datos en [ADR 0002](adr/0002-supabase-con-prisma-y-rls.md).
+- **Panel admin (F4-03 en adelante):** página de login, listado paginado con filtros, detalle con cambio de estado, notas e historial, y el link del mail al detalle. Todo detrás de `requireStaff()` / `requireStaffForAction()`.
 
 ## Decisiones vigentes
 
@@ -204,5 +233,6 @@ sequenceDiagram
 | [0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md) | Prisma 7 con adapter `pg`, `prisma.config.ts`, TLS verificado y override de `effect` | Aceptada |
 | [0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md) | Ports sin excepciones; rate limit caído deja pasar, Turnstile caído rechaza | Aceptada |
 | [0014](adr/0014-auth-supabase-ssr-solo-servidor.md) | Supabase Auth solo en el servidor, cookies httpOnly, proxy solo en `/admin` | Aceptada |
+| [0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md) | `requireStaff()` con `getUser()` en cada página y action; `staff:add` con `tsx` y `auth.users` por SQL | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).

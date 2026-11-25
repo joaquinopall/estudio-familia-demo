@@ -4,6 +4,21 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-02 · Staff y `requireStaff()`
+
+- **Agregado:** autorización del panel ([ADR 0015](docs/adr/0015-autorizacion-del-panel-y-alta-de-staff.md)).
+  - **`checkStaffAccess`** verifica el usuario con el servidor de Supabase (`getUser()`) y exige un `StaffMember` activo. Si Supabase o la base no responden, falla cerrado.
+  - **`requireStaff()`** (páginas: redirige a `/admin/login` o a `?error=forbidden`), **`requireStaffForAction()`** (actions: `UNAUTHORIZED`, `FORBIDDEN` o `INTERNAL`) y `getCurrentStaff()`. Hacen una sola verificación por request.
+  - **Layout protegido** `app/admin/(protected)/layout.tsx`, con la verificación dentro de `<Suspense>` como pide Cache Components, y un `/admin` mínimo que también llama a `requireStaff()`.
+- **Agregado:** `npm run staff:add -- --email x --name y`.
+  - Busca al usuario en `auth.users` con la conexión de Prisma, sin service role key, y lo da de alta como staff activo.
+  - Si ya existía, lo reactiva y le actualiza el nombre.
+  - Muestra en qué proyecto de Supabase escribe.
+- **Agregado:** `AuthGateway.getVerifiedUser()` en el port, el adapter de Supabase y `FakeAuthGateway`.
+- **Agregado:** dependencia de desarrollo `tsx` 4.23.15, para correr el script.
+- **Agregado:** tests de acceso (sin sesión, sesión sin staff, staff inactivo, staff OK y servicios caídos), del DAL, del alta de staff y de sus argumentos. Test de integración del repository de staff contra dev, que confirma la lectura de `auth.users`. E2E con una cookie de sesión falsificada.
+- **Documentado:** ADR-0015, ARCHITECTURE, README (alta y baja de staff), TESTING (MT-09 detallado, MT-25 nuevo). SPEC v1.25.
+
 ### F4-01 · Auth con Supabase
 
 - **Agregado:** sesión y login del staff con Supabase Auth, todo del lado del servidor ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)).

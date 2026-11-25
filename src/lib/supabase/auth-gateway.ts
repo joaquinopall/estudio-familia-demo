@@ -10,19 +10,28 @@ import type {
   SignInCredentials,
   SignInOutcome,
   SignOutOutcome,
+  VerifiedUserOutcome,
 } from "@/lib/ports/auth-gateway";
+
+type UserAnswer = { data: { user: { id: string } | null }; error: AuthError | null };
 
 /**
  * The part of `supabase.auth` this adapter uses. Supabase's client satisfies it; tests pass
  * a small fake.
  */
 export type SupabaseAuthClient = {
-  signInWithPassword(credentials: SignInCredentials): Promise<{
-    data: { user: { id: string } | null };
-    error: AuthError | null;
-  }>;
+  signInWithPassword(credentials: SignInCredentials): Promise<UserAnswer>;
+  getUser(): Promise<UserAnswer>;
   signOut(options: { scope: "local" }): Promise<{ error: AuthError | null }>;
 };
+
+/** Only a provider outage is "unavailable"; any rejection of the session is "none". */
+function mapGetUserError(error: AuthError): VerifiedUserOutcome {
+  if (isAuthRetryableFetchError(error) || (error.status ?? 0) >= 500) {
+    return { status: "unavailable", errorCode: errorCodeOf(error) };
+  }
+  return { status: "none" };
+}
 
 /** Codes that mean "these credentials do not open a session", without saying why. */
 const REJECTED_CODES = new Set([
@@ -61,6 +70,17 @@ export function createSupabaseAuthGateway(auth: SupabaseAuthClient): AuthGateway
         if (error) return mapSignInError(error);
         if (!data.user) return { status: "unavailable", errorCode: "no_user" };
         return { status: "ok" };
+      } catch (error) {
+        return { status: "unavailable", errorCode: nameOf(error) };
+      }
+    },
+
+    async getVerifiedUser(): Promise<VerifiedUserOutcome> {
+      try {
+        // getUser() asks the Auth server; getSession() would trust the cookie as is.
+        const { data, error } = await auth.getUser();
+        if (error) return mapGetUserError(error);
+        return data.user ? { status: "ok", userId: data.user.id } : { status: "none" };
       } catch (error) {
         return { status: "unavailable", errorCode: nameOf(error) };
       }
