@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.28 (25/11/2026) |
+| Versión | 1.29 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -159,7 +159,7 @@ src/
       (protected)/layout.tsx     # llama a requireStaff()
       (protected)/page.tsx       # listado
       (protected)/error.tsx      # error del panel (mensaje genérico y reintento)
-      (protected)/consultas/[id]/page.tsx
+      (protected)/consultas/[id]/page.tsx       # detalle (+ not-found.tsx del panel)
     sitemap.ts
     robots.ts
     opengraph-image.tsx
@@ -184,13 +184,14 @@ src/
       errors.ts                  # InquiryStoreError, InvalidInquiryInputError
       actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes ("use server", finas)
       submit-inquiry.ts          # lógica de submitInquiry con dependencias por parámetro (FR-06)
+      update-inquiry.ts          # lógica de updateInquiryStatus y updateInquiryNotes (requireStaffForAction → Zod → service)
       notifications.ts           # contenido y envío de los mails de una consulta nueva
       labels.ts                  # nombres en español de los enums (§8.1, FR-11)
       emails/                    # React Email: NewInquiryEmail, InquiryReceiptEmail, render.ts, styles.ts
       form-values.ts             # valores del formulario que la action devuelve al fallar
       server.ts                  # getInquiryService(): el service con Prisma, para páginas y actions
       list-href.ts               # buildListHref: URLs del listado con los filtros
-      components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, InquiryFilters, InquiryPagination, badges (F4-04)
+      components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, InquiryFilters, InquiryPagination, badges (F4-04); InquiryDetail, ContactPlanBox, StatusForm, NotesForm, InquiryHistory (F4-05)
       __tests__/
     auth/
       dal.ts                     # requireStaff() (páginas), requireStaffForAction() (actions), getCurrentStaff()
@@ -314,12 +315,12 @@ type ActionResult<T> =
 | Action | Input | Output OK | Errores posibles |
 |---|---|---|---|
 | `submitInquiry(prev, formData)` | campos de §8.1 + `cf-turnstile-response` + `website` (honeypot) | `{ reference: string; doNotContact: boolean }` (`doNotContact`: sin medio seguro, la confirmación no promete contacto, US-03 CA3). Con un error devuelve además `values` (lo que escribió la persona, sin el token ni el honeypot) para no perderlo (US-03 CA4) | VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, INTERNAL |
-| `updateInquiryStatus({ id, status })` | UUID + enum | `{ status }` | UNAUTHORIZED, FORBIDDEN, VALIDATION, NOT_FOUND, INTERNAL |
-| `updateInquiryNotes({ id, notes })` | UUID + string ≤ 5000 | `{ updatedAt }` | ídem |
+| `updateInquiryStatus(prev, formData)` | `id` (UUID) + `status` (enum) | `{ status, changed }`. El mismo estado devuelve `changed: false` y no crea un evento | UNAUTHORIZED, FORBIDDEN, VALIDATION, NOT_FOUND, INTERNAL |
+| `updateInquiryNotes(prev, formData)` | `id` (UUID) + `notes` (string ≤ 5000; vacío = sin notas) | `{ updatedAt, changed }`. Con un error devuelve además `values.notes` para no perder lo escrito | ídem |
 | `signIn(prev, formData)` | email + password | redirect `/admin`. Con un error devuelve además `values.email` (lo escrito, nunca la contraseña) para no perderlo | VALIDATION, UNAUTHORIZED (mensaje genérico), RATE_LIMITED, INTERNAL |
 | `signOut()` | — | redirect `/admin/login` | — |
 
-Los mensajes de error al usuario son genéricos y en español. El login nunca revela si el email existe.
+Los mensajes de error al usuario son genéricos y en español. El login nunca revela si el email existe. Las actions del panel validan el acceso (`requireStaffForAction`) antes que el input, y toman el actor de la sesión.
 
 ---
 
@@ -651,3 +652,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.26 | F4-03. §6.5: `signIn` devuelve `values.email` cuando falla (React 19 reinicia el formulario) y puede devolver `INTERNAL` si Supabase no responde. §6.2: `app/admin/layout.tsx` (noindex y encabezado propio para todo el panel), `features/auth/components/` (`LoginForm`, `LoginSessionCheck`, `SignOutButton`) y `components/forms/field-styles.ts`. | [tu nombre] |
 | 25/11/2026 | 1.27 | Corrección de F4-02. §7: `staff:add` vincula un staff existente a un usuario de Auth recreado con el mismo email (conserva su `id`) y no toca nada si el usuario viejo sigue existiendo. | [tu nombre] |
 | 25/11/2026 | 1.28 | F4-04. FR-03: `site.config.ts` suma la zona horaria del estudio (`timeZone`), que usan las fechas del panel. §6.2: `features/inquiries/server.ts` (`getInquiryService()`), `list-href.ts`, los componentes del listado y `app/admin/(protected)/error.tsx`. El listado muestra el email (pedido del dueño), pero no el mensaje ni el teléfono; la búsqueda trata `%` y `_` como texto. | [tu nombre] |
+| 25/11/2026 | 1.29 | F4-05. §6.5: `updateInquiryStatus` y `updateInquiryNotes` reciben `(prev, formData)`, para `useActionState` y para funcionar sin JavaScript. Devuelven `changed`: el mismo valor no crea un evento. Las notas vuelven en `values` si el guardado falla. El acceso se valida antes que el input. §6.2: `update-inquiry.ts`, los componentes del detalle y `not-found.tsx` del detalle. En el detalle, teléfono y email van sin links (§11.5). | [tu nombre] |

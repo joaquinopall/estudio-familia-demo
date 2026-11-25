@@ -4,6 +4,23 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-05 · Detalle y acciones
+
+- **Agregado:** el detalle de una consulta en `/admin/consultas/<id>` (US-06 CA3).
+  - **"Cómo contactar"** destacado: el medio seguro y su dato, o "No iniciar contacto" con la explicación (US-03 CA6 y CA7).
+  - Datos de la persona, la consulta (el mensaje con sus saltos de línea) y el consentimiento.
+  - Teléfono y email **sin links**, para no iniciar el contacto con un toque.
+  - Un id inválido o inexistente muestra una 404 dentro del panel.
+- **Agregado:** cambio de estado (cualquier estado distinto, FR-11) y notas internas, con `useActionState`. Funcionan sin JavaScript, anuncian el resultado y conservan las notas si el guardado falla.
+- **Agregado:** historial con quién, qué y cuándo (FR-12). El evento de notas no guarda el texto.
+- **Agregado:** `updateInquiryStatus` y `updateInquiryNotes`.
+  - `requireStaffForAction()` primero, después Zod, después el service. El actor siempre es el de la sesión.
+  - Cada cambio y su evento van en una transacción interactiva; el mismo valor no escribe nada.
+  - `refresh()` actualiza la página.
+- **Cambiado:** las actions del panel reciben `(prev, formData)` en lugar de un objeto (SPEC §6.5), como `submitInquiry` y `signIn`.
+- **Agregado:** tests del service, de las actions (UNAUTHORIZED, FORBIDDEN, VALIDATION, NOT_FOUND, INTERNAL y OK), de su cableado, de los componentes y `detail.db.test.ts` contra dev. `enums.test.ts` también controla `InquiryEventType`.
+- **Documentado:** ARCHITECTURE, README, TESTING (MT-10 detallado) y SPEC v1.29.
+
 ### F4-04 · Listado
 
 - **Agregado:** el listado de consultas en `/admin` (US-06 CA2).

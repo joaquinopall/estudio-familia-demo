@@ -42,7 +42,7 @@ flowchart LR
 | `src/app/layout.tsx`          | ✅ F1-07    | Layout raíz: `lang="es-AR"`, fuentes (`next/font`), metadata base.                             |
 | `src/app/globals.css`         | ✅ F1-07    | Tokens de diseño (SPEC §11.1).                                                                 |
 | `src/app/(public)/`           | ✅ F2-07    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
-| `src/app/admin/`              | 🟨 F4       | ✅ `layout.tsx` común (`noindex`, encabezado propio), `(protected)/layout.tsx` con `requireStaff()` y la barra de sesión (F4-02), `login/` (F4-03), el listado en `(protected)/page.tsx` y su `error.tsx` (F4-04). ⏳ detalle (F4-05). |
+| `src/app/admin/`              | 🟨 F4       | ✅ `layout.tsx` común (`noindex`, encabezado propio), `(protected)/layout.tsx` con `requireStaff()` y la barra de sesión (F4-02), `login/` (F4-03), el listado en `(protected)/page.tsx` y su `error.tsx` (F4-04), y el detalle en `(protected)/consultas/[id]/` con su `not-found.tsx` (F4-05). |
 | `src/components/forms/`       | ✅ F4-03    | Estilos compartidos de controles nativos (`controlClass`, `focusOutlineClass`): formulario de consultas y login. |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
 | `src/app/icon.tsx`, `apple-icon.tsx` | ✅ F2-07 | Íconos con el monograma de `site.config.ts`, generados en el build. `/favicon.ico` se reescribe a `/icon`. |
@@ -54,7 +54,7 @@ flowchart LR
 | `src/content/`                | ✅ F2-07    | Áreas, preguntas, textos de cada página y de error, ayuda urgente y privacidad como datos.     |
 | `src/lib/seo/`                | ✅ F2-07    | Metadata, rutas del sitemap, datos estructurados, `<JsonLd>` seguro e íconos.                  |
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
-| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06), formulario (F3-07), listado del panel (F4-04). ⏳ detalle y acciones (F4-05). |
+| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06), formulario (F3-07), listado del panel (F4-04), detalle, estado, notas e historial (F4-05). |
 | `src/lib/security/ip.ts`      | ✅ F3-05    | IP del visitante (`x-forwarded-for` en Vercel) y HMAC-SHA256 con `IP_HASH_SALT`.               |
 | `src/features/auth/`          | ✅ F4-02    | `signIn`/`signOut` con rate limit (F4-01); reglas de acceso (`access.ts`), DAL (`requireStaff`, `requireStaffForAction`), alta de staff y repositorio (F4-02). |
 | `scripts/staff-add.ts`        | ✅ F4-02    | `npm run staff:add`: vincula un usuario de Supabase Auth como staff activo ([ADR 0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md)). |
@@ -174,6 +174,36 @@ flowchart LR
 - **Fechas:** en la zona del estudio (`siteConfig.timeZone`), no en la del servidor (UTC en Vercel).
 - **Errores:** `inquiry.list_failed` (solo el nombre del error) y `app/admin/(protected)/error.tsx`, con un mensaje genérico y "Probar de nuevo".
 
+### Detalle, estado y notas (F4-05)
+
+```mermaid
+sequenceDiagram
+  participant B as Navegador (staff)
+  participant A as updateInquiryStatus / updateInquiryNotes
+  participant D as requireStaffForAction
+  participant S as InquiryService
+  participant R as Repository (transacción)
+  B->>A: FormData (id, status | notes)
+  A->>D: ¿staff activo?
+  D-->>A: staff o UNAUTHORIZED / FORBIDDEN / INTERNAL
+  A->>A: updateStatusSchema / updateNotesSchema → VALIDATION
+  A->>S: changeStatus(id, status, staff.id)
+  S->>R: leer actual → si cambia: update + InquiryEvent (from, to, actor)
+  R-->>S: changed / unchanged / not_found
+  A->>A: changed → refresh() de next/cache
+  A-->>B: ActionResult (role="status" o role="alert")
+```
+
+- **Lectura:** `/admin/consultas/[id]` llama a `requireStaff()`, valida que el id sea un UUID (si no, 404 dentro del panel) y pide `getInquiry`. Ese método trae la consulta, sus eventos en orden y el nombre de cada actor (sin FK: un staff que ya no existe se muestra como "Staff"). Nunca trae el `ipHash`.
+- **Escritura** (`update-inquiry.ts`, dependencias por parámetro):
+  - Pasos: **primero** `requireStaffForAction()`, así nadie sin acceso puede tantear ids; **después** Zod; **después** el service.
+  - El actor siempre es el staff de la sesión, nunca un campo del formulario.
+  - Las actions reciben `(prev, formData)`, para `useActionState` y para funcionar sin JavaScript.
+- **Transacciones interactivas:** el repository lee el valor actual y, si cambió, escribe el cambio y su `InquiryEvent` en la misma transacción. Así `fromStatus` siempre es real. El mismo estado, o las mismas notas, no escriben nada ni crean un evento.
+- **Notas:** el evento `NOTES_UPDATED` registra quién y cuándo, nunca el texto. Los logs (`inquiry.status_changed`, `inquiry.notes_updated` y sus `_failed`) llevan solo `inquiryId`, `staffId` y el nombre del error.
+- **Cómo contactar:** `ContactPlanBox` usa `planContact`, igual que el listado y los mails. Teléfono y email van **sin links**, para no iniciar el contacto por un toque accidental (§11.5).
+- **Después de un cambio,** `refresh()` vuelve a dibujar la página: el badge, el formulario y el historial quedan al día sin recargar.
+
 ### Formulario de consulta (F3-07)
 
 - `/contacto` sigue **estática**. `InquiryFormSection` (servidor) dibuja `#formulario` con **un solo** `InquiryForm`. Cuando carga en el navegador, lee `?area=` y completa el área **solo si el selector sigue vacío** (`area-from-query.ts`). La página le pasa un mapa slug → área, así el navegador no carga los textos de las áreas.
@@ -247,7 +277,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Panel admin (F4-05 en adelante):** detalle con cambio de estado, notas e historial, y el link del mail al detalle (con vuelta a la página original después del login, F4-06). Todo detrás de `requireStaff()` / `requireStaffForAction()`.
+- **Panel admin (F4-06 en adelante):** el link del mail al detalle, con vuelta a la página original después del login (F4-06), y los e2e del panel con sesión (F4-07).
 
 ## Decisiones vigentes
 

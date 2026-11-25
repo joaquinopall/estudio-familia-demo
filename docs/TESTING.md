@@ -44,10 +44,11 @@ Detalles de los e2e:
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Auth        | Vitest + fakes               | `src/features/auth/__tests__/`, `src/lib/supabase/__tests__/` | `signIn`: OK, VALIDATION, mismo UNAUTHORIZED para email inexistente y contraseña incorrecta, rate limit propio (5 en 15 min) y de Supabase, Upstash caído, Supabase caído, logs sin email ni contraseña. `signOut` aunque Supabase falle. Traducción de errores de Supabase. Proxy: redirect sin sesión, sin loop en el login, cookies y headers de no-caché, cookies httpOnly/Secure/Lax |
+| Detalle y actions del panel | Vitest + fakes + Testing Library | `src/features/inquiries/__tests__/inquiry-detail-service.test.ts`, `update-inquiry.test.ts`, `panel-actions.test.ts`, `components/__tests__/inquiry-detail.test.tsx` | `getInquiry` (sin `ipHash`, plan de contacto, actores), `changeStatus` y `updateNotes` (evento con actor, nada si no cambia, notas fuera del evento). Actions: UNAUTHORIZED, **FORBIDDEN**, INTERNAL antes de validar, VALIDATION, NOT_FOUND, OK, actor de la sesión, `refresh()` solo si cambió, logs sin notas. Detalle: "Cómo contactar" y "No iniciar contacto", sin links `tel:`/`mailto:`/WhatsApp, mensaje con saltos de línea, historial, formularios accesibles y notas conservadas si se rechazan |
 | Listado del panel | Vitest + fakes + Testing Library | `src/features/inquiries/__tests__/list-inquiries.test.ts`, `list-href.test.ts`, `escape-like.test.ts`, `components/__tests__/inquiry-list.test.tsx` | Paginación (20, página fuera de rango), filtros y búsqueda hacia el repository, filtros inválidos ignorados, referencia, `doNotContact` con `planContact`, URLs con filtros, tabla (encabezados, hora del estudio, badges, "No iniciar contacto", sin mensaje ni teléfono), filtros (`GET`, labels, valores actuales) y paginación |
 | Login (UI)  | Vitest + Testing Library     | `src/features/auth/components/__tests__/`    | `LoginForm`: labels y `autocomplete`, funciona sin JavaScript, error general en `role="alert"` con foco, errores de campo con `aria-describedby`, email conservado y contraseña no, botón pendiente. `LoginSessionCheck`: redirect del staff a `/admin`, aviso de `?error=forbidden` sin detalles |
 | Autorización | Vitest + fakes              | `src/features/auth/__tests__/access.test.ts`, `dal.test.ts`, `staff-service.test.ts`, `staff-add-args.test.ts` | `requireStaff()`: sin sesión, sesión sin staff, staff inactivo, staff OK, Supabase y base caídos (falla cerrado), redirects de páginas y `ActionResult` de actions, logs sin datos personales. `staff:add`: usuario inexistente, alta, reactivación idempotente y argumentos |
-| Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; listado (`list.db.test.ts`: orden, cada filtro, búsqueda sin distinguir mayúsculas en nombre y email, `%` como texto, paginación y campos del `select`); staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
+| Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; detalle (`detail.db.test.ts`: estado y notas con su evento en una transacción, `fromStatus` real, nada si no cambia, actor que ya no existe); listado (`list.db.test.ts`: orden, cada filtro, búsqueda sin distinguir mayúsculas en nombre y email, `%` como texto, paginación y campos del `select`); staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
@@ -146,7 +147,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-07 | Login y logout del admin                                | F4-03         | **Detallado** · se ejecuta en F4-03 y F4-08 |
 | MT-08 | Entrar a `/admin` sin sesión                            | F4-01         | **Detallado** · se ejecuta en F4-01 y F4-08 |
 | MT-09 | Usuario autenticado que no es staff                     | F4-02         | **Detallado** · se ejecuta en F4-03 y F4-08 |
-| MT-10 | Cambio de estado, notas e historial                     | F4-08         | Pendiente     |
+| MT-10 | Cambio de estado, notas e historial                     | F4-05         | **Detallado** · se ejecuta en F4-05 y F4-08 |
 | MT-11 | Navegación completa solo con teclado                    | F1-08         | **Detallado** |
 | MT-12 | Lighthouse mobile en 3 páginas                          | F2-07         | **Detallado** |
 | MT-13 | Banner de modo demo                                     | F1-08         | **Detallado** |
@@ -614,6 +615,49 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 8: el lector anuncia los nombres de los campos y lee el mensaje de error apenas aparece.
 - Paso 9: funciona igual (la página se recarga en cada envío).
 - Si hacés más de 5 intentos en 15 minutos: "Hiciste demasiados intentos seguidos…".
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-10 — Cambio de estado, notas e historial
+
+- **Objetivo:** que el estudio vea todo lo que mandó la persona, sepa cómo (y si) contactarla, y que cada cambio quede registrado con quién y cuándo, sin exponer las notas.
+- **Requisitos:** US-06 CA3, FR-11, FR-12, US-03 CA6 y CA7, SPEC §6.5, §11.5, NFR-SEC-02, NFR-SEC-06.
+- **Precondiciones:** sesión de staff en dev (MT-07). Dos consultas nuevas desde `/contacto`:
+  - A: WhatsApp y "sí, es seguro", con un mensaje de varias líneas;
+  - B: teléfono y "no es seguro", con un email **no** privado.
+  - Para el paso 8, un segundo usuario sin staff (MT-09) o el tuyo con `active = false`.
+
+**Pasos**
+
+1. Desde el listado, abrí A.
+2. Abrí B.
+3. En A, cambiá el estado a "En revisión" y tocá "Cambiar estado".
+4. Elegí otra vez "En revisión" y volvé a tocar "Cambiar estado".
+5. Escribí unas notas, guardalas y recargá la página. Después vacialas y guardá.
+6. Volvé al listado.
+7. Abrí `/admin/consultas/no-existe` y `/admin/consultas/00000000-0000-4000-8000-000000000000`.
+8. Con la página de A abierta en otra pestaña, dejá de ser staff (`active = false` en el Table Editor) y probá cambiar el estado desde esa pestaña. Al final, volvé a `active = true`.
+9. Repetí los pasos 3 y 5 solo con el teclado y, si podés, con un lector de pantalla.
+10. (Opcional) Con JavaScript desactivado, cambiá el estado.
+
+**Resultado esperado**
+
+- Paso 1:
+  - Arriba, "Cómo contactar: Contactar por WhatsApp: <teléfono>".
+  - Se ven todos los datos, el mensaje con sus saltos de línea y el consentimiento con su versión.
+  - El teléfono y el email no son links.
+  - El historial dice "Consulta recibida · Sitio web".
+- Paso 2: arriba, en rojo, **"No iniciar contacto"** con la explicación. El email dice "no es privado: puede leerlo otra persona".
+- Paso 3: "Estado actualizado." El badge cambia sin recargar, y el historial suma "Estado: Nueva → En revisión", con tu nombre y la hora de Argentina.
+- Paso 4: "La consulta ya estaba en ese estado." El historial no suma nada.
+- Paso 5: "Notas guardadas." Después de recargar, las notas siguen ahí. El historial dice "Notas actualizadas" con tu nombre, **sin el texto**. Al vaciarlas también se registra.
+- Paso 6: A figura "En revisión" en el listado.
+- Paso 7: "No encontramos esta consulta", dentro del panel, con "Volver al listado".
+- Paso 8: "No tenés permiso para realizar esta acción." El estado no cambia y el historial no suma nada.
+- Paso 9: los mensajes se anuncian ("Estado actualizado", "Notas guardadas") y el foco se ve en cada control.
+- Paso 10: funciona igual; la página se recarga.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
