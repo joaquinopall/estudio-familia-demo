@@ -10,7 +10,7 @@
 import { z } from "zod";
 
 // Same reason as in features/inquiries/schema.ts: no `new Function` probe under an enforced
-// CSP when the login form validates in the browser (F4-03).
+// CSP if this schema is ever used in the browser (today the login validates on the server only).
 z.config({ jitless: true });
 
 export const EMAIL_MAX_LENGTH = 254;

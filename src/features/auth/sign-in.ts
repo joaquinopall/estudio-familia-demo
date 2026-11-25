@@ -13,7 +13,7 @@ import type { AuthGateway } from "@/lib/ports/auth-gateway";
 import type { RateLimiter } from "@/lib/ports/rate-limiter";
 import { hashIdentifier } from "@/lib/security/ip";
 
-import { signInSchema } from "./schema";
+import { EMAIL_MAX_LENGTH, signInSchema } from "./schema";
 
 /**
  * One message for every rejected login: wrong password, unknown email, unconfirmed email...
@@ -21,8 +21,14 @@ import { signInSchema } from "./schema";
  */
 export const INVALID_CREDENTIALS_MESSAGE = "El email o la contraseña no son correctos.";
 
-/** On success the action redirects, so the result carries no data. */
-export type SignInResult = ActionResult<null>;
+/** What the form gets back after a failure: the email as typed, never the password. */
+export type SignInFormValues = { email?: string };
+
+/**
+ * On success the action redirects, so the result carries no data. On failure it also carries
+ * the email, because React 19 resets the form after the action (same idea as US-03 CA4).
+ */
+export type SignInResult = ActionResult<null> & { values?: SignInFormValues };
 /** useActionState state: null before the first attempt. It never holds a success. */
 export type SignInState = Extract<SignInResult, { ok: false }> | null;
 
@@ -59,7 +65,14 @@ export function createSignInHandler(deps: SignInDeps) {
     return result.status === "limited";
   }
 
-  return async function signIn({ formData, clientIp }: SignInRequest): Promise<SignInResult> {
+  return async function signIn(request: SignInRequest): Promise<SignInResult> {
+    const result = await handle(request);
+    if (result.ok) return result;
+    const email = fieldOf(request.formData, "email")?.trim().slice(0, EMAIL_MAX_LENGTH);
+    return { ...result, values: email ? { email } : {} };
+  };
+
+  async function handle({ formData, clientIp }: SignInRequest): Promise<ActionResult<null>> {
     if (await isRateLimited(clientIp)) {
       logger.info("auth.sign_in_rate_limited");
       return fail("RATE_LIMITED");
@@ -87,7 +100,7 @@ export function createSignInHandler(deps: SignInDeps) {
         logger.error("auth.sign_in_unavailable", { errorCode: outcome.errorCode });
         return fail("INTERNAL");
     }
-  };
+  }
 }
 
 /**

@@ -83,16 +83,46 @@ describe("signIn handler", () => {
     expect(result).toEqual({
       ok: false,
       error: { code: "UNAUTHORIZED", message: INVALID_CREDENTIALS_MESSAGE },
+      values: { email: ACCOUNT.email },
     });
   });
 
-  it("gives an unknown email exactly the same answer as a wrong password (§6.5)", async () => {
+  it("gives an unknown email exactly the same error as a wrong password (§6.5)", async () => {
     const ctx = setup();
 
     const unknownEmail = await ctx.signIn({ ...ACCOUNT, email: "nadie@example.com" });
     const wrongPassword = await ctx.signIn({ ...ACCOUNT, password: "otra-clave-incorrecta" });
 
-    expect(unknownEmail).toEqual(wrongPassword);
+    expect(unknownEmail.ok === false && unknownEmail.error).toEqual(
+      wrongPassword.ok === false && wrongPassword.error,
+    );
+  });
+
+  it.each<[string, SignInOutcome | null, Record<string, string>]>([
+    ["rejected credentials", null, { ...ACCOUNT, password: "incorrecta" }],
+    ["a validation error", null, { email: "staff@example.com", password: "" }],
+    ["Supabase down", { status: "unavailable", errorCode: "x" }, ACCOUNT],
+  ])(
+    "gives back the typed email after %s, never the password (F4-03)",
+    async (_case, outcome, fields) => {
+      const ctx = setup();
+      ctx.authGateway.respondWith(outcome);
+
+      const result = await ctx.signIn({ ...fields, email: `  ${fields.email ?? ""} ` });
+
+      expect(result.values).toEqual({ email: fields.email });
+      expect(JSON.stringify(result)).not.toContain(ACCOUNT.password);
+    },
+  );
+
+  it("gives back no email when none was typed", async () => {
+    const result = await setup().signIn({ password: "x" });
+
+    expect(result.values).toEqual({});
+  });
+
+  it("returns no values on success", async () => {
+    expect((await setup().signIn()).values).toBeUndefined();
   });
 
   it("logs the provider's code on a rejected login, never the email", async () => {
@@ -123,6 +153,7 @@ describe("signIn handler", () => {
     expect(blocked).toEqual({
       ok: false,
       error: { code: "RATE_LIMITED", message: DEFAULT_ERROR_MESSAGES.RATE_LIMITED },
+      values: { email: ACCOUNT.email },
     });
     expect(ctx.authGateway.signInCalls).toHaveLength(rateLimits.loginByIp.limit);
 
@@ -178,6 +209,7 @@ describe("signIn handler", () => {
     expect(result).toEqual({
       ok: false,
       error: { code: "INTERNAL", message: DEFAULT_ERROR_MESSAGES.INTERNAL },
+      values: { email: ACCOUNT.email },
     });
     expect(JSON.parse(ctx.logs.at(-1) ?? "{}")).toMatchObject({
       level: "error",
