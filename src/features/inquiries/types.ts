@@ -30,3 +30,27 @@ export const PHONE_CHANNELS = ["PHONE", "WHATSAPP"] as const satisfies readonly 
 
 export const isPhoneChannel = (channel: ContactChannel): boolean =>
   (PHONE_CHANNELS as readonly ContactChannel[]).includes(channel);
+
+/** One row of the panel list (US-06 CA2). No message or phone: they belong to the detail. */
+export type InquirySummary = {
+  id: string;
+  reference: string;
+  createdAt: Date;
+  fullName: string;
+  email: string;
+  area: PracticeArea;
+  urgency: Urgency;
+  status: InquiryStatus;
+  preferredChannel: ContactChannel;
+  /** No safe channel: the firm must not start contact (US-03 CA7). */
+  doNotContact: boolean;
+};
+
+/** A page of the panel list. `page` is the one actually shown (out-of-range requests clamp). */
+export type InquiryPage = {
+  items: InquirySummary[];
+  total: number;
+  page: number;
+  totalPages: number;
+  pageSize: number;
+};
