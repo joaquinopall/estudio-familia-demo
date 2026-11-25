@@ -7,11 +7,16 @@ import { randomUUID } from "node:crypto";
 
 import { InquiryStoreError } from "@/features/inquiries/errors";
 import type {
+  InquiryDetailRow,
+  InquiryEventRow,
   InquiryListQuery,
   InquiryListRow,
   InquiryRepository,
   NewInquiryRecord,
+  NotesChangeResult,
+  StatusChangeResult,
 } from "@/features/inquiries/service";
+import type { InquiryStatus } from "@/features/inquiries/types";
 
 export type StoredInquiry = NewInquiryRecord & {
   id: string;
@@ -38,7 +43,70 @@ export class FakeInquiryRepository implements InquiryRepository {
   readonly inquiries: StoredInquiry[] = [];
   readonly listRows: InquiryListRow[] = [];
   readonly listQueries: InquiryListQuery[] = [];
+  /** Detail rows by id (seeded with addDetail); updates change them and append events. */
+  readonly details = new Map<string, InquiryDetailRow>();
+  /** StaffMember names by id, to resolve actors like the database does. */
+  readonly staffNames = new Map<string, string>();
   private failure: Error | null = null;
+  private eventSeq = 0;
+  private now = new Date("2026-11-25T18:00:00.000Z");
+
+  addDetail(row: InquiryDetailRow): InquiryDetailRow {
+    this.details.set(row.id, row);
+    return row;
+  }
+
+  private nextEvent(
+    fields: Pick<InquiryEventRow, "type" | "fromStatus" | "toStatus" | "actorId">,
+  ): InquiryEventRow {
+    this.now = new Date(this.now.getTime() + 60_000);
+    return {
+      id: `event-${++this.eventSeq}`,
+      createdAt: this.now,
+      ...fields,
+      actorName: fields.actorId ? (this.staffNames.get(fields.actorId) ?? null) : null,
+    };
+  }
+
+  async findById(id: string): Promise<InquiryDetailRow | null> {
+    if (this.failure) throw this.failure;
+    const row = this.details.get(id);
+    return row ? structuredClone(row) : null;
+  }
+
+  async updateStatus(
+    id: string,
+    status: InquiryStatus,
+    actorId: string,
+  ): Promise<StatusChangeResult> {
+    if (this.failure) throw this.failure;
+    const row = this.details.get(id);
+    if (!row) return { result: "not_found" };
+    if (row.status === status) return { result: "unchanged" };
+    const from = row.status;
+    row.status = status;
+    row.events.push(
+      this.nextEvent({ type: "STATUS_CHANGED", fromStatus: from, toStatus: status, actorId }),
+    );
+    return { result: "changed", from, to: status };
+  }
+
+  async updateNotes(id: string, notes: string | null, actorId: string): Promise<NotesChangeResult> {
+    if (this.failure) throw this.failure;
+    const row = this.details.get(id);
+    if (!row) return { result: "not_found" };
+    if (row.internalNotes === notes) return { result: "unchanged", updatedAt: row.updatedAt };
+    row.internalNotes = notes;
+    const event = this.nextEvent({
+      type: "NOTES_UPDATED",
+      fromStatus: null,
+      toStatus: null,
+      actorId,
+    });
+    row.updatedAt = event.createdAt;
+    row.events.push(event);
+    return { result: "changed", updatedAt: row.updatedAt };
+  }
 
   constructor(private readonly nextId: () => string = randomUUID) {}
 

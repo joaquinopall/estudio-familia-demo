@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { practiceAreas } from "@/content/practice-areas";
 import {
   CONTACT_CHANNELS,
+  INQUIRY_EVENT_TYPES,
   INQUIRY_STATUSES,
   PRACTICE_AREAS,
   URGENCIES,
@@ -33,6 +34,7 @@ describe("domain enums (SPEC §7)", () => {
     ["Urgency", URGENCIES],
     ["ContactChannel", CONTACT_CHANNELS],
     ["InquiryStatus", INQUIRY_STATUSES],
+    ["InquiryEventType", INQUIRY_EVENT_TYPES],
   ])("%s matches prisma/schema.prisma", (name, values) => {
     expect([...values]).toEqual(prismaEnum(name));
   });
