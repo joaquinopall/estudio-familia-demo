@@ -25,7 +25,10 @@ async function createAuthGateway() {
   return createSupabaseAuthGateway(supabase.auth);
 }
 
-/** Login form action, for useActionState(signIn, null) (F4-03). Success goes to /admin. */
+/**
+ * Login form action, for useActionState(signIn, null) (F4-03). Success goes to the validated
+ * `next` (the page that asked for the login, F4-06) or to /admin.
+ */
 export async function signIn(_previous: SignInState, formData: FormData): Promise<SignInState> {
   const clientIp = getClientIp(await headers());
   const result = await createSignInHandler({
@@ -35,7 +38,7 @@ export async function signIn(_previous: SignInState, formData: FormData): Promis
     ipHashSalt: env.IP_HASH_SALT,
   })({ formData, clientIp });
 
-  if (result.ok) redirect(adminPaths.home);
+  if (result.ok) redirect(result.data.redirectTo);
   return result;
 }
 

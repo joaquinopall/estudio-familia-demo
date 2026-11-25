@@ -62,6 +62,17 @@ describe("signIn action", () => {
     });
   });
 
+  it("redirects to the validated next after a successful sign-in (F4-06)", async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: "u-1" } }, error: null });
+    const { signIn } = await import("@/features/auth/actions");
+    const formData = credentials();
+    formData.set("next", "/admin/consultas/7f3a9b21-4c5d-4e6f-8a7b-9c0d1e2f3a4b");
+
+    expect(await redirectOf(signIn(null, formData))).toBe(
+      "/admin/consultas/7f3a9b21-4c5d-4e6f-8a7b-9c0d1e2f3a4b",
+    );
+  });
+
   it("returns the generic error without redirecting when Supabase rejects the credentials", async () => {
     const { AuthApiError } = await import("@supabase/supabase-js");
     mocks.signInWithPassword.mockResolvedValue({
