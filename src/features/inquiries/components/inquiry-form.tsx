@@ -18,6 +18,7 @@ import { submitInquiry } from "../actions";
 import { INQUIRY_FORM_FIELDS, type InquiryFormValues } from "../form-values";
 import { HONEYPOT_FIELD } from "../schema";
 import type { ContactChannel, PracticeArea } from "../types";
+import { applyAreaFromQuery } from "./area-from-query";
 import { ErrorSummary } from "./error-summary";
 import { focusOutlineClass } from "./form-field";
 import {
@@ -34,8 +35,8 @@ import { StepDetails } from "./step-details";
 import { TurnstileWidget } from "./turnstile-widget";
 
 export type InquiryFormProps = {
-  /** From ?area=<slug> (only for areas with a page). */
-  defaultArea?: PracticeArea;
+  /** Slug of each area page → its PracticeArea, to preselect it from ?area=<slug>. */
+  areaBySlug?: Readonly<Record<string, PracticeArea>>;
   turnstileSiteKey: string;
   /** siteConfig.responseTime, for the confirmation. */
   responseTime: string;
@@ -53,7 +54,7 @@ const useEnhanced = () =>
   );
 
 export function InquiryForm({
-  defaultArea,
+  areaBySlug,
   turnstileSiteKey,
   responseTime,
   noscriptContacts,
@@ -73,7 +74,14 @@ export function InquiryForm({
   const contactHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const failed = state && !state.ok ? state : null;
-  const values: InquiryFormValues = failed?.values ?? { area: defaultArea };
+  const values: InquiryFormValues = failed?.values ?? {};
+
+  // ?area=<slug> preselection: on the live <select>, only if still empty (area-from-query.ts).
+  useEffect(() => {
+    if (formRef.current && areaBySlug) {
+      applyAreaFromQuery(formRef.current, window.location.search, areaBySlug);
+    }
+  }, [areaBySlug]);
   const errors = clientErrors ?? firstMessages(failed?.error.fieldErrors);
   const generalMessage =
     failed && failed.error.code !== "VALIDATION" ? failed.error.message : undefined;

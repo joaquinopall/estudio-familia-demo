@@ -53,7 +53,7 @@ const { id, reference } = await service.createInquiry(data, { ipHash, source });
 Orden (FR-06, de lo más barato a lo más caro):
 
 1. **Honeypot** (`website`) lleno → éxito falso, sin guardar ni mandar nada.
-2. **Rate limit** por IP (5 cada 10 minutos) y por email (3 por hora), con claves HMAC (`lib/security/ip.ts`) → `RATE_LIMITED`. Si Upstash no responde, se deja pasar y se loguea `rate_limit.unavailable`. Sin IP (desarrollo local), se saltea esa regla.
+2. **Rate limit** por IP (5 cada 10 minutos) y por email (3 por hora), con claves HMAC (`lib/security/ip.ts`) → `RATE_LIMITED`. Si Upstash no responde, se deja pasar y se loguea `rate_limit.unavailable`. La IP sale de `x-forwarded-for`: en Vercel la pone la plataforma; en local, Next pone `::1`, así que **todos los envíos locales comparten el límite de 5 cada 10 minutos**. Si no hay IP, se saltea esa regla (`rate_limit.no_client_ip`).
 3. **Validación** con `inquirySchema` → `VALIDATION` con los errores por campo.
 4. **Turnstile** (token `cf-turnstile-response`) → `CAPTCHA_FAILED`. Si Cloudflare no responde, también, pero con un mensaje que ofrece WhatsApp (ADR-0013).
 5. **`createInquiry`** con el hash de la IP → si la base falla, `INTERNAL`.
@@ -63,7 +63,7 @@ Orden (FR-06, de lo más barato a lo más caro):
 
 ## Formulario (`components/`)
 
-`InquiryFormSection` (servidor) es la sección `#formulario` de `/contacto`. Adentro, `InquiryFormFromQuery` lee `?area=<slug>` en el cliente (la página sigue estática) y dibuja `InquiryForm`.
+`InquiryFormSection` (servidor) es la sección `#formulario` de `/contacto` y dibuja **un solo** `InquiryForm`. Cuando carga en el navegador, el formulario lee `?area=<slug>` y completa el área solo si sigue vacía (`area-from-query.ts`); la página sigue estática. No uses `useSearchParams` con `Suspense`: React reemplazaría el formulario al cargar y se perdería lo elegido.
 
 - **Dos pasos en un solo `<form>`:** "Tu consulta" (área, urgencia y mensaje) y "Tus datos". Los pasos solo ocultan partes, así que volver no borra nada. **Sin JavaScript** se ven los dos juntos y la action valida igual; Turnstile necesita JavaScript, por eso hay un `<noscript>` con WhatsApp, teléfono y email.
 - **Validación:** "Siguiente" y "Enviar" validan en el cliente con el mismo `inquirySchema` (`form-validation.ts`). Si hay errores no se envía nada, así no se gasta rate limit; el servidor valida igual.

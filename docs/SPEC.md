@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.22 (25/11/2026) |
+| Versión | 1.23 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -409,6 +409,8 @@ Etiquetas de interfaz:
 - En dev, test, CI y Preview de Vercel se usan las claves de prueba oficiales de Turnstile; las reales, solo en Production (ADR-0013).
 - Si un servicio no responde (ADR-0013): con el rate limit caído, se deja pasar y se registra en el log; con Turnstile caído, se rechaza (`CAPTCHA_FAILED`).
 - Las claves del rate limit son hashes: Upstash nunca recibe un email ni una IP.
+- La IP sale del primer valor de `x-forwarded-for`, que en Vercel pisa la plataforma. Fuera de Vercel hace falta un proxy que lo pise, o el límite por IP se puede esquivar. En local vale `::1` para todos los envíos.
+- Zod corre en modo `jitless` (`z.config`), así la validación del cliente no necesita `'unsafe-eval'` en la CSP (F5-01).
 
 ---
 
@@ -534,7 +536,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | Manual | `docs/TESTING.md` | Guía MT-xx (ver abajo) |
 
 - Cobertura objetivo: ≥ 80% en `src/features/**`.
-- Los e2e que escriben en la DB usan el proyecto Supabase **dev** y datos con prefijo `E2E-` que el propio test limpia.
+- Los e2e que escriben en la DB usan el proyecto Supabase **dev** y datos con prefijo `E2E-` que el propio test limpia (también los de más de un día que haya dejado una corrida cortada). Mandan los mails a las direcciones de prueba de Resend (`delivered+…@resend.dev`), nunca a una casilla real, y se saltean si la clave de Turnstile no es la de prueba. Playwright nunca reusa un servidor abierto.
 - CI (GitHub Actions) en cada PR: install → lint → typecheck → unit e integración → build → `npm audit`. Los e2e corren en local y contra la URL de preview de Vercel (Fase 5: también en CI).
 
 **Casos manuales mínimos** (la IA los detalla en `docs/TESTING.md`):
@@ -625,3 +627,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 24/11/2026 | 1.20 | F3-05. §6.5: `submitInquiry` devuelve también `doNotContact`. §9: las variables de la Fase 3 (salvo `DIRECT_URL`) son obligatorias, con valores ficticios en la CI. §6.2: `submit-inquiry.ts`, `notifications.ts` y `labels.ts` en `features/inquiries`. | [tu nombre] |
 | 24/11/2026 | 1.21 | F3-06. US-03 CA5: el acuse se firma con `shortName`, que no puede incluir la especialidad. §6.2: `content/emails.ts` y `render.ts`/`styles.ts` en `emails/`. React Email 6: los componentes vienen del paquete `react-email` (`@react-email/components` está deprecado); preview con `npm run email:dev`. | [tu nombre] |
 | 25/11/2026 | 1.22 | F3-07. §6.5: `submitInquiry` devuelve `values` con los errores (US-03 CA4). §11.3: en Contacto, el formulario va primero. §6.2: `form-values.ts`, `components/` del formulario y `content/inquiry-form.ts`; se quita `InquiryFormSlot`. | [tu nombre] |
+| 25/11/2026 | 1.23 | F3-08. §13: el e2e del envío usa las direcciones de prueba de Resend, borra sus filas `E2E-` (y las de más de un día), se saltea sin la clave de prueba de Turnstile, y Playwright nunca reusa un servidor abierto. §8.2: Zod corre en modo `jitless` (sin `'unsafe-eval'` en la CSP); en local la IP es `::1` y el límite por IP se cuenta; fuera de Vercel, `x-forwarded-for` necesita un proxy que lo pise. | [tu nombre] |

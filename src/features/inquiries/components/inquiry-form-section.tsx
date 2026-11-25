@@ -1,10 +1,8 @@
 /**
  * The "Contanos tu caso" section of /contacto (server component). Reachable at #formulario
- * from the CTAs of the site. The form preselects the area from ?area= on the client; while
- * that loads (static render), the same form shows without preselection.
+ * from the CTAs of the site. One form, rendered statically: it preselects the area from
+ * ?area= on the client without replacing itself (see area-from-query.ts).
  */
-import { Suspense } from "react";
-
 import { siteConfig } from "@/config/site.config";
 import { inquiryFormContent as copy } from "@/content/inquiry-form";
 import { practiceAreas } from "@/content/practice-areas";
@@ -13,8 +11,8 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 import type { PracticeArea } from "../types";
 import { InquiryForm } from "./inquiry-form";
-import { InquiryFormFromQuery } from "./inquiry-form-from-query";
 
+/** Built on the server, so the browser does not load the texts of every area. */
 const areaBySlug: Record<string, PracticeArea> = Object.fromEntries(
   practiceAreas.map((area) => [area.slug, area.inquiryArea]),
 );
@@ -47,12 +45,6 @@ function NoscriptContacts() {
 }
 
 export function InquiryFormSection() {
-  const formProps = {
-    turnstileSiteKey: publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-    responseTime: siteConfig.responseTime,
-    noscriptContacts: <NoscriptContacts />,
-  };
-
   return (
     <section
       id="formulario"
@@ -63,9 +55,12 @@ export function InquiryFormSection() {
         {copy.title}
       </h2>
       <p className="mt-3 mb-6 text-muted-foreground">{copy.intro}</p>
-      <Suspense fallback={<InquiryForm {...formProps} />}>
-        <InquiryFormFromQuery {...formProps} areaBySlug={areaBySlug} />
-      </Suspense>
+      <InquiryForm
+        areaBySlug={areaBySlug}
+        turnstileSiteKey={publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+        responseTime={siteConfig.responseTime}
+        noscriptContacts={<NoscriptContacts />}
+      />
     </section>
   );
 }

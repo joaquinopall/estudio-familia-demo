@@ -8,6 +8,14 @@
  */
 import { z } from "zod";
 
+/*
+ * jitless: Zod 4 probes `new Function` to compile faster validators. In the browser (the form
+ * validates with this schema) the CSP reports that probe as an 'unsafe-eval' violation, and
+ * an enforced CSP (F5-01) must not allow eval. Global, so it also applies on the server; the
+ * speed difference does not matter for one form. Set here, before any schema is used.
+ */
+z.config({ jitless: true });
+
 import {
   CONTACT_CHANNELS,
   INQUIRY_STATUSES,

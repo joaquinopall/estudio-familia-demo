@@ -4,6 +4,20 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-08 · E2E del envío
+
+- **Agregado:** `tests/e2e/inquiry-submit.spec.ts`, el envío completo en un navegador real con Turnstile de prueba y los servicios de dev.
+  - **Con medio seguro:** desde la página de un área (área preseleccionada) hasta la confirmación con la referencia; verifica en la base la consulta, su evento `CREATED` y la versión de la política, y que no haya violaciones de la CSP.
+  - **Sin medio seguro:** la confirmación no promete contacto.
+- **Agregado:** `tests/e2e/support/db.ts`, con `pg` y el mismo TLS verificado que la app, para verificar y limpiar. Cada corrida borra sus filas `E2E-` y las de más de un día.
+- **Cambiado:** en los e2e, el aviso al estudio va a una dirección de prueba de Resend (sin casilla real), y Playwright **nunca reusa** un servidor abierto: con `npm run dev` corriendo, falla enseguida en lugar de mandar mails a tu casilla.
+- **Corregido (lo encontró el e2e):**
+  - Al cargar `/contacto`, el formulario estático se reemplazaba por otro (`useSearchParams` + `Suspense`) y se perdía el área elegida antes de que cargara JavaScript (US-03 CA4).
+  - Ahora hay un solo formulario, que completa el área de `?area=` solo si sigue vacía (`area-from-query.ts`, con tests).
+- **Corregido:** Zod corre en modo `jitless`. Su prueba de `new Function` generaba una violación de la CSP (`'unsafe-eval'`) en el navegador desde la validación del cliente, y con la CSP aplicada (F5-01) estaría prohibida.
+- **Aclarado:** en local, Next pone `::1` en `x-forwarded-for`, así que el límite por IP también se cuenta y todos los envíos locales lo comparten. MT-04, `ip.ts` y el README de la feature decían lo contrario. Los e2e usan una IP de documentación propia por escenario. Fuera de Vercel, ese header se puede falsificar si no hay un proxy que lo pise.
+- **Documentado:** TESTING (cómo correrlos y qué hacer si fallan) y README. SPEC v1.23.
+
 ### F3-07 · Formulario de 2 pasos
 
 - **Agregado:** el formulario "Contanos tu caso" en `/contacto`.

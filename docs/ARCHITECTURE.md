@@ -85,7 +85,8 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 
 ### Formulario de consulta (F3-07)
 
-- `/contacto` sigue **estática**. `InquiryFormSection` (servidor) dibuja `#formulario`; adentro, `InquiryFormFromQuery` (cliente, dentro de `Suspense`) lee `?area=` y preselecciona el área. La página le pasa un mapa slug → área, así el navegador no carga los textos de las áreas.
+- `/contacto` sigue **estática**. `InquiryFormSection` (servidor) dibuja `#formulario` con **un solo** `InquiryForm`. Cuando carga en el navegador, lee `?area=` y completa el área **solo si el selector sigue vacío** (`area-from-query.ts`). La página le pasa un mapa slug → área, así el navegador no carga los textos de las áreas.
+- **No uses `useSearchParams` + `Suspense` para el formulario:** el HTML estático trae el formulario de reserva, y al cargar React lo reemplaza por otro árbol, borrando lo que la persona ya eligió o escribió. El e2e de F3-08 lo encontró (US-03 CA4).
 - `InquiryForm` usa `useActionState(submitInquiry, null)`. Son dos pasos en un solo `<form>`: sin JavaScript se ven juntos y la action valida igual, pero Turnstile necesita JavaScript (hay un `<noscript>` con los otros canales).
 - El cliente valida con el mismo `inquirySchema` antes de enviar (FR-05), así no gasta rate limit; el servidor valida igual.
 - Cuando falla, la action devuelve `values` y el formulario los usa como valores por defecto: así no se pierde lo escrito, aunque React 19 vacíe el formulario y aun sin JavaScript (US-03 CA4).

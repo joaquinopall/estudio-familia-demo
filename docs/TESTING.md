@@ -24,8 +24,13 @@ Antes del primer e2e: `npx playwright install chromium`.
 
 Detalles de los e2e:
 
-- Playwright hace `npm run build && npm run start` y espera a `http://localhost:3000`. Si ya tenés un servidor en el puerto 3000, lo **reusa** (en ese caso no aplica `NEXT_PUBLIC_DEMO_MODE=true` que fija la config): cerralo antes.
-- Necesita las variables de `.env.local` (al menos `NEXT_PUBLIC_SITE_URL`).
+- Playwright hace `npm run build && npm run start` y espera a `http://localhost:3000`. **Nunca reusa un servidor abierto:** si el puerto 3000 está ocupado (por ejemplo, por tu `npm run dev`), la corrida falla enseguida con "http://localhost:3000 is already used". Cerralo y volvé a correr. Así siempre se aplican las variables que fija la config: el modo demo prendido y el aviso al estudio dirigido a la dirección de prueba de Resend.
+- Necesita las variables de `.env.local`, las mismas que `npm run dev`.
+- **`inquiry-submit.spec.ts` envía consultas reales** (F3-08):
+  - **Base:** usa la de `.env.local`, que tiene que ser **Supabase dev**. Escribe filas cuyo mensaje empieza con `E2E-<corrida>-` y las borra al final, aunque el test falle. También borra las filas `E2E-` de más de un día, que quedan si una corrida se corta.
+  - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
+  - **Turnstile:** necesita la clave de prueba que aprueba sola (`1x00000000000000000000AA`). Con otra clave, o sin `DATABASE_URL`, los dos escenarios se saltean con su motivo: nunca resuelven un desafío real.
+  - Cubre: llegar desde un área con el área preseleccionada, los dos pasos, Turnstile, la confirmación con y sin medio seguro, lo guardado en la base (con su evento `CREATED`) y que no haya violaciones de la CSP.
 - Reporte HTML de la última corrida: `npx playwright show-report`.
 - Correr un archivo o un test: `npx playwright test tests/e2e/layout.spec.ts` o `-g "nombre del test"`.
 
@@ -37,7 +42,7 @@ Detalles de los e2e:
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repository de consultas contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base |
-| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles) |
+| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
 Próximas fases: services con fakes de repos y ports, actions (validación, auth, rate limit, captcha), formulario y e2e de envío (F3), admin (F4).
@@ -67,6 +72,7 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`turnstile-verifier.test.ts` → hostname:** si cambiaste a claves reales de Turnstile, el hostname esperado sale de `NEXT_PUBLIC_SITE_URL`; con las de prueba es `example.com`.
 - **`emails.test.tsx` → "never reveals the reason":** alguien agregó al acuse un dato que delata el motivo de la consulta (el área, la urgencia, la especialidad, un link o el nombre completo del estudio). Sacalo: el acuse tiene que ser neutro (US-03 CA5). No relajes el test.
 - **`site-config.test.ts` → "keeps shortName neutral":** el nombre corto del estudio incluye la especialidad, y ese nombre firma el acuse. Elegí un nombre corto sin la especialidad.
+- **`inquiry-submit.spec.ts`:** si se saltea, mirá el motivo (falta `DATABASE_URL` o la clave de Turnstile no es la de prueba). Si falla esperando el token de Turnstile, revisá la conexión a `challenges.cloudflare.com`. Si falla en la confirmación, mirá el snapshot del error (`test-results/…/error-context.md`): el resumen de errores dice qué respondió la action. Cada escenario manda su propia IP de documentación (`2001:db8:…`) en `x-forwarded-for`, así no comparte el rate limit con otras corridas ni con tus pruebas a mano; si ves "Hiciste demasiados intentos seguidos", revisá que eso siga así. Si queda alguna fila `E2E-`, la próxima corrida la borra cuando tenga más de un día, o borrala desde el Table Editor de Supabase dev.
 - **`repository.db.test.ts`:** si falla al conectar, revisá `DATABASE_URL` (y que las migraciones estén aplicadas: `npx prisma migrate status`). Si queda alguna fila `E2E-` en `inquiries`, borrala desde el Table Editor de Supabase dev.
 - **`enums.test.ts`:** cambiaste un enum en `prisma/schema.prisma` y no en `src/features/inquiries/types.ts` (o al revés), o un área de `practice-areas.ts` no existe en el enum.
 - **`db.test.ts` y `db-tls.test.ts`:** corren en entorno `node` (Prisma no funciona en jsdom) y no se conectan a nada. Si fallan al importar `@/generated/prisma/client`, corré `npm run db:generate`. Si falla "is a PEM certificate", falta `prisma/certs/supabase-ca.crt` o alguien puso ahí otra cosa (nunca una clave privada).
@@ -544,7 +550,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 - **Objetivo:** que el formulario frene los envíos en ráfaga sin bloquear a otras personas, y que el mensaje se entienda.
 - **Requisitos:** SPEC §8.2, FR-06, ADR-0004, ADR-0013.
-- **Precondiciones:** formulario funcionando (F3-07), en el **preview de Vercel** (en local no hay IP y el límite por IP se saltea). Upstash configurado. Usá emails de prueba tuyos.
+- **Precondiciones:** formulario funcionando (F3-07), en el **preview de Vercel**, donde cada red tiene su IP. En local todos los envíos salen de `::1` y comparten el mismo límite, así que el paso 3 no se puede probar. Upstash configurado. Usá emails de prueba tuyos.
 
 **Pasos**
 

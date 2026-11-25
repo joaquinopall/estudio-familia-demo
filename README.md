@@ -77,24 +77,24 @@ Reglas:
 
 ## Scripts
 
-| Script                  | Qué hace                                                                          |
-| ----------------------- | --------------------------------------------------------------------------------- |
-| `npm run dev`           | Servidor de desarrollo en `http://localhost:3000`                                 |
-| `npm run build`         | Build de producción                                                               |
-| `npm run start`         | Sirve el build de producción                                                      |
-| `npm run lint`          | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                    |
-| `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                 |
-| `npm run format`        | Formatea con Prettier (incluye el orden de clases de Tailwind)                    |
-| `npm run format:check`  | Verifica el formato sin modificar archivos                                        |
-| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)        |
-| `npm run test:db`       | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI |
-| `npm run email:dev`     | Preview de los mails en `http://localhost:3001`, con datos de ejemplo ficticios   |
-| `npm run test:watch`    | Vitest en modo watch                                                              |
-| `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                    |
-| `npm run test:e2e`      | Tests e2e con Playwright contra el build de producción (levanta el servidor solo) |
-| `npm run db:generate`   | Genera el cliente de Prisma en `src/generated/prisma` (también corre en `npm ci`) |
-| `npm run db:migrate`    | `prisma migrate dev`: crea y aplica migraciones. **Solo contra Supabase dev**     |
-| `npm run db:deploy`     | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano        |
+| Script                  | Qué hace                                                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`           | Servidor de desarrollo en `http://localhost:3000`                                                                                                          |
+| `npm run build`         | Build de producción                                                                                                                                        |
+| `npm run start`         | Sirve el build de producción                                                                                                                               |
+| `npm run lint`          | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                                                                                             |
+| `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                                                                                          |
+| `npm run format`        | Formatea con Prettier (incluye el orden de clases de Tailwind)                                                                                             |
+| `npm run format:check`  | Verifica el formato sin modificar archivos                                                                                                                 |
+| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)                                                                                 |
+| `npm run test:db`       | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI                                                                          |
+| `npm run email:dev`     | Preview de los mails en `http://localhost:3001`, con datos de ejemplo ficticios                                                                            |
+| `npm run test:watch`    | Vitest en modo watch                                                                                                                                       |
+| `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                                                                                             |
+| `npm run test:e2e`      | E2E con Playwright contra el build de producción. Cerrá `npm run dev` antes (usa el puerto 3000). Envía consultas reales a la base de **dev**: ver TESTING |
+| `npm run db:generate`   | Genera el cliente de Prisma en `src/generated/prisma` (también corre en `npm ci`)                                                                          |
+| `npm run db:migrate`    | `prisma migrate dev`: crea y aplica migraciones. **Solo contra Supabase dev**                                                                              |
+| `npm run db:deploy`     | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano                                                                                 |
 
 Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`](docs/TESTING.md).
 
