@@ -4,6 +4,21 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-03 · Login
+
+- **Agregado:** la página `/admin/login`.
+  - Email y contraseña con `autocomplete`, sin registro. Funciona sin JavaScript.
+  - El mensaje de error es siempre "El email o la contraseña no son correctos.", va en `role="alert"` y recibe el foco.
+  - Los errores de formato aparecen junto a cada campo.
+  - Si ya tenés sesión de staff, te lleva a `/admin`.
+- **Agregado:** aviso para `?error=forbidden` ("Esta cuenta no tiene acceso al panel"), con "Usar otra cuenta", sin decir si la cuenta está inactiva o nunca fue staff.
+- **Agregado:** layout común del panel con `noindex, nofollow` y un encabezado propio, sin el shell público. Barra con el nombre del staff y "Cerrar sesión" en las páginas protegidas.
+- **Cambiado:** si falla, `signIn` devuelve también el email escrito (`values.email`, nunca la contraseña), para que no se borre al reintentar. SPEC §6.5.
+- **Cambiado:** `controlClass` y `focusOutlineClass` pasan a `src/components/forms/field-styles.ts`, compartidos por el formulario de consultas y el login.
+- **Agregado:** tests de componente de `LoginForm` y `LoginSessionCheck`, tests de `values` en `signIn`, y el e2e `admin-login.spec.ts` (axe, CSP, teclado, credenciales incorrectas contra Supabase dev y aviso de acceso).
+- **Documentado:** ARCHITECTURE, README, TESTING (MT-07 detallado; MT-07 y MT-09 ya se pueden ejecutar). SPEC v1.26.
+- **Pendiente:** el refinamiento visual con `/claude-design`.
+
 ### F4-02 · Staff y `requireStaff()`
 
 - **Agregado:** autorización del panel ([ADR 0015](docs/adr/0015-autorizacion-del-panel-y-alta-de-staff.md)).

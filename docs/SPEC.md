@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.25 (25/11/2026) |
+| Versión | 1.26 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -154,6 +154,7 @@ src/
       contacto/page.tsx
       privacidad/page.tsx
     admin/
+      layout.tsx                 # todo el panel: noindex y encabezado propio, sin el shell público
       login/page.tsx
       (protected)/layout.tsx     # llama a requireStaff()
       (protected)/page.tsx       # listado
@@ -170,6 +171,7 @@ src/
     ui/                          # shadcn (generado)
     layout/                      # Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, NotFoundView, ErrorView (archivos en kebab-case)
     marketing/                   # Hero, PracticeAreaCard, ProcessSteps, TrustBar, FaqList, UrgentNote, CTA
+    forms/                       # field-styles.ts: estilos de controles nativos compartidos
   features/
     inquiries/
       schema.ts                  # Zod: inquirySchema, updateStatusSchema, updateNotesSchema, listFiltersSchema
@@ -198,6 +200,7 @@ src/
       staff-add-args.ts          # argumentos de npm run staff:add
       repository.ts              # StaffMember y lectura de auth.users (implementa StaffRepository)
       errors.ts                  # StaffStoreError
+      components/                # LoginForm (client), LoginSessionCheck, SignOutButton
       __tests__/
   lib/
     env.ts                       # server-only: exporta env (públicas + privadas validadas); entrada para código de servidor
@@ -310,7 +313,7 @@ type ActionResult<T> =
 | `submitInquiry(prev, formData)` | campos de §8.1 + `cf-turnstile-response` + `website` (honeypot) | `{ reference: string; doNotContact: boolean }` (`doNotContact`: sin medio seguro, la confirmación no promete contacto, US-03 CA3). Con un error devuelve además `values` (lo que escribió la persona, sin el token ni el honeypot) para no perderlo (US-03 CA4) | VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, INTERNAL |
 | `updateInquiryStatus({ id, status })` | UUID + enum | `{ status }` | UNAUTHORIZED, FORBIDDEN, VALIDATION, NOT_FOUND, INTERNAL |
 | `updateInquiryNotes({ id, notes })` | UUID + string ≤ 5000 | `{ updatedAt }` | ídem |
-| `signIn(prev, formData)` | email + password | redirect `/admin` | VALIDATION, UNAUTHORIZED (mensaje genérico), RATE_LIMITED |
+| `signIn(prev, formData)` | email + password | redirect `/admin`. Con un error devuelve además `values.email` (lo escrito, nunca la contraseña) para no perderlo | VALIDATION, UNAUTHORIZED (mensaje genérico), RATE_LIMITED, INTERNAL |
 | `signOut()` | — | redirect `/admin/login` | — |
 
 Los mensajes de error al usuario son genéricos y en español. El login nunca revela si el email existe.
@@ -642,3 +645,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.23 | F3-08. §13: el e2e del envío usa las direcciones de prueba de Resend, borra sus filas `E2E-` (y las de más de un día), se saltea sin la clave de prueba de Turnstile, y Playwright nunca reusa un servidor abierto. §8.2: Zod corre en modo `jitless` (sin `'unsafe-eval'` en la CSP); en local la IP es `::1` y el límite por IP se cuenta; fuera de Vercel, `x-forwarded-for` necesita un proxy que lo pise. | [tu nombre] |
 | 25/11/2026 | 1.24 | F4-01 (ADR-0014). §6.2: `proxy.ts` va en `src/` (Next 16 no lo ejecuta desde la raíz cuando existe `src/app`) y cubre solo `/admin/:path*`; `lib/supabase/` suma `session.ts`, `cookie-options.ts` y `auth-gateway.ts`, y no tiene `client.ts` (sin cliente de navegador); se agregan `lib/admin-paths.ts`, el port `AuthGateway` y `features/auth/schema.ts` y `sign-in.ts`. §9: las variables de Supabase Auth son obligatorias desde F4-01. | [tu nombre] |
 | 25/11/2026 | 1.25 | F4-02 (ADR-0015). §6.2: `features/auth` suma `access.ts`, `types.ts`, `staff-service.ts`, `staff-add-args.ts` y `errors.ts`; `dal.ts` agrega `requireStaffForAction()` para las actions; se agrega `scripts/staff-add.ts` (con `tsx`). §7: cómo `staff:add` encuentra al usuario (`auth.users` por SQL), su idempotencia y la baja con `active = false`. | [tu nombre] |
+| 25/11/2026 | 1.26 | F4-03. §6.5: `signIn` devuelve `values.email` cuando falla (React 19 reinicia el formulario) y puede devolver `INTERNAL` si Supabase no responde. §6.2: `app/admin/layout.tsx` (noindex y encabezado propio para todo el panel), `features/auth/components/` (`LoginForm`, `LoginSessionCheck`, `SignOutButton`) y `components/forms/field-styles.ts`. | [tu nombre] |

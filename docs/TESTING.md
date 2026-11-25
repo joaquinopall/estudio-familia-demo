@@ -31,6 +31,7 @@ Detalles de los e2e:
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
   - **Turnstile:** necesita la clave de prueba que aprueba sola (`1x00000000000000000000AA`). Con otra clave, o sin `DATABASE_URL`, los dos escenarios se saltean con su motivo: nunca resuelven un desafío real.
   - Cubre: llegar desde un área con el área preseleccionada, los dos pasos, Turnstile, la confirmación con y sin medio seguro, lo guardado en la base (con su evento `CREATED`) y que no haya violaciones de la CSP.
+- **`admin-login.spec.ts`** (F4-03): la página de login con `noindex`, sin violaciones de axe ni de la CSP, el orden de teclado, el aviso de `?error=forbidden` y credenciales incorrectas (mensaje genérico con foco, email conservado). Ese último escenario **consulta a Supabase dev** con una cuenta que no existe, y cuenta un intento del rate limit con una IP de documentación propia de la corrida. El login exitoso llega en F4-07.
 - **`admin-redirect.spec.ts`** (F4-01, F4-02): sin sesión o con una cookie de sesión falsificada, `/admin` y `/admin/consultas/…` responden 307 a `/admin/login`; el login no se redirige, y `/contacto` no recibe cookies de sesión. No inicia sesión ni toca Supabase Auth: alcanza con que las dos variables de Supabase estén definidas.
 - Reporte HTML de la última corrida: `npx playwright show-report`.
 - Correr un archivo o un test: `npx playwright test tests/e2e/layout.spec.ts` o `-g "nombre del test"`.
@@ -43,6 +44,7 @@ Detalles de los e2e:
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Auth        | Vitest + fakes               | `src/features/auth/__tests__/`, `src/lib/supabase/__tests__/` | `signIn`: OK, VALIDATION, mismo UNAUTHORIZED para email inexistente y contraseña incorrecta, rate limit propio (5 en 15 min) y de Supabase, Upstash caído, Supabase caído, logs sin email ni contraseña. `signOut` aunque Supabase falle. Traducción de errores de Supabase. Proxy: redirect sin sesión, sin loop en el login, cookies y headers de no-caché, cookies httpOnly/Secure/Lax |
+| Login (UI)  | Vitest + Testing Library     | `src/features/auth/components/__tests__/`    | `LoginForm`: labels y `autocomplete`, funciona sin JavaScript, error general en `role="alert"` con foco, errores de campo con `aria-describedby`, email conservado y contraseña no, botón pendiente. `LoginSessionCheck`: redirect del staff a `/admin`, aviso de `?error=forbidden` sin detalles |
 | Autorización | Vitest + fakes              | `src/features/auth/__tests__/access.test.ts`, `dal.test.ts`, `staff-service.test.ts`, `staff-add-args.test.ts` | `requireStaff()`: sin sesión, sesión sin staff, staff inactivo, staff OK, Supabase y base caídos (falla cerrado), redirects de páginas y `ActionResult` de actions, logs sin datos personales. `staff:add`: usuario inexistente, alta, reactivación idempotente y argumentos |
 | Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev |
@@ -105,7 +107,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-23 | Pasos 1 a 5 y 7 en **dev**; el caso completo en **prod** | Dev: en **F4-01**, apenas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` estén en `.env.local`. Prod: en **F5-08**, después de `db:deploy`. | En F3-01 no estaban cargadas la URL de la API ni la clave pública (son de F4). |
 | MT-24 | El caso en **prod** | En **F5-08**. | En F4-01 se configura y verifica dev; prod se verifica antes del lanzamiento. |
 | MT-25 | El caso en **prod** | En **F5-08**, después de `db:deploy`. | En F4-02 se da de alta el staff de dev; el de prod, antes del lanzamiento. |
-| MT-09 | El caso completo | Desde **F4-03** (y en el cierre, F4-08). | Hasta F4-03 no hay página de login para iniciar sesión. |
+| MT-07 y MT-09 | El caso completo en **dev** | En **F4-03** (y de nuevo en el cierre, F4-08). Antes, MT-25 con tu usuario. | Necesitaban la página de login, que llega en F4-03. |
 
 ### Plantilla
 
@@ -140,9 +142,9 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-04 | Exceder el rate limit                                   | F3-05         | **Detallado** · se ejecuta en F3-09 |
 | MT-05 | Honeypot completado (no guarda nada)                    | F3-05         | **Detallado** · se ejecuta en F3-09 |
 | MT-06 | Mails recibidos: estudio y acuse                        | F3-06         | **Detallado** · se ejecuta en F3-09 |
-| MT-07 | Login y logout del admin                                | F4-08         | Pendiente     |
+| MT-07 | Login y logout del admin                                | F4-03         | **Detallado** · se ejecuta en F4-03 y F4-08 |
 | MT-08 | Entrar a `/admin` sin sesión                            | F4-01         | **Detallado** · se ejecuta en F4-01 y F4-08 |
-| MT-09 | Usuario autenticado que no es staff                     | F4-02         | **Detallado** · se ejecuta desde F4-03 (necesita el login) |
+| MT-09 | Usuario autenticado que no es staff                     | F4-02         | **Detallado** · se ejecuta en F4-03 y F4-08 |
 | MT-10 | Cambio de estado, notas e historial                     | F4-08         | Pendiente     |
 | MT-11 | Navegación completa solo con teclado                    | F1-08         | **Detallado** |
 | MT-12 | Lighthouse mobile en 3 páginas                          | F2-07         | **Detallado** |
@@ -527,7 +529,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 - **Objetivo:** que nadie sin sesión llegue al panel, y que el sitio público no cambie: sin cookies de sesión y estático. El proxy es solo la primera barrera; la autorización real (`requireStaff()`) se prueba en MT-09 (F4-02).
 - **Requisitos:** SPEC §6.4 paso 1, FR-10, NFR-SEC-02, NFR-SEC-07, ADR-0014.
-- **Precondiciones:** `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en `.env.local`. `npm run dev`, o el preview de Vercel. Una ventana privada (sin sesión). Hasta F4-03, `/admin/login` muestra la 404: es lo esperado.
+- **Precondiciones:** `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en `.env.local`. `npm run dev`, o el preview de Vercel. Una ventana privada (sin sesión).
 
 **Pasos**
 
@@ -536,12 +538,12 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 3. Entrá a `/admin/login`.
 4. Entrá a `/` y a `/contacto`. En Network, mirá los headers de respuesta del documento.
 5. En DevTools → Application → Cookies, mirá las cookies del sitio.
-6. Desde F4-03: iniciá sesión y mirá otra vez las cookies `sb-…`.
+6. Iniciá sesión y mirá otra vez las cookies `sb-…`.
 
 **Resultado esperado**
 
 - Pasos 1 y 2: la respuesta del documento es un **307** con `location: /admin/login`, sin la query. Terminás en `/admin/login`.
-- Paso 3: no hay redirect (no hay loop). Hasta F4-03 muestra la 404 del sitio.
+- Paso 3: no hay redirect (no hay loop): se ve el formulario de login.
 - Paso 4: ningún `Set-Cookie` con `sb-` y ningún `Cache-Control: private, no-cache, no-store…`: el proxy no corre en el sitio público.
 - Paso 5: no hay cookies `sb-…`.
 - Paso 6: las cookies `sb-…` tienen **HttpOnly**, **SameSite=Lax** y, en el preview (https), **Secure**.
@@ -581,6 +583,40 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | ----- | ------- | --------- | ----- |
 |       |         |           |       |
 
+### MT-07 — Login y logout del admin
+
+- **Objetivo:** que el staff entre y salga del panel sin fricción, que un error no revele si la cuenta existe y que todo funcione con teclado y lector de pantalla.
+- **Requisitos:** US-06 CA1, SPEC §6.4, §6.5, §8.2 (5 intentos por IP cada 15 minutos), NFR-A11Y-01, NFR-SEC-07, ADR-0014.
+- **Precondiciones:** `npm run dev` (o el preview). Tu usuario dado de alta como staff en dev (MT-25). Una ventana privada.
+
+**Pasos**
+
+1. Entrá a `/admin`.
+2. Con el teclado solamente: Tab hasta el email, escribí tu email, Tab a la contraseña, escribí una **incorrecta** y Enter.
+3. Repetí el paso 2 con un email que no existe.
+4. Enviá el formulario con el email vacío.
+5. Escribí la contraseña correcta y enviá.
+6. Volvé a abrir `/admin/login` en la misma pestaña.
+7. Tocá "Cerrar sesión" en la barra superior y después abrí `/admin`.
+8. Con un lector de pantalla (NVDA, VoiceOver o TalkBack), repetí los pasos 2 y 5.
+9. (Opcional) Con JavaScript desactivado en DevTools, repetí los pasos 2 y 5.
+
+**Resultado esperado**
+
+- Paso 1: terminás en `/admin/login`, con el título "Ingresar al panel" y sin el banner de demo, WhatsApp ni el footer del sitio.
+- Pasos 2 y 3: el **mismo** mensaje, "El email o la contraseña no son correctos.", recibe el foco. El email sigue escrito y la contraseña queda vacía.
+- Paso 4: "Ingresá un email válido" junto al campo de email, que queda marcado en rojo.
+- Paso 5: entrás a `/admin` y ves "Panel de consultas" y tu nombre en la barra superior.
+- Paso 6: te lleva directo a `/admin`.
+- Paso 7: volvés a `/admin/login`, y `/admin` te devuelve al login.
+- Paso 8: el lector anuncia los nombres de los campos y lee el mensaje de error apenas aparece.
+- Paso 9: funciona igual (la página se recarga en cada envío).
+- Si hacés más de 5 intentos en 15 minutos: "Hiciste demasiados intentos seguidos…".
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
 ### MT-25 — Alta de staff con `npm run staff:add`
 
 - **Objetivo:** dar de alta como staff a un usuario de Supabase Auth, sin duplicarlo y sin poder vincular a alguien que no existe. Es el único camino para entrar al panel.
@@ -613,7 +649,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 - **Objetivo:** que una sesión válida de Supabase no alcance para ver el panel: hace falta ser staff activo (US-06 CA4). Es la barrera real, más allá del proxy (MT-08).
 - **Requisitos:** US-06 CA4, SPEC §6.4 paso 2, NFR-SEC-02, ADR-0015.
-- **Precondiciones:** página de login (F4-03). En Supabase **dev**, un segundo usuario de prueba creado con Add user y **sin** `staff:add`. Tu usuario dado de alta como staff (MT-25).
+- **Precondiciones:** en Supabase **dev**, un segundo usuario de prueba creado con Add user y **sin** `staff:add`. Tu usuario dado de alta como staff (MT-25).
 
 **Pasos**
 
@@ -626,10 +662,10 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 **Resultado esperado**
 
-- Pasos 1 y 2: terminás en `/admin/login?error=forbidden`, con un aviso de que la cuenta no tiene acceso. Nunca se ve ningún dato del panel, ni por un instante.
+- Pasos 1 y 2: terminás en `/admin/login?error=forbidden`, con el aviso "Esta cuenta no tiene acceso al panel" y el botón "Usar otra cuenta". Nunca se ve ningún dato del panel, ni por un instante. "Usar otra cuenta" cierra la sesión y deja el login limpio.
 - Paso 3: ahora sí ve el panel.
 - Paso 4: vuelve a `/admin/login?error=forbidden` sin tener que cerrar sesión.
-- Paso 5: ves "Panel de consultas" y tu nombre (hasta F4-04; después, el listado).
+- Paso 5: ves "Panel de consultas" (hasta F4-04; después, el listado) y tu nombre en la barra superior.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
