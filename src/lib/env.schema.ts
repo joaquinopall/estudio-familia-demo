@@ -31,9 +31,10 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_DEMO_MODE: optional(
     z.stringbool({ truthy: ["true"], falsy: ["false"], error: 'debe ser "true" o "false"' }),
   ).transform((value) => value ?? true),
-  // Phase 4 (Supabase Auth).
-  NEXT_PUBLIC_SUPABASE_URL: optional(httpUrl()),
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optional(nonEmpty()),
+  // Required from F4-01 (Supabase Auth for the admin panel). Only the server uses them: there
+  // is no browser client (ADR-0014), but they are public by nature (publishable key).
+  NEXT_PUBLIC_SUPABASE_URL: required(httpUrl()),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: required(nonEmpty()),
   // Required from F3-05 (Turnstile widget). Test key in dev, CI and Preview (ADR-0013).
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: required(nonEmpty()),
 });

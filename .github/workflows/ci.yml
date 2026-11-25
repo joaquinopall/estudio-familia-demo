@@ -22,10 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      # Fictitious values: src/lib/env.schema.ts requires them at build time (F3-05). Nothing
-      # connects to them: the build is static and unit tests use fakes. No secrets in CI.
+      # Fictitious values: src/lib/env.schema.ts requires them at build time (F3-05, F4-01).
+      # Nothing connects to them: the build is static and unit tests use fakes. No secrets in CI.
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-project.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_fake
       DATABASE_URL: postgresql://ci:ci@db.invalid:6543/postgres
       RESEND_API_KEY: re_ci_fake
       EMAIL_FROM: "Estudio <onboarding@resend.dev>"

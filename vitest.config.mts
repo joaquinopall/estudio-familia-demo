@@ -31,6 +31,8 @@ export default defineConfig({
           // shadow the real DATABASE_URL from .env.local).
           env: {
             NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+            NEXT_PUBLIC_SUPABASE_URL: "https://fake-project.supabase.invalid",
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fake_for_tests",
             DATABASE_URL: "postgresql://user:fake-password@db.invalid:6543/postgres",
             RESEND_API_KEY: "re_fake_key_for_tests",
             EMAIL_FROM: "Estudio <avisos@example.com>",

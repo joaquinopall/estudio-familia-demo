@@ -13,6 +13,8 @@ import {
 const validPublic = {
   NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+  NEXT_PUBLIC_SUPABASE_URL: "https://project-ref.supabase.co",
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fake",
 };
 
 /** Every server variable required since F3-05, with fictitious values. */
@@ -43,7 +45,7 @@ describe("parsePublicEnv", () => {
 
     expect(env.NEXT_PUBLIC_SITE_URL).toBe("http://localhost:3000");
     expect(env.NEXT_PUBLIC_DEMO_MODE).toBe(true);
-    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBeUndefined();
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe("https://project-ref.supabase.co");
   });
 
   it.each(["", "  "])("keeps demo mode on when the variable is empty (%j, ADR-0011)", (raw) => {
@@ -93,6 +95,27 @@ describe("parsePublicEnv", () => {
     );
 
     expect(message).toContain("NEXT_PUBLIC_TURNSTILE_SITE_KEY: es obligatoria");
+  });
+
+  it("requires the Supabase Auth variables (F4-01)", () => {
+    const message = errorMessageOf(() =>
+      parsePublicEnv({
+        ...validPublic,
+        NEXT_PUBLIC_SUPABASE_URL: undefined,
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
+      }),
+    );
+
+    expect(message).toContain("NEXT_PUBLIC_SUPABASE_URL: es obligatoria");
+    expect(message).toContain("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: es obligatoria");
+  });
+
+  it("rejects a Supabase URL that is not http(s)", () => {
+    const message = errorMessageOf(() =>
+      parsePublicEnv({ ...validPublic, NEXT_PUBLIC_SUPABASE_URL: "project-ref" }),
+    );
+
+    expect(message).toContain("NEXT_PUBLIC_SUPABASE_URL: debe ser una URL http(s) válida");
   });
 
   it("rejects an unexpected NEXT_PUBLIC_DEMO_MODE value", () => {

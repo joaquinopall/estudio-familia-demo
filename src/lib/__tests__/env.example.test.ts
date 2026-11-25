@@ -29,8 +29,10 @@ describe(".env.example", () => {
     expect(Object.keys(example).sort()).toEqual(schemaKeys);
   });
 
-  it("is valid once the empty credentials are filled (F3-05: the form needs them)", () => {
+  it("is valid once the empty credentials are filled (F3-05 and F4-01 require them)", () => {
     const filled: Record<string, string> = {
+      NEXT_PUBLIC_SUPABASE_URL: "https://project-ref.supabase.co",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fake",
       DATABASE_URL: "postgresql://user:pass@host:6543/postgres",
       DIRECT_URL: "postgresql://user:pass@host:5432/postgres",
       RESEND_API_KEY: "re_fake",

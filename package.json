@@ -28,6 +28,8 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "@react-email/render": "2.3.1",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.119.2",
     "@upstash/ratelimit": "2.2.2",
     "@upstash/redis": "1.41.1",
     "class-variance-authority": "0.7.1",
