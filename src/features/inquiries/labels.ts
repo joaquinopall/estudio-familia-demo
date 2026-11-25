@@ -19,6 +19,13 @@ export const URGENCY_LABELS = {
   HIGH: "Tengo un plazo o una audiencia cercana",
 } as const satisfies Record<Urgency, string>;
 
+/** Short urgency names for the panel's badges and filters, where the long ones do not fit. */
+export const URGENCY_SHORT_LABELS = {
+  LOW: "Baja",
+  NORMAL: "Normal",
+  HIGH: "Alta",
+} as const satisfies Record<Urgency, string>;
+
 export const CONTACT_CHANNEL_LABELS = {
   WHATSAPP: "WhatsApp",
   PHONE: "Teléfono",
