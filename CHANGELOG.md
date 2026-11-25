@@ -4,6 +4,20 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-01 · Auth con Supabase
+
+- **Agregado:** sesión y login del staff con Supabase Auth, todo del lado del servidor ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)).
+  - **`src/proxy.ts`**, solo en `/admin/*`: refresca la sesión con `getClaims()` y, sin sesión, redirige a `/admin/login` (307), conservando las cookies y los headers de no-caché. El sitio público sigue estático y sin cookies.
+  - **`signIn` y `signOut`** (`features/auth/actions.ts`):
+    - El login aplica primero el rate limit (5 intentos por IP cada 15 minutos), después Zod y después Supabase. Responde siempre "El email o la contraseña no son correctos." ante cualquier rechazo.
+    - El logout cierra solo este navegador.
+  - **Cookies de sesión** httpOnly, SameSite=Lax y Secure en https (NFR-SEC-07). No hay cliente de Supabase en el navegador.
+  - **Port `AuthGateway`** con su adapter de Supabase y `FakeAuthGateway` para tests.
+- **Agregado:** dependencias `@supabase/ssr` 0.12.7 y `@supabase/supabase-js` 2.119.2.
+- **Cambiado:** `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` pasan a ser **obligatorias**. Hay que cargarlas en `.env.local` y en Vercel (Preview → dev, Production → prod) antes de mergear. La CI y los tests usan valores ficticios.
+- **Agregado:** tests del schema, del login con fakes (incluye la misma respuesta para un email inexistente y una contraseña incorrecta, y logs sin datos personales), de las actions, del adapter, del proxy y de las cookies. E2E `admin-redirect.spec.ts`.
+- **Documentado:** ADR-0014, ARCHITECTURE, README (sección "Panel admin"), TESTING (MT-08 detallado y MT-24 nuevo, configuración de Supabase Auth). SPEC v1.24: `proxy.ts` va en `src/`.
+
 ### F3-08 · E2E del envío
 
 - **Agregado:** `tests/e2e/inquiry-submit.spec.ts`, el envío completo en un navegador real con Turnstile de prueba y los servicios de dev.
