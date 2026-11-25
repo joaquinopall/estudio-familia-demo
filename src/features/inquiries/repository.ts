@@ -11,11 +11,47 @@ import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 
 import { InquiryStoreError } from "./errors";
 import type {
+  InquiryDetailRow,
   InquiryListQuery,
   InquiryListRow,
   InquiryRepository,
   NewInquiryRecord,
+  NotesChangeResult,
+  StatusChangeResult,
 } from "./service";
+import type { InquiryStatus } from "./types";
+
+/** Everything the detail shows. Never the ipHash (NFR-SEC-06). */
+const DETAIL_SELECT = {
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  fullName: true,
+  email: true,
+  phone: true,
+  area: true,
+  urgency: true,
+  message: true,
+  preferredChannel: true,
+  safeToContact: true,
+  emailIsPrivate: true,
+  consentAt: true,
+  privacyPolicyVersion: true,
+  status: true,
+  internalNotes: true,
+  source: true,
+  events: {
+    select: {
+      id: true,
+      type: true,
+      createdAt: true,
+      fromStatus: true,
+      toStatus: true,
+      actorId: true,
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  },
+} as const satisfies Prisma.InquirySelect;
 
 /** Only what the panel list shows (US-06 CA2): never the message, the phone or the notes. */
 const LIST_SELECT = {
@@ -93,5 +129,79 @@ export function createPrismaInquiryRepository(db: PrismaClient): InquiryReposito
         ]);
         return { total, rows: rows satisfies InquiryListRow[] };
       }),
+
+    findById: (id: string) =>
+      guard(async (): Promise<InquiryDetailRow | null> => {
+        const inquiry = await db.inquiry.findUnique({ where: { id }, select: DETAIL_SELECT });
+        if (!inquiry) return null;
+
+        // actor_id has no foreign key (SPEC §7): names are looked up apart, and a missing
+        // member stays null.
+        const actorIds = [
+          ...new Set(inquiry.events.flatMap((event) => (event.actorId ? [event.actorId] : []))),
+        ];
+        const staff = actorIds.length
+          ? await db.staffMember.findMany({
+              where: { id: { in: actorIds } },
+              select: { id: true, fullName: true },
+            })
+          : [];
+        const names = new Map(staff.map((member) => [member.id, member.fullName]));
+
+        return {
+          ...inquiry,
+          events: inquiry.events.map((event) => ({
+            ...event,
+            actorName: event.actorId ? (names.get(event.actorId) ?? null) : null,
+          })),
+        };
+      }),
+
+    updateStatus: (id: string, status: InquiryStatus, actorId: string) =>
+      guard(() =>
+        // Interactive transaction: the status read and the event written are one unit, so
+        // fromStatus is the real previous status (FR-12).
+        db.$transaction(async (tx): Promise<StatusChangeResult> => {
+          const current = await tx.inquiry.findUnique({ where: { id }, select: { status: true } });
+          if (!current) return { result: "not_found" };
+          if (current.status === status) return { result: "unchanged" };
+          await tx.inquiry.update({
+            where: { id },
+            data: {
+              status,
+              events: {
+                create: {
+                  type: "STATUS_CHANGED",
+                  fromStatus: current.status,
+                  toStatus: status,
+                  actorId,
+                },
+              },
+            },
+          });
+          return { result: "changed", from: current.status, to: status };
+        }),
+      ),
+
+    updateNotes: (id: string, notes: string | null, actorId: string) =>
+      guard(() =>
+        db.$transaction(async (tx): Promise<NotesChangeResult> => {
+          const current = await tx.inquiry.findUnique({
+            where: { id },
+            select: { internalNotes: true, updatedAt: true },
+          });
+          if (!current) return { result: "not_found" };
+          if (current.internalNotes === notes) {
+            return { result: "unchanged", updatedAt: current.updatedAt };
+          }
+          // The event records who and when; the notes themselves are only in the inquiry.
+          const updated = await tx.inquiry.update({
+            where: { id },
+            data: { internalNotes: notes, events: { create: { type: "NOTES_UPDATED", actorId } } },
+            select: { updatedAt: true },
+          });
+          return { result: "changed", updatedAt: updated.updatedAt };
+        }),
+      ),
   };
 }

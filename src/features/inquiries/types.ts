@@ -46,6 +46,42 @@ export type InquirySummary = {
   doNotContact: boolean;
 };
 
+export const INQUIRY_EVENT_TYPES = ["CREATED", "STATUS_CHANGED", "NOTES_UPDATED"] as const;
+export type InquiryEventType = (typeof INQUIRY_EVENT_TYPES)[number];
+
+/** Who made a change (FR-12): the website for CREATED, otherwise a staff member. */
+export type InquiryActor =
+  | { type: "website" }
+  /** `name` is null if the StaffMember no longer exists (actorId has no foreign key). */
+  | { type: "staff"; name: string | null };
+
+/** One line of the history (US-06 CA3: who, what and when). Notes events never carry the text. */
+export type InquiryHistoryEntry = {
+  id: string;
+  type: InquiryEventType;
+  createdAt: Date;
+  fromStatus: InquiryStatus | null;
+  toStatus: InquiryStatus | null;
+  actor: InquiryActor;
+};
+
+/** Everything the detail page shows (US-06 CA3). Never the ipHash. */
+export type InquiryDetail = InquirySummary & {
+  updatedAt: Date;
+  phone: string | null;
+  message: string;
+  safeToContact: boolean | null;
+  emailIsPrivate: boolean;
+  consentAt: Date;
+  privacyPolicyVersion: string;
+  source: string | null;
+  internalNotes: string | null;
+  /** The safe channel to start contact (planContact), or null with doNotContact. */
+  contactChannel: ContactChannel | null;
+  /** Oldest first. */
+  history: InquiryHistoryEntry[];
+};
+
 /** A page of the panel list. `page` is the one actually shown (out-of-range requests clamp). */
 export type InquiryPage = {
   items: InquirySummary[];

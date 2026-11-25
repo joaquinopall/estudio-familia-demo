@@ -2,7 +2,7 @@
  * Business rules of inquiries (SPEC §6.1, CLAUDE.md §3). Pure: no Next, no Prisma, no SDKs.
  * Dependencies come in through the factory, so tests use fakes (SPEC §13).
  *
- * F3-04: createInquiry. F4-04: listInquiries. getInquiry, changeStatus and updateNotes: F4-05.
+ * F3-04: createInquiry. F4-04: listInquiries. F4-05: getInquiry, changeStatus, updateNotes.
  */
 import type { Clock } from "@/lib/ports/clock";
 
@@ -10,7 +10,15 @@ import { planContact } from "./contact-safety";
 import { InquiryStoreError, InvalidInquiryInputError } from "./errors";
 import { toReference } from "./reference";
 import { INQUIRIES_PAGE_SIZE, type InquiryData, type ListFilters } from "./schema";
-import type { InquiryPage, InquiryStatus, InquirySummary, PracticeArea, Urgency } from "./types";
+import type {
+  InquiryDetail,
+  InquiryHistoryEntry,
+  InquiryPage,
+  InquiryStatus,
+  InquirySummary,
+  PracticeArea,
+  Urgency,
+} from "./types";
 
 /** What gets stored for a new inquiry. The consent checkbox becomes its date and version. */
 export type NewInquiryRecord = Omit<InquiryData, "consent"> & {
@@ -39,15 +47,48 @@ export type InquiryListRow = Omit<InquirySummary, "reference" | "doNotContact"> 
   emailIsPrivate: boolean;
 };
 
+/** A stored event, with the actor's name already looked up (null: unknown or the website). */
+export type InquiryEventRow = Omit<InquiryHistoryEntry, "actor"> & {
+  actorId: string | null;
+  actorName: string | null;
+};
+
+/** The stored fields the detail needs, before the service derives the rest. */
+export type InquiryDetailRow = Omit<
+  InquiryDetail,
+  "reference" | "doNotContact" | "contactChannel" | "history"
+> & { events: InquiryEventRow[] };
+
+export type StatusChangeResult =
+  | { result: "changed"; from: InquiryStatus; to: InquiryStatus }
+  /** Already in that status: nothing written, no event (FR-11 is about distinct statuses). */
+  | { result: "unchanged" }
+  | { result: "not_found" };
+
+export type NotesChangeResult =
+  | { result: "changed"; updatedAt: Date }
+  /** Same notes as stored: nothing written, no event. */
+  | { result: "unchanged"; updatedAt: Date }
+  | { result: "not_found" };
+
 /**
  * What the service needs from storage. Implemented by repository.ts (Prisma) and by an
- * in-memory fake in tests. Must store the inquiry and its CREATED event atomically (FR-07),
- * and throw InquiryStoreError if it cannot.
+ * in-memory fake in tests. Writes and their events are atomic (FR-07, FR-12); failures throw
+ * InquiryStoreError.
  */
 export interface InquiryRepository {
   createWithCreatedEvent(record: NewInquiryRecord): Promise<{ id: string }>;
   /** Newest first (createdAt desc, then id desc), with the total that matches the filters. */
   list(query: InquiryListQuery): Promise<{ rows: InquiryListRow[]; total: number }>;
+  /** The inquiry with its events, oldest first; null if it does not exist. */
+  findById(id: string): Promise<InquiryDetailRow | null>;
+  /**
+   * In one transaction: reads the current status, and if it differs, updates it and creates a
+   * STATUS_CHANGED event with the real fromStatus and the actor.
+   */
+  updateStatus(id: string, status: InquiryStatus, actorId: string): Promise<StatusChangeResult>;
+  /** In one transaction: if the notes differ, updates them and creates a NOTES_UPDATED event. */
+  updateNotes(id: string, notes: string | null, actorId: string): Promise<NotesChangeResult>;
 }
 
 export type InquiryServiceDeps = {
@@ -80,6 +121,25 @@ function normalizeIpHash(ipHash: string | null | undefined): string | null {
 function normalizeSource(source: string | null | undefined): string | null {
   const trimmed = source?.trim().slice(0, SOURCE_MAX_LENGTH).trim();
   return trimmed ? trimmed : null;
+}
+
+function toHistoryEntry({ actorId, actorName, ...event }: InquiryEventRow): InquiryHistoryEntry {
+  return {
+    ...event,
+    actor: actorId === null ? { type: "website" } : { type: "staff", name: actorName },
+  };
+}
+
+/** Adds the reference, the safe-contact plan (planContact, the only source) and the history. */
+function toDetail({ events, ...row }: InquiryDetailRow): InquiryDetail {
+  const plan = planContact(row);
+  return {
+    ...row,
+    reference: toReference(row.id),
+    doNotContact: plan.doNotContact,
+    contactChannel: plan.channel,
+    history: events.map(toHistoryEntry),
+  };
 }
 
 /** Adds what the list shows but is not stored: the reference and the safe-contact verdict. */
@@ -158,6 +218,25 @@ export function createInquiryService({
       }
 
       return { items: rows.map(toSummary), total, page, totalPages, pageSize };
+    },
+
+    /** The detail of one inquiry with its history (US-06 CA3), or null if it does not exist. */
+    async getInquiry(id: string): Promise<InquiryDetail | null> {
+      const row = await repository.findById(id);
+      return row ? toDetail(row) : null;
+    },
+
+    /** Any transition between distinct statuses (FR-11), recorded with its actor (FR-12). */
+    changeStatus(id: string, status: InquiryStatus, actorId: string): Promise<StatusChangeResult> {
+      return repository.updateStatus(id, status, actorId);
+    },
+
+    /**
+     * Internal notes (FR-12). `notes` comes from updateNotesSchema: trimmed, and null when
+     * empty. The event records who and when, never the text (notes may be sensitive).
+     */
+    updateNotes(id: string, notes: string | null, actorId: string): Promise<NotesChangeResult> {
+      return repository.updateNotes(id, notes, actorId);
     },
   };
 }
