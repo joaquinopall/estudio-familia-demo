@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.26 (25/11/2026) |
+| Versión | 1.27 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -388,7 +388,7 @@ model StaffMember {
 **Reglas:**
 - Migraciones solo con `prisma migrate` versionadas en git. Nunca `db push` contra producción.
 - **RLS habilitado en todas las tablas del esquema `public`** (`inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`, que crea Prisma), **sin políticas** para `anon` ni `authenticated`: la Data API de Supabase no puede leerlas. Prisma accede con la conexión de Postgres. Se hace en una migración SQL, y un test verifica que toda tabla nueva lo tenga.
-- Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase). Busca al usuario en `auth.users` por email con la conexión de Prisma (sin service role key) y guarda el email de Auth. Es idempotente: si ya era staff, lo reactiva y actualiza el nombre. La baja es `active = false` (ADR-0015).
+- Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase). Busca al usuario en `auth.users` por email con la conexión de Prisma (sin service role key) y guarda el email de Auth. Es idempotente: si ya era staff, lo reactiva y actualiza el nombre. Si el usuario de Auth se borró y se volvió a crear con el mismo email, vincula el staff existente al usuario nuevo y conserva su `id`; si el usuario viejo sigue existiendo, no cambia nada. La baja es `active = false` (ADR-0015).
 - Retención: las consultas en `CLOSED` o `DISCARDED` con más de 24 meses se eliminan (script manual en v1; cron en v2). Documentado en la política de privacidad.
 
 ---
@@ -646,3 +646,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.24 | F4-01 (ADR-0014). §6.2: `proxy.ts` va en `src/` (Next 16 no lo ejecuta desde la raíz cuando existe `src/app`) y cubre solo `/admin/:path*`; `lib/supabase/` suma `session.ts`, `cookie-options.ts` y `auth-gateway.ts`, y no tiene `client.ts` (sin cliente de navegador); se agregan `lib/admin-paths.ts`, el port `AuthGateway` y `features/auth/schema.ts` y `sign-in.ts`. §9: las variables de Supabase Auth son obligatorias desde F4-01. | [tu nombre] |
 | 25/11/2026 | 1.25 | F4-02 (ADR-0015). §6.2: `features/auth` suma `access.ts`, `types.ts`, `staff-service.ts`, `staff-add-args.ts` y `errors.ts`; `dal.ts` agrega `requireStaffForAction()` para las actions; se agrega `scripts/staff-add.ts` (con `tsx`). §7: cómo `staff:add` encuentra al usuario (`auth.users` por SQL), su idempotencia y la baja con `active = false`. | [tu nombre] |
 | 25/11/2026 | 1.26 | F4-03. §6.5: `signIn` devuelve `values.email` cuando falla (React 19 reinicia el formulario) y puede devolver `INTERNAL` si Supabase no responde. §6.2: `app/admin/layout.tsx` (noindex y encabezado propio para todo el panel), `features/auth/components/` (`LoginForm`, `LoginSessionCheck`, `SignOutButton`) y `components/forms/field-styles.ts`. | [tu nombre] |
+| 25/11/2026 | 1.27 | Corrección de F4-02. §7: `staff:add` vincula un staff existente a un usuario de Auth recreado con el mismo email (conserva su `id`) y no toca nada si el usuario viejo sigue existiendo. | [tu nombre] |

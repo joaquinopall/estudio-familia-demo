@@ -4,6 +4,13 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### Corrección F4-02 · `staff:add` con un usuario de Auth recreado
+
+- **Corregido:** si un usuario se borraba y se volvía a crear en Supabase Auth (mismo email, id nuevo), `staff:add` fallaba con "StaffStoreError: PrismaClientKnownRequestError": la fila vieja de `staff_members` conservaba el email, que es único. Ahora el script vincula esa fila al usuario nuevo y la reactiva (`relinked`), sin perder su `id`. Si el usuario viejo sigue existiendo, no toca nada y avisa (`email_in_use`).
+- **Corregido:** los errores del script muestran el código de Prisma y las columnas (por ejemplo `P2002 (email)`), nunca valores. Antes solo mostraban el nombre del error.
+- **Agregado:** tests que reproducen el caso (con el repository falso, que ahora respeta la unicidad como la base), el caso del usuario vigente, la descripción del error y, contra dev, el revinculado y el `P2002` real.
+- **Documentado:** README, MT-25 (paso 7), ADR-0015 y SPEC v1.27.
+
 ### F4-03 · Login
 
 - **Agregado:** la página `/admin/login`.

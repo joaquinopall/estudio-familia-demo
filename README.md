@@ -147,6 +147,8 @@ Login del staff con email y contraseña, todo del lado del servidor ([ADR 0014](
   - **Prod:** `DATABASE_URL="<url de prod>" npm run staff:add -- --email ... --name "..."`. La variable del shell gana sobre `.env.local`.
   - El script muestra el proyecto de Supabase en el que escribe: revisalo.
   - Busca al usuario en Auth por email. Si no existe, avisa y no crea nada. Si ya era staff, lo reactiva y le actualiza el nombre.
+  - **Si borraste y volviste a crear el usuario en Auth** (mismo email, id nuevo), el script vincula el staff existente al usuario nuevo y conserva su historial. Si ese email lo tiene otro staff cuyo usuario de Auth sigue existiendo, no toca nada y avisa.
+  - Si falla, muestra el código de Prisma y la columna (por ejemplo `P2002 (email)`, un dato duplicado), nunca valores.
   - **Dar de baja:** en el Table Editor, `staff_members` → `active = false`. Desde la próxima página que abra, esa persona no ve el panel.
 - **Cómo funciona:**
   - `src/proxy.ts` corre solo en `/admin/*`: refresca la sesión y, sin sesión, redirige a `/admin/login`. Es la primera barrera.
