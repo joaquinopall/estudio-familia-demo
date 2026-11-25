@@ -42,7 +42,7 @@ flowchart LR
 | `src/app/layout.tsx`          | ✅ F1-07    | Layout raíz: `lang="es-AR"`, fuentes (`next/font`), metadata base.                             |
 | `src/app/globals.css`         | ✅ F1-07    | Tokens de diseño (SPEC §11.1).                                                                 |
 | `src/app/(public)/`           | ✅ F2-07    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
-| `src/app/admin/`              | ⏳ F4       | Login, listado y detalle de consultas.                                                         |
+| `src/app/admin/`              | ⏳ F4-03+   | Login, listado y detalle de consultas. Hasta F4-03, `/admin/login` responde 404.               |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
 | `src/app/icon.tsx`, `apple-icon.tsx` | ✅ F2-07 | Íconos con el monograma de `site.config.ts`, generados en el build. `/favicon.ico` se reescribe a `/icon`. |
 | `src/app/not-found.tsx`, `error.tsx` y los de `(public)/` | ✅ F2-07 | Páginas de error amigables (FR-16). |
@@ -55,7 +55,7 @@ flowchart LR
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
 | `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06), formulario (F3-07). ⏳ lo del panel. |
 | `src/lib/security/ip.ts`      | ✅ F3-05    | IP del visitante (`x-forwarded-for` en Vercel) y HMAC-SHA256 con `IP_HASH_SALT`.               |
-| `src/features/auth/`          | ⏳ F4       | DAL (`requireStaff`), actions de login y repositorio de staff.                                 |
+| `src/features/auth/`          | 🟨 F4       | ✅ `signIn`/`signOut` con rate limit y su schema (F4-01). ⏳ DAL (`requireStaff`) y repositorio de staff (F4-02). |
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
 | `src/lib/action-result.ts`    | ✅ F1-04    | Contrato `ActionResult<T>` de las Server Actions (SPEC §6.5).                                  |
 | `src/lib/logger.ts`           | ✅ F1-04    | Logger JSON sin datos personales.                                                              |
@@ -64,9 +64,10 @@ flowchart LR
 | `src/lib/ports/`, `adapters/` | ✅ F3-03    | Ports sin excepciones, adapters de Resend, Turnstile y Upstash, y fakes para tests ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)). |
 | `src/config/rate-limits.ts`   | ✅ F3-03    | Límites anti-abuso de SPEC §8.2.                                                               |
 | `src/lib/db.ts`, `db-tls.ts`  | ✅ F3-01    | `getDb()`: cliente Prisma único y lazy, por el pooler, con TLS verificado ([ADR 0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)). |
-| `src/lib/supabase/`           | ⏳ F4       | Clientes de Supabase Auth.                                                                     |
+| `src/lib/supabase/`           | ✅ F4-01    | Cliente de servidor, refresh de sesión del proxy, opciones de cookie y adapter `AuthGateway` ([ADR 0014](adr/0014-auth-supabase-ssr-solo-servidor.md)). Sin cliente de navegador. |
+| `src/lib/admin-paths.ts`      | ✅ F4-01    | Rutas del panel (`/admin`, `/admin/login`) para el proxy y las actions.                        |
 | `src/generated/prisma/`       | ✅ F3-01    | Cliente generado por `prisma generate` (fuera de git).                                         |
-| `proxy.ts`                    | ⏳ F4       | Refresh de sesión y redirect de `/admin`.                                                      |
+| `src/proxy.ts`                | ✅ F4-01    | Refresh de sesión y redirect de `/admin` sin sesión. Solo `/admin/:path*`. Va en `src/`: Next 16 no lo ejecuta desde la raíz si existe `src/app`. |
 | `prisma/`, `prisma.config.ts` | ✅ F3-01    | Schema de SPEC §7, migraciones (tablas + RLS) y config de la CLI.                              |
 
 ## Flujos vigentes
@@ -82,6 +83,33 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Flujo:** Server Action → toma los ports de `lib/adapters` → se los pasa al service. Los services y sus tests solo conocen los ports, y en tests usan los fakes de `lib/ports/fakes`.
 - **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
 - **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
+
+### Sesión y login del panel (F4-01)
+
+Todo Supabase Auth corre en el servidor; el navegador nunca habla con Supabase ([ADR 0014](adr/0014-auth-supabase-ssr-solo-servidor.md)).
+
+```mermaid
+flowchart LR
+  B[GET /admin/*] --> P{"src/proxy.ts<br/>getClaims()"}
+  P -- sin sesión o error --> L[307 a /admin/login]
+  P -- sesión válida --> G["Página (F4-02: requireStaff)"]
+  P -. refresca .-> C[Set-Cookie httpOnly + Cache-Control no-store]
+```
+
+- **Proxy** (`src/proxy.ts` → `lib/supabase/session.ts`): solo en `/admin/:path*`, así las páginas públicas siguen estáticas y sin cookies.
+  - Llama a `getClaims()`, que verifica el JWT y lo refresca si está por vencer. Sin sesión, redirige a `/admin/login`, que nunca se redirige (no hay loop).
+  - Las cookies nuevas y los headers de no-caché que pasa Supabase van en la respuesta, también en el redirect.
+  - Es optimista: la autorización real es `requireStaff()` en cada página y action (F4-02, NFR-SEC-02).
+- **Cookies** (`lib/supabase/cookie-options.ts`): httpOnly, SameSite=Lax, y Secure cuando el sitio es https (NFR-SEC-07).
+- **`signIn(prev, formData)`** (`features/auth/actions.ts` → `sign-in.ts`):
+  - Pasos: rate limit por IP (`loginByIp`, 5 cada 15 minutos) → `signInSchema` → `AuthGateway.signInWithPassword` → redirect a `/admin`.
+  - Cualquier rechazo de credenciales da `UNAUTHORIZED` con "El email o la contraseña no son correctos.".
+  - El 429 de Supabase da `RATE_LIMITED`. Si Supabase no responde, `INTERNAL`.
+  - Con Upstash caído, el intento pasa y se registra en el log (ADR-0013).
+- **`signOut()`**: `scope: 'local'` (solo este navegador) y redirect a `/admin/login`, aunque Supabase falle.
+- **`AuthGateway`** (`lib/ports/auth-gateway.ts`): port sin excepciones. El adapter (`lib/supabase/auth-gateway.ts`) traduce los errores de Supabase y nunca devuelve su mensaje, que puede incluir el email. Los tests usan `FakeAuthGateway`.
+- **CSRF:** Next compara el `Origin` de cada Server Action con el host, y las cookies son SameSite=Lax.
+- **Logs:** `auth.signed_in`, `auth.sign_in_rejected` (con el código de Supabase), `auth.sign_in_rate_limited`, `auth.sign_in_rate_limited_by_provider`, `auth.sign_in_unavailable`, `auth.signed_out`, `auth.sign_out_failed` y `auth.session_check_failed`. Nunca llevan el email ni la contraseña.
 
 ### Formulario de consulta (F3-07)
 
@@ -156,15 +184,14 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **E2E del envío (F3-08):** Playwright de punta a punta con las claves de prueba de Turnstile.
-- **Panel admin (F4):** `proxy` refresca la sesión y redirige `/admin/*` sin sesión; el layout protegido y cada action llaman a `requireStaff()`, que verifica el usuario contra Supabase Auth y busca un `StaffMember` activo. Detalle en SPEC §6.4; datos en [ADR 0002](adr/0002-supabase-con-prisma-y-rls.md).
+- **Panel admin (F4-02 en adelante):** el layout protegido y cada action llaman a `requireStaff()`, que verifica el usuario contra Supabase Auth (`getUser()`) y busca un `StaffMember` activo. Detalle en SPEC §6.4; datos en [ADR 0002](adr/0002-supabase-con-prisma-y-rls.md).
 
 ## Decisiones vigentes
 
 | ADR                                                              | Decisión                                                       | Estado                     |
 | ---------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------- |
 | [0001](adr/0001-arquitectura-en-capas-por-feature.md)            | Capas con ports & adapters, organizadas por feature            | Aceptada                   |
-| [0002](adr/0002-supabase-con-prisma-y-rls.md)                    | Supabase + Prisma; RLS sin políticas; sin service role key     | Aceptada (datos en F3-01; Auth en F4) |
+| [0002](adr/0002-supabase-con-prisma-y-rls.md)                    | Supabase + Prisma; RLS sin políticas; sin service role key     | Aceptada (datos en F3-01; Auth en F4-01) |
 | [0003](adr/0003-un-tenant-por-instalacion.md)                    | Un tenant por instalación                                      | Aceptada                   |
 | [0004](adr/0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (se implementa en F3) |
 | [0005](adr/0005-mails-despues-de-responder.md)                   | Mails con `after()`, sin el mensaje completo                   | Aceptada (se implementa en F3) |
@@ -176,5 +203,6 @@ sequenceDiagram
 | [0011](adr/0011-modo-demo-por-defecto.md) | Modo demo encendido por defecto | Aceptada |
 | [0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md) | Prisma 7 con adapter `pg`, `prisma.config.ts`, TLS verificado y override de `effect` | Aceptada |
 | [0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md) | Ports sin excepciones; rate limit caído deja pasar, Turnstile caído rechaza | Aceptada |
+| [0014](adr/0014-auth-supabase-ssr-solo-servidor.md) | Supabase Auth solo en el servidor, cookies httpOnly, proxy solo en `/admin` | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).

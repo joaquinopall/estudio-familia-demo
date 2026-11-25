@@ -11,7 +11,7 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 - Aviso por mail al estudio y acuse de recibo neutro a quien consulta, solo si su email es privado.
 - Panel de administración para gestionar las consultas.
 
-**Estado actual:** Fase 1 (fundaciones) completa; Fase 2 (sitio público y contenido) implementada, pendiente de los tests manuales de cierre. Próxima: Fase 3 (formulario y backend de consultas). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
+**Estado actual:** Fase 1 (fundaciones) completa. Fases 2 (sitio público) y 3 (formulario y backend de consultas) implementadas, pendientes de sus tests manuales de cierre. En curso: Fase 4 (panel admin), con la sesión y el login del lado del servidor (F4-01). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Stack
 
@@ -20,7 +20,7 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 | Framework    | Next.js 16 (App Router) + React 19 + TypeScript estricto                      |
 | Estilos y UI | Tailwind CSS 4 + shadcn/ui (base Radix)                                       |
 | Validación   | Zod 4                                                                         |
-| Datos y auth | Supabase (Postgres) con Prisma 7 — _F3_; Supabase Auth — _F4_                 |
+| Datos y auth | Supabase (Postgres) con Prisma 7; Supabase Auth con `@supabase/ssr` (F4-01)   |
 | Servicios    | Resend (mails), Cloudflare Turnstile (anti-bots), Upstash (rate limit) — _F3_ |
 | Tests        | Vitest + Testing Library, Playwright + axe                                    |
 | Deploy y CI  | Vercel + GitHub Actions                                                       |
@@ -41,7 +41,7 @@ cp .env.example .env.local          # en Windows: copy .env.example .env.local
 npm run dev                         # http://localhost:3000
 ```
 
-Desde F3-05, `npm run dev` necesita **todas las credenciales del formulario** en `.env.local`: base de datos, Resend, Turnstile (las claves de prueba ya vienen en `.env.example`), Upstash e `IP_HASH_SALT`. Sin ellas, el comando falla y nombra la que falta. Cómo conseguirlas: [Base de datos](#base-de-datos-supabase--prisma) y [Servicios externos](#servicios-externos-mails-anti-bots-y-rate-limit).
+`npm run dev` necesita en `.env.local` **todas las credenciales del formulario** (desde F3-05: base de datos, Resend, Turnstile, Upstash e `IP_HASH_SALT`; las claves de prueba de Turnstile ya vienen en `.env.example`) y **las dos de Supabase Auth** (desde F4-01). Sin ellas, el comando falla y nombra la que falta. Cómo conseguirlas: [Base de datos](#base-de-datos-supabase--prisma), [Servicios externos](#servicios-externos-mails-anti-bots-y-rate-limit) y [Panel admin](#panel-admin-supabase-auth).
 
 Para los tests e2e, la primera vez instalá el navegador: `npx playwright install chromium`.
 
@@ -55,8 +55,8 @@ Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `de
 | ----------------------------------------------------- | :-----: | ----------------- | ------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                                |   sí    | **Fase 1**        | URLs absolutas, metadata, sitemap     |
 | `NEXT_PUBLIC_DEMO_MODE`                               |   sí    | opcional (`true`) | Banner de demo y `noindex`            |
-| `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | Fase 4            | Supabase Auth                         |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | Fase 4            | Supabase Auth                         |
+| `NEXT_PUBLIC_SUPABASE_URL`                            |   sí    | **F4-01**         | Supabase Auth (login del panel)       |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                |   sí    | **F4-01**         | Supabase Auth (clave pública)         |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                      |   sí    | **F3-05**         | Widget anti-bots                      |
 | `DATABASE_URL`                                        |   no    | **F3-05**         | Prisma en runtime (pooler)            |
 | `DIRECT_URL`                                          |   no    | opcional          | Prisma migraciones (solo la CLI)      |
@@ -128,6 +128,25 @@ Cada uno está detrás de un port (`src/lib/ports`), con su adapter en `src/lib/
 - **Si un servicio se cae:** el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y un mail que falla no pierde la consulta (ADR-0013).
 - Desde F3-05 sus variables son obligatorias: sin ellas, `dev`, `build` y `start` fallan nombrando la que falta. Cada adapter se crea recién cuando se usa (`getEmailSender()`, `getCaptchaVerifier()`, `getRateLimiter()`).
 
+## Panel admin (Supabase Auth)
+
+Login del staff con email y contraseña, todo del lado del servidor ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)). Se usa el mismo proyecto de Supabase que la base: dev para local y previews, prod para producción.
+
+- **Variables:**
+  - `NEXT_PUBLIC_SUPABASE_URL`: Project Settings → Data API → Project URL.
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: Project Settings → API Keys → publishable key, o la anon key en proyectos con claves legacy.
+  - Son públicas, pero el navegador no las usa: no hay cliente de Supabase en el navegador. **Nunca** cargues la secret ni la service role key.
+- **Configuración en cada proyecto de Supabase** (NFR-SEC-10):
+  1. Authentication → Sign In / Providers → Email: **desactivá "Allow new users to sign up"**. Nadie puede registrarse.
+  2. Contraseña mínima de **12 caracteres**.
+  3. Creá cada usuario del staff con Authentication → Users → Add user, con "Auto Confirm User". Desde F4-02, además hay que darlo de alta como staff con `npm run staff:add`: sin eso, el usuario no ve nada del panel.
+  4. Verificalo con MT-24 en [`docs/TESTING.md`](docs/TESTING.md).
+- **Cómo funciona:**
+  - `src/proxy.ts` corre solo en `/admin/*`: refresca la sesión y, sin sesión, redirige a `/admin/login`. Es la primera barrera; la autorización real es `requireStaff()` (F4-02).
+  - `signIn`/`signOut` son Server Actions (`src/features/auth/actions.ts`). El login permite 5 intentos por IP cada 15 minutos y responde siempre lo mismo ante cualquier credencial rechazada.
+  - Las cookies de sesión son httpOnly, SameSite=Lax y Secure en https.
+- **Hasta F4-03 no existe la página de login:** `/admin` redirige a `/admin/login`, que todavía da 404.
+
 ## Estructura
 
 ```
@@ -141,7 +160,8 @@ src/
   content/             contenido del sitio como datos
   features/            código por feature: inquiries, auth (Fases 3 y 4)
   generated/prisma/    cliente de Prisma generado (no se commitea)
-  lib/                 env, db (Prisma), ports y adapters, ActionResult, logger, headers de seguridad, SEO, utilidades
+  lib/                 env, db (Prisma), supabase (Auth), ports y adapters, ActionResult, logger, headers de seguridad, SEO, utilidades
+  proxy.ts             proxy de Next (ex middleware): sesión y redirect de /admin. Tiene que estar en src/, al lado de app/
 prisma/                schema.prisma, migraciones, test de RLS y CA de Supabase (certs/)
 prisma.config.ts       configuración de la CLI de Prisma (URL de migraciones)
 tests/e2e/             Playwright
@@ -187,6 +207,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - **Variables de entorno** validadas al arrancar; secretos solo del lado del servidor (`server-only`).
 - **Base de datos:** RLS sin políticas en todas las tablas y sin service role key ([ADR 0002](docs/adr/0002-supabase-con-prisma-y-rls.md)); conexiones con TLS verificado ([ADR 0012](docs/adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)).
 - **Logs** estructurados en JSON, sin datos personales (`src/lib/logger.ts`).
+- **Panel:** registro público deshabilitado en Supabase, login con rate limit y mensaje genérico, cookies httpOnly y proxy como primera barrera ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)).
 - Detalle completo de requisitos y amenazas en SPEC §10.
 
 ## Calidad y CI
@@ -203,6 +224,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - Node 24 se toma de `engines` en `package.json`.
 - **Base de datos:** `DATABASE_URL` va en Preview con la URL de Supabase **dev** y en Production con la de **prod**. `DIRECT_URL` no se carga en Vercel: las migraciones no corren en el deploy.
 - **Desde F3-05, todas las variables obligatorias tienen que estar en Preview y Production** antes de mergear: si falta una, el build de Vercel falla y la nombra.
+- **Supabase Auth (desde F4-01):** `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` del proyecto **dev** en Preview y del de **prod** en Production. Son valores de build: si los cambiás, volvé a deployar.
 - **Turnstile:** en Preview, las claves de prueba de `.env.example`; en Production, las reales (ADR-0013). Resend y Upstash pueden compartir cuenta entre Preview y Production en la demo; para un estudio real, conviene separarlos.
 - **Migraciones de producción:** se aplican a mano antes de mergear cambios de schema, con aprobación y un export previo de la base (SPEC §14): `DIRECT_URL="<url de prod>" npm run db:deploy`. La variable del shell gana sobre `.env.local`.
 

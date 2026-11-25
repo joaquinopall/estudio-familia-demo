@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.23 (25/11/2026) |
+| Versión | 1.24 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -189,7 +189,9 @@ src/
       __tests__/
     auth/
       dal.ts                     # requireStaff(), getCurrentStaff()
-      actions.ts                 # signIn, signOut
+      schema.ts                  # signInSchema
+      sign-in.ts                 # lógica de signIn/signOut con dependencias por parámetro
+      actions.ts                 # signIn, signOut ("use server", finas)
       repository.ts              # StaffMember
       __tests__/
   lib/
@@ -198,9 +200,13 @@ src/
     env.schema.ts                # schemas Zod puros; next.config.ts lo usa para fallar dev/build/start
     db.ts                        # Prisma client singleton (getDb(), lazy, pooler)
     db-tls.ts                    # TLS verificado contra la CA de Supabase (app y CLI de Prisma)
-    supabase/server.ts           # cliente SSR (cookies)
-    supabase/client.ts           # cliente browser (solo si hace falta)
-    ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock (sin excepciones, ADR-0013)
+    supabase/server.ts           # cliente SSR (cookies) para Server Components y Server Actions
+    supabase/session.ts          # updateSession: refresh y redirect de /admin, lo usa src/proxy.ts
+    supabase/cookie-options.ts   # cookies httpOnly, SameSite=Lax, Secure en https (NFR-SEC-07)
+    supabase/auth-gateway.ts     # adapter de AuthGateway (signIn/signOut con Supabase)
+                                 # sin cliente de navegador (ADR-0014)
+    admin-paths.ts               # rutas del panel (/admin, /admin/login)
+    ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock, AuthGateway (sin excepciones, ADR-0013)
     ports/fakes/                 # fakes en memoria, solo para tests
     adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter, systemClock
     adapters/index.ts            # raíz de composición: getEmailSender(), getCaptchaVerifier(), getRateLimiter(), getClock()
@@ -235,7 +241,7 @@ src/
     faqs.ts
     legal/privacy.ts             # texto de la política + versión
   generated/prisma/              # cliente de Prisma generado (prisma generate); fuera de git
-proxy.ts                         # (o middleware.ts según la versión de Next) refresh de sesión y redirect de /admin
+  proxy.ts                       # Next 16: en src/, al lado de app/ (en la raíz no corre). Solo /admin/:path*
 prisma.config.ts                 # config de la CLI de Prisma 7: carga .env* y usa DIRECT_URL (ADR-0012)
 prisma/
   schema.prisma
@@ -435,7 +441,7 @@ Etiquetas de interfaz:
 - **No se usa la service role key de Supabase** (mínimo privilegio): la DB va por Prisma y Auth por la clave pública.
 - **Conexiones a la DB cifradas y verificadas:** TLS contra la CA de Supabase (`prisma/certs/supabase-ca.crt`), configurado en el código (`lib/db-tls.ts`). `DATABASE_URL` y `DIRECT_URL` no llevan parámetros `ssl*`. Cada proyecto de Supabase tiene activado "Enforce SSL on incoming connections" (ADR-0012).
 - **Entornos:** `development` (local), `preview` (Vercel Preview) y `production`. Dos proyectos de Supabase: **dev** (usado por local y preview) y **prod**.
-- `env.ts` falla el build si falta una variable obligatoria. Desde F3-05 son obligatorias todas las de la tabla salvo `DIRECT_URL` (solo la CLI de Prisma) y las de Supabase Auth (F4). La CI usa valores ficticios.
+- `env.ts` falla el build si falta una variable obligatoria. Desde F4-01 son obligatorias todas las de la tabla salvo `DIRECT_URL` (solo la CLI de Prisma). La CI usa valores ficticios.
 
 ---
 
@@ -628,3 +634,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 24/11/2026 | 1.21 | F3-06. US-03 CA5: el acuse se firma con `shortName`, que no puede incluir la especialidad. §6.2: `content/emails.ts` y `render.ts`/`styles.ts` en `emails/`. React Email 6: los componentes vienen del paquete `react-email` (`@react-email/components` está deprecado); preview con `npm run email:dev`. | [tu nombre] |
 | 25/11/2026 | 1.22 | F3-07. §6.5: `submitInquiry` devuelve `values` con los errores (US-03 CA4). §11.3: en Contacto, el formulario va primero. §6.2: `form-values.ts`, `components/` del formulario y `content/inquiry-form.ts`; se quita `InquiryFormSlot`. | [tu nombre] |
 | 25/11/2026 | 1.23 | F3-08. §13: el e2e del envío usa las direcciones de prueba de Resend, borra sus filas `E2E-` (y las de más de un día), se saltea sin la clave de prueba de Turnstile, y Playwright nunca reusa un servidor abierto. §8.2: Zod corre en modo `jitless` (sin `'unsafe-eval'` en la CSP); en local la IP es `::1` y el límite por IP se cuenta; fuera de Vercel, `x-forwarded-for` necesita un proxy que lo pise. | [tu nombre] |
+| 25/11/2026 | 1.24 | F4-01 (ADR-0014). §6.2: `proxy.ts` va en `src/` (Next 16 no lo ejecuta desde la raíz cuando existe `src/app`) y cubre solo `/admin/:path*`; `lib/supabase/` suma `session.ts`, `cookie-options.ts` y `auth-gateway.ts`, y no tiene `client.ts` (sin cliente de navegador); se agregan `lib/admin-paths.ts`, el port `AuthGateway` y `features/auth/schema.ts` y `sign-in.ts`. §9: las variables de Supabase Auth son obligatorias desde F4-01. | [tu nombre] |

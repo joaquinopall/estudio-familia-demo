@@ -31,6 +31,7 @@ Detalles de los e2e:
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
   - **Turnstile:** necesita la clave de prueba que aprueba sola (`1x00000000000000000000AA`). Con otra clave, o sin `DATABASE_URL`, los dos escenarios se saltean con su motivo: nunca resuelven un desafío real.
   - Cubre: llegar desde un área con el área preseleccionada, los dos pasos, Turnstile, la confirmación con y sin medio seguro, lo guardado en la base (con su evento `CREATED`) y que no haya violaciones de la CSP.
+- **`admin-redirect.spec.ts`** (F4-01): sin sesión, `/admin` y `/admin/consultas/…` responden 307 a `/admin/login`; el login no se redirige, y `/contacto` no recibe cookies de sesión. No inicia sesión ni toca Supabase Auth: alcanza con que las dos variables de Supabase estén definidas.
 - Reporte HTML de la última corrida: `npx playwright show-report`.
 - Correr un archivo o un test: `npx playwright test tests/e2e/layout.spec.ts` o `-g "nombre del test"`.
 
@@ -41,6 +42,7 @@ Detalles de los e2e:
 | Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas, regla de medio seguro, referencia y service con un repository falso (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
+| Auth        | Vitest + fakes               | `src/features/auth/__tests__/`, `src/lib/supabase/__tests__/` | `signIn`: OK, VALIDATION, mismo UNAUTHORIZED para email inexistente y contraseña incorrecta, rate limit propio (5 en 15 min) y de Supabase, Upstash caído, Supabase caído, logs sin email ni contraseña. `signOut` aunque Supabase falle. Traducción de errores de Supabase. Proxy: redirect sin sesión, sin loop en el login, cookies y headers de no-caché, cookies httpOnly/Secure/Lax |
 | Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repository de consultas contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base |
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
@@ -54,9 +56,9 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - Preferí consultas por rol y nombre accesible (`getByRole("button", { name: "Menú" })`): si un test no encuentra un elemento así, probablemente un lector de pantalla tampoco.
 - Un bug arreglado = un test que lo reproduce.
 - Cobertura objetivo: 80% en `src/features/**` (services, schemas y actions), a medida que existan.
-- Vitest no carga `.env.local`: `vitest.config.mts` fija valores públicos de prueba (`NEXT_PUBLIC_SITE_URL` y modo demo prendido) y, **solo en el proyecto `unit`**, valores ficticios para las variables obligatorias desde F3-05 (nada se conecta a ellos). Nunca pongas secretos ahí; para otro valor, usá `vi.stubEnv`.
+- Vitest no carga `.env.local`: `vitest.config.mts` fija valores públicos de prueba (`NEXT_PUBLIC_SITE_URL` y modo demo prendido) y, **solo en el proyecto `unit`**, valores ficticios para las variables obligatorias desde F3-05 y F4-01 (nada se conecta a ellos). Nunca pongas secretos ahí; para otro valor, usá `vi.stubEnv`.
 - En tests, `server-only` se reemplaza por un módulo vacío (`tests/stubs/server-only.ts`).
-- **Servicios externos:** los tests nunca llaman a Resend, Turnstile ni Upstash. Los services y las actions usan los fakes de `src/lib/ports/fakes` (`FakeEmailSender`, `FakeCaptchaVerifier`, `FakeRateLimiter`, `FixedClock`); los adapters se testean con clientes y `fetch` simulados. Las claves del rate limit en los tests tienen que ser hashes de 64 caracteres (por ejemplo `"a".repeat(64)`).
+- **Servicios externos:** los tests nunca llaman a Resend, Turnstile, Upstash ni Supabase Auth. Los services y las actions usan los fakes de `src/lib/ports/fakes` (`FakeEmailSender`, `FakeCaptchaVerifier`, `FakeRateLimiter`, `FakeAuthGateway`, `FixedClock`); los adapters se testean con clientes y `fetch` simulados. Las claves del rate limit en los tests tienen que ser hashes de 64 caracteres (por ejemplo `"a".repeat(64)`).
 
 ### Cuando falla un test "especial"
 
@@ -74,6 +76,8 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`site-config.test.ts` → "keeps shortName neutral":** el nombre corto del estudio incluye la especialidad, y ese nombre firma el acuse. Elegí un nombre corto sin la especialidad.
 - **`inquiry-submit.spec.ts`:** si se saltea, mirá el motivo (falta `DATABASE_URL` o la clave de Turnstile no es la de prueba). Si falla esperando el token de Turnstile, revisá la conexión a `challenges.cloudflare.com`. Si falla en la confirmación, mirá el snapshot del error (`test-results/…/error-context.md`): el resumen de errores dice qué respondió la action. Cada escenario manda su propia IP de documentación (`2001:db8:…`) en `x-forwarded-for`, así no comparte el rate limit con otras corridas ni con tus pruebas a mano; si ves "Hiciste demasiados intentos seguidos", revisá que eso siga así. Si queda alguna fila `E2E-`, la próxima corrida la borra cuando tenga más de un día, o borrala desde el Table Editor de Supabase dev.
 - **`repository.db.test.ts`:** si falla al conectar, revisá `DATABASE_URL` (y que las migraciones estén aplicadas: `npx prisma migrate status`). Si queda alguna fila `E2E-` en `inquiries`, borrala desde el Table Editor de Supabase dev.
+- **`sign-in.test.ts` → "same answer" o "never writes":** el login empezó a distinguir un email inexistente de una contraseña incorrecta, o a loguear el email o la contraseña. Las dos cosas están prohibidas (SPEC §6.5, NFR-SEC-06): corregí el código, no el test.
+- **`session.test.ts` o `admin-redirect.spec.ts`:** si `/admin` deja de redirigir, revisá que `src/proxy.ts` siga en `src/` (en la raíz Next no lo ejecuta) y que su `matcher` incluya `/admin/:path*`. Si `/contacto` recibe cookies `sb-`, el matcher se amplió de más (ADR-0014).
 - **`enums.test.ts`:** cambiaste un enum en `prisma/schema.prisma` y no en `src/features/inquiries/types.ts` (o al revés), o un área de `practice-areas.ts` no existe en el enum.
 - **`db.test.ts` y `db-tls.test.ts`:** corren en entorno `node` (Prisma no funciona en jsdom) y no se conectan a nada. Si fallan al importar `@/generated/prisma/client`, corré `npm run db:generate`. Si falla "is a PEM certificate", falta `prisma/certs/supabase-ca.crt` o alguien puso ahí otra cosa (nunca una clave privada).
 
@@ -96,6 +100,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | Caso  | Qué falta correr                                     | Cuándo                                                                                                             | Por qué quedó pendiente                                         |
 | ----- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
 | MT-23 | Pasos 1 a 5 y 7 en **dev**; el caso completo en **prod** | Dev: en **F4-01**, apenas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` estén en `.env.local`. Prod: en **F5-08**, después de `db:deploy`. | En F3-01 no estaban cargadas la URL de la API ni la clave pública (son de F4). |
+| MT-24 | El caso en **prod** | En **F5-08**. | En F4-01 se configura y verifica dev; prod se verifica antes del lanzamiento. |
 
 ### Plantilla
 
@@ -131,7 +136,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-05 | Honeypot completado (no guarda nada)                    | F3-05         | **Detallado** · se ejecuta en F3-09 |
 | MT-06 | Mails recibidos: estudio y acuse                        | F3-06         | **Detallado** · se ejecuta en F3-09 |
 | MT-07 | Login y logout del admin                                | F4-08         | Pendiente     |
-| MT-08 | Entrar a `/admin` sin sesión                            | F4-08         | Pendiente     |
+| MT-08 | Entrar a `/admin` sin sesión                            | F4-01         | **Detallado** · se ejecuta en F4-01 y F4-08 |
 | MT-09 | Usuario autenticado que no es staff                     | F4-08         | Pendiente     |
 | MT-10 | Cambio de estado, notas e historial                     | F4-08         | Pendiente     |
 | MT-11 | Navegación completa solo con teclado                    | F1-08         | **Detallado** |
@@ -147,6 +152,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
 | MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** · sin ejecutar (pendiente: F4-01 y F5-08) |
+| MT-24 | Configuración de Supabase Auth (registro y contraseñas) | F4-01         | **Detallado** · dev en F4-01, prod en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -506,6 +512,64 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 5: un error (por ejemplo `new row violates row-level security policy`). No se crea ninguna fila.
 - Paso 6: "Database schema is up to date!".
 - Paso 7: activado.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-08 — Entrar a `/admin` sin sesión
+
+- **Objetivo:** que nadie sin sesión llegue al panel, y que el sitio público no cambie: sin cookies de sesión y estático. El proxy es solo la primera barrera; la autorización real (`requireStaff()`) se prueba en MT-09 (F4-02).
+- **Requisitos:** SPEC §6.4 paso 1, FR-10, NFR-SEC-02, NFR-SEC-07, ADR-0014.
+- **Precondiciones:** `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en `.env.local`. `npm run dev`, o el preview de Vercel. Una ventana privada (sin sesión). Hasta F4-03, `/admin/login` muestra la 404: es lo esperado.
+
+**Pasos**
+
+1. Con DevTools → Network abierto, entrá a `/admin`.
+2. Entrá a `/admin/consultas/7f3a9b21-4c5d-4e6f-8a7b-9c0d1e2f3a4b?estado=NEW`.
+3. Entrá a `/admin/login`.
+4. Entrá a `/` y a `/contacto`. En Network, mirá los headers de respuesta del documento.
+5. En DevTools → Application → Cookies, mirá las cookies del sitio.
+6. Desde F4-03: iniciá sesión y mirá otra vez las cookies `sb-…`.
+
+**Resultado esperado**
+
+- Pasos 1 y 2: la respuesta del documento es un **307** con `location: /admin/login`, sin la query. Terminás en `/admin/login`.
+- Paso 3: no hay redirect (no hay loop). Hasta F4-03 muestra la 404 del sitio.
+- Paso 4: ningún `Set-Cookie` con `sb-` y ningún `Cache-Control: private, no-cache, no-store…`: el proxy no corre en el sitio público.
+- Paso 5: no hay cookies `sb-…`.
+- Paso 6: las cookies `sb-…` tienen **HttpOnly**, **SameSite=Lax** y, en el preview (https), **Secure**.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-24 — Configuración de Supabase Auth (registro y contraseñas)
+
+- **Objetivo:** que nadie pueda crearse una cuenta en el proyecto de Supabase y que las contraseñas del staff sean largas. Esta configuración vive en Supabase, no en el código, así que solo se verifica a mano.
+- **Requisitos:** NFR-SEC-10, US-06 CA1, SPEC §7 (alta de staff), ADR-0014.
+- **Precondiciones:** acceso al dashboard del proyecto (dev en F4-01, prod en F5-08) y su URL y clave pública. **Nunca uses la secret ni la service role key.**
+
+**Pasos**
+
+1. Supabase → Authentication → Sign In / Providers → Email: mirá "Allow new users to sign up" (o, según la versión del dashboard, "Enable email signups" en la configuración general de Auth).
+2. En la configuración de contraseñas de Auth, mirá "Minimum password length".
+3. Authentication → Users: buscá tu usuario.
+4. Intentá registrar una cuenta con la clave pública (en Windows, `curl.exe`):
+
+   ```bash
+   curl -X POST "https://<project-ref>.supabase.co/auth/v1/signup" -H "apikey: <clave pública>" -H "Content-Type: application/json" -d "{\"email\":\"intruso@example.com\",\"password\":\"una-clave-de-prueba-larga\"}"
+   ```
+
+5. Authentication → Users: buscá `intruso@example.com`.
+
+**Resultado esperado**
+
+- Paso 1: el registro está **deshabilitado**.
+- Paso 2: **12** o más.
+- Paso 3: tu usuario existe y está **confirmado** (creado con Add user → "Auto Confirm User").
+- Paso 4: un error del tipo `signup_disabled` ("Signups not allowed for this instance"). Nunca un usuario creado.
+- Paso 5: no existe.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
