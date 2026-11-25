@@ -23,7 +23,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 | F1 — Fundaciones | 0–20% | 9 / 9 | ✅ |
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
-| F4 — Panel admin | 60–80% | 0 / 8 | ⬜ |
+| F4 — Panel admin | 60–80% | 3 / 8 | 🟨 |
 | F5 — Calidad, seguridad y lanzamiento | 80–100% | 0 / 9 | ⬜ |
 
 Estados: ⬜ sin empezar · 🟨 en curso · ✅ cerrada.
@@ -187,15 +187,15 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 
 ## FASE 4 — Panel admin (60% → 80%)
 
-- [ ] **F4-01 · Auth con Supabase** (IA + Vos) · SPEC §6.4, NFR-SEC-07, NFR-SEC-10
-  - [ ] Clientes `@supabase/ssr`, `proxy` (refresh de sesión y redirect de `/admin`) y `signIn`/`signOut` con rate limit.
-  - [ ] (Vos) Registro público deshabilitado en Supabase y tu usuario creado.
+- [X] **F4-01 · Auth con Supabase** (IA + Vos) · SPEC §6.4, NFR-SEC-07, NFR-SEC-10
+  - [X] Clientes `@supabase/ssr`, `proxy` (refresh de sesión y redirect de `/admin`) y `signIn`/`signOut` con rate limit.
+  - [X] (Vos) Registro público deshabilitado en Supabase y tu usuario creado.
 
-- [ ] **F4-02 · Staff y `requireStaff()`** (IA) · NFR-SEC-02
-  - [ ] DAL, repositorio de staff y script `staff:add`. Tests: sin sesión, sesión sin staff, staff inactivo y staff OK.
+- [X] **F4-02 · Staff y `requireStaff()`** (IA) · NFR-SEC-02
+  - [X] DAL, repositorio de staff y script `staff:add`. Tests: sin sesión, sesión sin staff, staff inactivo y staff OK.
 
-- [ ] **F4-03 · Login** (IA + `/claude-design`)
-  - [ ] Página de login accesible, mensajes genéricos y `noindex`.
+- [X] **F4-03 · Login** (IA + `/claude-design`)
+  - [X] Página de login accesible, mensajes genéricos y `noindex`.
 
 - [ ] **F4-04 · Listado** (IA) · US-06 CA2
   - [ ] Tabla paginada en el servidor, filtros (estado, área y urgencia), búsqueda y filtros en la URL (se pueden compartir). Badges de estado y urgencia.

@@ -631,6 +631,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 4. Supabase → Table Editor → `staff_members`.
 5. Repetí el paso 3 con otro nombre (por ejemplo, agregando tu segundo nombre).
 6. En el Table Editor, poné `active = false` en tu fila y repetí el paso 3.
+7. (Opcional, usuario recreado) Creá un usuario de prueba en Auth, dalo de alta con `staff:add`, borralo en Authentication → Users, crealo de nuevo con el mismo email y repetí `staff:add`. Al final, borrá el usuario y su fila.
 
 **Resultado esperado**
 
@@ -640,6 +641,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 4: hay **una** fila con tu email, tu nombre, `role = ADMIN`, `active = true` y `auth_user_id` igual al id de tu usuario en Authentication → Users.
 - Paso 5: "Staff actualizado y activo: …". Sigue habiendo una sola fila, con el nombre nuevo.
 - Paso 6: la fila vuelve a `active = true`.
+- Paso 7: "El usuario de Auth se había vuelto a crear: se vinculó el staff existente…". Sigue habiendo una sola fila, con el mismo `id` y el `auth_user_id` nuevo. Antes de este arreglo, el script fallaba con "StaffStoreError: PrismaClientKnownRequestError".
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

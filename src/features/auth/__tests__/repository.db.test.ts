@@ -11,6 +11,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { StaffStoreError } from "@/features/auth/errors";
 import { createPrismaStaffRepository } from "@/features/auth/repository";
+import { describeStaffAddError } from "@/features/auth/staff-add-args";
 import { getDb } from "@/lib/db";
 
 const RUN = randomUUID().slice(0, 8);
@@ -53,6 +54,7 @@ describe("Prisma staff repository (Supabase dev)", () => {
     await db.staffMember.update({ where: { id: created.id }, data: { active: false } });
 
     const updated = await repository.reactivate(created.id, {
+      authUserId: created.authUserId,
       email: created.email,
       fullName: `${MARKER} Nombre nuevo`,
     });
@@ -62,6 +64,32 @@ describe("Prisma staff repository (Supabase dev)", () => {
       active: true,
       fullName: `${MARKER} Nombre nuevo`,
     });
+  });
+
+  it("relinks a member to another Auth user id, keeping its id (recreated Auth user)", async () => {
+    const orphan = await repository.create(record());
+    const newAuthUserId = randomUUID();
+
+    const relinked = await repository.reactivate(orphan.id, {
+      authUserId: newAuthUserId,
+      email: orphan.email,
+      fullName: orphan.fullName,
+    });
+
+    expect(relinked).toMatchObject({ id: orphan.id, authUserId: newAuthUserId, active: true });
+    expect(await repository.findByEmail(orphan.email)).toEqual(relinked);
+  });
+
+  it("knows when an Auth user id does not exist (an orphan member)", async () => {
+    expect(await repository.authUserExists(randomUUID())).toBe(false);
+  });
+
+  it("knows when an Auth user id exists", async () => {
+    const [someone] = await db.$queryRaw<{ id: string }[]>`
+      select id::text as id from auth.users where deleted_at is null limit 1`;
+    if (!someone) return;
+
+    expect(await repository.authUserExists(someone.id)).toBe(true);
   });
 
   it("can read auth.users: an unknown email returns null instead of a permission error", async () => {
@@ -92,5 +120,18 @@ describe("Prisma staff repository (Supabase dev)", () => {
 
     expect(error).toBeInstanceOf(StaffStoreError);
     expect((error as Error).message).not.toContain(input.authUserId);
+  });
+
+  it("a duplicated email is reported by staff:add as P2002 (the bug that was hidden)", async () => {
+    const input = record();
+    await repository.create(input);
+
+    const error: unknown = await repository
+      .create({ ...input, authUserId: randomUUID() })
+      .catch((thrown: unknown) => thrown);
+    const text = describeStaffAddError(error);
+
+    expect(text).toContain("P2002");
+    expect(text).not.toContain(input.email);
   });
 });
