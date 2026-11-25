@@ -12,6 +12,7 @@
  */
 import { createElement } from "react";
 
+import { adminPaths } from "@/lib/admin-paths";
 import type { Logger } from "@/lib/logger";
 import type { EmailMessage, EmailSender } from "@/lib/ports/email-sender";
 
@@ -86,7 +87,7 @@ export async function sendNewInquiryEmails(
   { emailSender, logger, firmEmail, siteUrl, signature }: InquiryEmailsDeps,
   inquiry: NewInquiryForEmail,
 ): Promise<void> {
-  const panelUrl = new URL(`/admin/consultas/${inquiry.id}`, siteUrl).toString();
+  const panelUrl = new URL(adminPaths.inquiry(inquiry.id), siteUrl).toString();
   const firm = await emailSender.send(
     await buildFirmNotification(inquiry, { to: firmEmail, panelUrl }),
   );

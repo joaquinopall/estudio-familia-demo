@@ -15,3 +15,23 @@ export function formatLongDate(isoDate: string): string {
 
   return longDateFormatter.format(date);
 }
+
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * A moment as the firm sees it: "25/11/2026, 14:05" in its time zone (siteConfig.timeZone),
+ * never the server's (UTC on Vercel). One cached formatter per time zone.
+ */
+export function formatDateTime(date: Date, timeZone: string): string {
+  let formatter = dateTimeFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("es-AR", {
+      dateStyle: "short",
+      timeStyle: "short",
+      hourCycle: "h23",
+      timeZone,
+    });
+    dateTimeFormatters.set(timeZone, formatter);
+  }
+  return formatter.format(date);
+}

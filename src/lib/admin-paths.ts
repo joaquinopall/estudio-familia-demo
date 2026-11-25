@@ -7,6 +7,8 @@ export const adminPaths = {
   login: "/admin/login",
   /** A valid session that is not active staff (SPEC §6.4). The login page explains it (F4-03). */
   loginForbidden: "/admin/login?error=forbidden",
+  /** Detail of one inquiry (FR-10): linked from the list and from the email to the firm. */
+  inquiry: (id: string) => `/admin/consultas/${encodeURIComponent(id)}`,
 } as const;
 
 /** True for /admin and anything below it, never for paths like /administracion. */

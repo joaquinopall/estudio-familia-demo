@@ -44,6 +44,8 @@ export type SiteConfig = {
   geo: { latitude: number; longitude: number };
   /** Where the firm litigates: `label` for tight spaces, `note` as a sentence. */
   jurisdiction: { label: string; note: string };
+  /** IANA time zone of the firm: dates and times in the panel use it, not the server's (UTC). */
+  timeZone: string;
   /** Human-readable hours shown on the site. */
   hours: OfficeHours[];
   /** Same hours, structured (24 h "HH:MM"). Keep both in sync. */
@@ -101,6 +103,7 @@ export const siteConfig: SiteConfig = {
   },
   geo: { latitude: -34.6083, longitude: -58.3712 },
   jurisdiction: { label: "CABA", note: "Atendemos trámites en CABA." },
+  timeZone: "America/Argentina/Buenos_Aires",
   hours: [
     { days: "Lunes a viernes", hours: "9 a 18 h" },
     { days: "Sábados, domingos y feriados", hours: "Cerrado" },
