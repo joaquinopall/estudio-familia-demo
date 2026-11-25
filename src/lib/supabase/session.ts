@@ -8,7 +8,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { adminPaths, isAdminPath } from "@/lib/admin-paths";
+import { adminPaths, isAdminPath, loginPathFor } from "@/lib/admin-paths";
 import { publicEnv } from "@/lib/env.public";
 import { type Logger, logger as defaultLogger } from "@/lib/logger";
 
@@ -17,12 +17,20 @@ import { buildAuthCookieOptions } from "./cookie-options";
 /** Headers Supabase sends with refreshed cookies so no CDN caches one person's session. */
 const CACHE_HEADERS = ["cache-control", "expires", "pragma"] as const;
 
-/** Where to send the request, or null to let it through. Pure, so it is tested alone. */
-export function resolveAdminRedirect(pathname: string, hasSession: boolean): string | null {
+/**
+ * Where to send the request, or null to let it through. Pure, so it is tested alone. The login
+ * gets a `next` with the requested page and its query, so the person comes back to it after
+ * signing in (F4-06: the link in the email to the firm).
+ */
+export function resolveAdminRedirect(
+  pathname: string,
+  hasSession: boolean,
+  search = "",
+): string | null {
   if (hasSession || !isAdminPath(pathname)) return null;
   // The login page itself is always reachable, or the redirect would loop.
   if (pathname === adminPaths.login) return null;
-  return adminPaths.login;
+  return loginPathFor(`${pathname}${search}`);
 }
 
 export type SessionConfig = {
@@ -40,11 +48,9 @@ const defaultConfig = (): SessionConfig => ({
 });
 
 /** A redirect that keeps the refreshed cookies and the no-cache headers of `from`. */
-function redirectKeepingSession(request: NextRequest, from: NextResponse, pathname: string) {
-  const url = request.nextUrl.clone();
-  url.pathname = pathname;
-  url.search = "";
-  const redirect = NextResponse.redirect(url);
+function redirectKeepingSession(request: NextRequest, from: NextResponse, target: string) {
+  // `target` is a path built by resolveAdminRedirect, resolved on this same origin.
+  const redirect = NextResponse.redirect(new URL(target, request.nextUrl.origin));
   for (const cookie of from.cookies.getAll()) redirect.cookies.set(cookie);
   for (const header of CACHE_HEADERS) {
     const value = from.headers.get(header);
@@ -86,6 +92,6 @@ export async function updateSession(
     config.logger.warn("auth.session_check_failed", { error });
   }
 
-  const target = resolveAdminRedirect(request.nextUrl.pathname, hasSession);
+  const target = resolveAdminRedirect(request.nextUrl.pathname, hasSession, request.nextUrl.search);
   return target ? redirectKeepingSession(request, response, target) : response;
 }

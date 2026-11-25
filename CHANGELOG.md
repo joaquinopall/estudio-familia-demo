@@ -4,6 +4,17 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-06 · Link del mail al detalle
+
+- **Agregado:** volver a la página pedida después del login. El link "Ver en el panel" del aviso al estudio lleva a la consulta, aunque haya que iniciar sesión.
+  - El proxy redirige a `/admin/login?next=<página y query>` (salvo para `/admin`).
+  - El login suma `next` como campo oculto del formulario. Funciona sin JavaScript, y se conserva después de un error.
+  - `signIn` redirige a `next`. Si ya tenés sesión de staff, el login te lleva directo a `next`.
+- **Seguridad:** `safeNextPath` acepta solo rutas del panel, después de parsear y normalizar la URL, y rechaza `//host`, `\`, esquemas, codificaciones, `..` y el propio login. Amenaza nueva en SPEC §10.2.
+- **Cambiado:** `signIn` devuelve `{ redirectTo }`, que la action usa para redirigir.
+- **Agregado:** la tabla de ataques de `safeNextPath`, tests del proxy, de `signIn`, de la action y de `LoginSessionCheck`, y e2e del `next` en el redirect y en el login (también uno externo).
+- **Documentado:** ARCHITECTURE, README, TESTING (MT-27 nuevo) y SPEC v1.31.
+
 ### F4-05 · Detalle y acciones
 
 - **Agregado:** el detalle de una consulta en `/admin/consultas/<id>` (US-06 CA3).

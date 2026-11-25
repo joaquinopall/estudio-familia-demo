@@ -54,9 +54,37 @@ describe("signIn handler", () => {
 
     const result = await ctx.signIn({ ...ACCOUNT, email: " Staff@Example.com " });
 
-    expect(result).toEqual({ ok: true, data: null });
+    expect(result).toEqual({ ok: true, data: { redirectTo: "/admin" } });
     expect(ctx.authGateway.signInCalls).toEqual([ACCOUNT]);
     expect(events(ctx.logs)).toEqual(["auth.signed_in"]);
+  });
+
+  it("goes back to the page that asked for the login (F4-06)", async () => {
+    const detail = "/admin/consultas/7f3a9b21-4c5d-4e6f-8a7b-9c0d1e2f3a4b";
+
+    const result = await setup().signIn({ ...ACCOUNT, next: detail });
+
+    expect(result).toEqual({ ok: true, data: { redirectTo: detail } });
+  });
+
+  it.each([
+    "https://evil.example",
+    "//evil.example",
+    "/\\evil.example",
+    "/contacto",
+    "/admin/login",
+  ])("ignores next=%s and goes to /admin (no open redirect, §10.2)", async (next) => {
+    const result = await setup().signIn({ ...ACCOUNT, next });
+
+    expect(result).toEqual({ ok: true, data: { redirectTo: "/admin" } });
+  });
+
+  it("does not let next skip any check: wrong credentials still fail", async () => {
+    const ctx = setup();
+
+    const result = await ctx.signIn({ ...ACCOUNT, password: "incorrecta", next: "/admin" });
+
+    expect(result.ok === false && result.error.code).toBe("UNAUTHORIZED");
   });
 
   it("returns VALIDATION with field errors and never calls Supabase", async () => {

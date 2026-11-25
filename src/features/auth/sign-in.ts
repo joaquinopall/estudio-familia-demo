@@ -8,6 +8,7 @@
  */
 import { rateLimits } from "@/config/rate-limits";
 import { type ActionResult, fail, ok, validationFailure } from "@/lib/action-result";
+import { NEXT_PARAM, adminPaths, safeNextPath } from "@/lib/admin-paths";
 import type { Logger } from "@/lib/logger";
 import type { AuthGateway } from "@/lib/ports/auth-gateway";
 import type { RateLimiter } from "@/lib/ports/rate-limiter";
@@ -24,11 +25,14 @@ export const INVALID_CREDENTIALS_MESSAGE = "El email o la contraseña no son cor
 /** What the form gets back after a failure: the email as typed, never the password. */
 export type SignInFormValues = { email?: string };
 
+/** Where the action sends a successful login: the validated `next` (F4-06) or the panel. */
+export type SignInSuccess = { redirectTo: string };
+
 /**
- * On success the action redirects, so the result carries no data. On failure it also carries
- * the email, because React 19 resets the form after the action (same idea as US-03 CA4).
+ * On success the action redirects to `redirectTo`. On failure it also carries the email,
+ * because React 19 resets the form after the action (same idea as US-03 CA4).
  */
-export type SignInResult = ActionResult<null> & { values?: SignInFormValues };
+export type SignInResult = ActionResult<SignInSuccess> & { values?: SignInFormValues };
 /** useActionState state: null before the first attempt. It never holds a success. */
 export type SignInState = Extract<SignInResult, { ok: false }> | null;
 
@@ -72,7 +76,10 @@ export function createSignInHandler(deps: SignInDeps) {
     return { ...result, values: email ? { email } : {} };
   };
 
-  async function handle({ formData, clientIp }: SignInRequest): Promise<ActionResult<null>> {
+  async function handle({
+    formData,
+    clientIp,
+  }: SignInRequest): Promise<ActionResult<SignInSuccess>> {
     if (await isRateLimited(clientIp)) {
       logger.info("auth.sign_in_rate_limited");
       return fail("RATE_LIMITED");
@@ -89,7 +96,8 @@ export function createSignInHandler(deps: SignInDeps) {
     switch (outcome.status) {
       case "ok":
         logger.info("auth.signed_in");
-        return ok(null);
+        // Back to the page that asked for the login, only if it is a panel path (§10.2).
+        return ok({ redirectTo: safeNextPath(fieldOf(formData, NEXT_PARAM)) ?? adminPaths.home });
       case "invalid_credentials":
         logger.info("auth.sign_in_rejected", { errorCode: outcome.errorCode });
         return fail("UNAUTHORIZED", INVALID_CREDENTIALS_MESSAGE);

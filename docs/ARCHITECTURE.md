@@ -99,12 +99,12 @@ flowchart LR
 ```
 
 - **Proxy** (`src/proxy.ts` → `lib/supabase/session.ts`): solo en `/admin/:path*`, así las páginas públicas siguen estáticas y sin cookies.
-  - Llama a `getClaims()`, que verifica el JWT y lo refresca si está por vencer. Sin sesión, redirige a `/admin/login`, que nunca se redirige (no hay loop).
+  - Llama a `getClaims()`, que verifica el JWT y lo refresca si está por vencer. Sin sesión, redirige a `/admin/login`, que nunca se redirige (no hay loop). Salvo para `/admin`, agrega `?next=` con la página y la query pedidas (F4-06).
   - Las cookies nuevas y los headers de no-caché que pasa Supabase van en la respuesta, también en el redirect.
   - Es optimista: la autorización real es `requireStaff()` en cada página y action (ver abajo, NFR-SEC-02).
 - **Cookies** (`lib/supabase/cookie-options.ts`): httpOnly, SameSite=Lax, y Secure cuando el sitio es https (NFR-SEC-07).
 - **`signIn(prev, formData)`** (`features/auth/actions.ts` → `sign-in.ts`):
-  - Pasos: rate limit por IP (`loginByIp`, 5 cada 15 minutos) → `signInSchema` → `AuthGateway.signInWithPassword` → redirect a `/admin`.
+  - Pasos: rate limit por IP (`loginByIp`, 5 cada 15 minutos) → `signInSchema` → `AuthGateway.signInWithPassword` → redirect a `next` validado o a `/admin`.
   - Cualquier rechazo de credenciales da `UNAUTHORIZED` con "El email o la contraseña no son correctos.".
   - El 429 de Supabase da `RATE_LIMITED`. Si Supabase no responde, `INTERNAL`.
   - Con Upstash caído, el intento pasa y se registra en el log (ADR-0013).
@@ -140,6 +140,26 @@ flowchart LR
 - **Toda action admin** empieza con `const auth = await requireStaffForAction(); if (!auth.ok) return auth;`.
 - **Alta de staff:** `npm run staff:add -- --email x --name y` (`scripts/staff-add.ts`, con `tsx`) busca al usuario en `auth.users` con un `$queryRaw` parametrizado (la conexión de Prisma puede leerla; sin service role key) y crea o reactiva el `StaffMember` mediante `addStaffMember` (`staff-service.ts`). Idempotente. Para desactivar a alguien: `active = false` en el Table Editor.
 - **Logs:** `auth.forbidden` (`no_staff` o `inactive`, con `staffId` si existe), `auth.user_check_unavailable` y `auth.staff_lookup_failed`. Sin emails ni nombres.
+
+### Volver a la página pedida después del login (F4-06)
+
+```mermaid
+flowchart LR
+  M["Mail al estudio<br/>Ver en el panel"] --> D["/admin/consultas/:id"]
+  D -- sin sesión --> P["proxy: 307 a<br/>/admin/login?next=/admin/consultas/:id"]
+  P --> L["LoginSessionCheck:<br/>campo oculto next (form=login-form)"]
+  L --> S["signIn: safeNextPath(next)"]
+  S -- válido --> D
+  S -- inválido o ausente --> H["/admin"]
+```
+
+- **`safeNextPath`** (`lib/admin-paths.ts`) es la única puerta (SPEC §10.2, sin redirect abierto):
+  - Acepta solo rutas del panel, después de parsear y normalizar la URL contra un origen ficticio y comprobar que el origen no cambió.
+  - Rechaza `//host`, `\`, `https:` y otros esquemas, codificaciones, `..` que salen del panel, el propio login (loop) y valores de más de 512 caracteres.
+  - La usan el proxy (`loginPathFor`), `LoginSessionCheck` y `signIn`: se valida al recibir y otra vez al usar.
+- **El campo oculto** lo dibuja `LoginSessionCheck`, que ya espera `searchParams` dentro de `<Suspense>`. Se une al formulario con el atributo `form="login-form"`, así el formulario sigue en el shell estático y todo funciona sin JavaScript. Su id vive en `login-ids.ts`: un valor exportado desde un archivo `"use client"` llega a un Server Component como referencia de cliente, no como texto.
+- **`signIn`** devuelve `{ redirectTo }`, y la action hace el `redirect`. La elección del destino queda en la lógica testeada.
+- **Limitación:** solo el proxy agrega `next`. Una sesión que el proxy acepta pero `requireStaff()` rechaza (revocada) va al login sin `next` y después termina en `/admin`.
 
 ### Página de login (F4-03)
 
@@ -277,7 +297,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Panel admin (F4-06 en adelante):** el link del mail al detalle, con vuelta a la página original después del login (F4-06), y los e2e del panel con sesión (F4-07).
+- **Panel admin (F4-07):** los e2e del panel con sesión (login, filtrar, cambiar estado, historial y acceso denegado).
 
 ## Decisiones vigentes
 

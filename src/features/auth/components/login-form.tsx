@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { adminPanelContent } from "@/content/admin-panel";
 
 import { signIn } from "../actions";
+import { LOGIN_FORM_ID } from "./login-ids";
 
 const copy = adminPanelContent.login;
 
@@ -48,7 +49,8 @@ export function LoginForm() {
   }, [state]);
 
   return (
-    <form action={formAction} noValidate className="grid gap-5">
+    // The id lets the page's `next` hidden field (outside this form) join it (F4-06).
+    <form id={LOGIN_FORM_ID} action={formAction} noValidate className="grid gap-5">
       {state ? (
         <div
           ref={alertRef}

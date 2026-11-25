@@ -1,16 +1,19 @@
 /**
  * The part of /admin/login that depends on the request (SPEC §6.4). Rendered inside <Suspense>
  * by the page, as Cache Components requires for cookies and searchParams:
- * - an active staff member who lands on the login goes straight to /admin;
+ * - an active staff member who lands on the login goes straight to `next` (F4-06) or /admin;
+ * - a valid `next` becomes a hidden field of the login form (joined with the form attribute,
+ *   so the form itself stays in the static shell and works without JavaScript);
  * - ?error=forbidden (a session that is not active staff) explains it and offers to sign out,
  *   without saying whether the account is inactive or was never staff.
  */
 import { redirect } from "next/navigation";
 
 import { adminPanelContent } from "@/content/admin-panel";
-import { adminPaths } from "@/lib/admin-paths";
+import { NEXT_PARAM, adminPaths, safeNextPath } from "@/lib/admin-paths";
 
 import { getCurrentStaff } from "../dal";
+import { LOGIN_FORM_ID } from "./login-ids";
 import { SignOutButton } from "./sign-out-button";
 
 const copy = adminPanelContent.forbidden;
@@ -37,7 +40,16 @@ export async function LoginSessionCheck({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (await getCurrentStaff()) redirect(adminPaths.home);
-  const { error } = await searchParams;
-  return error === "forbidden" ? <ForbiddenNotice /> : null;
+  const params = await searchParams;
+  // Arrays (?next=a&next=b) and anything outside the panel are ignored (SPEC §10.2).
+  const next = safeNextPath(params[NEXT_PARAM]);
+
+  if (await getCurrentStaff()) redirect(next ?? adminPaths.home);
+
+  return (
+    <>
+      {next ? <input type="hidden" name={NEXT_PARAM} value={next} form={LOGIN_FORM_ID} /> : null}
+      {params.error === "forbidden" ? <ForbiddenNotice /> : null}
+    </>
+  );
 }
