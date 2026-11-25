@@ -1,26 +1,33 @@
 /**
  * Layout of every protected admin page (SPEC §6.2, §6.4 step 2, NFR-SEC-02). Nothing below it
- * renders until requireStaff() confirms an active staff member.
+ * renders until requireStaff() confirms an active staff member. noindex comes from the admin
+ * layout above it.
  *
  * Cache Components: reading the session (cookies) needs a <Suspense> boundary, so the check
  * lives in StaffGate. Each page must also call requireStaff() itself: Next may render a page
  * without re-running its layout (client navigation), and the call is cached per request.
  */
-import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { adminPanelContent } from "@/content/admin-panel";
+import { adminPanelContent as copy } from "@/content/admin-panel";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
 import { requireStaff } from "@/features/auth/dal";
 
-export const metadata: Metadata = {
-  title: adminPanelContent.metaTitle,
-  // robots.txt already blocks /admin; this also keeps it out of any index (FR-14).
-  robots: { index: false, follow: false },
-};
-
 async function StaffGate({ children }: { children: React.ReactNode }) {
-  await requireStaff();
-  return children;
+  const staff = await requireStaff();
+  return (
+    <>
+      <div className="border-b border-border bg-secondary">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-2">
+          <p className="text-sm text-muted-foreground">
+            {copy.signedInAs} <span className="font-medium text-foreground">{staff.fullName}</span>
+          </p>
+          <SignOutButton label={copy.signOut} />
+        </div>
+      </div>
+      {children}
+    </>
+  );
 }
 
 export default function ProtectedAdminLayout({ children }: LayoutProps<"/admin">) {
@@ -28,7 +35,7 @@ export default function ProtectedAdminLayout({ children }: LayoutProps<"/admin">
     <Suspense
       fallback={
         <p role="status" className="mx-auto w-full max-w-5xl px-6 py-10 text-muted-foreground">
-          {adminPanelContent.checkingSession}
+          {copy.checkingSession}
         </p>
       }
     >

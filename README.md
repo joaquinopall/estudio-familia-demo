@@ -153,7 +153,9 @@ Login del staff con email y contraseña, todo del lado del servidor ([ADR 0014](
   - La autorización real es `requireStaff()` (`src/features/auth/dal.ts`), en el layout del panel y en **cada** página. Las actions usan `requireStaffForAction()`. Verifica el usuario con el servidor de Supabase y exige un `StaffMember` activo.
   - `signIn`/`signOut` son Server Actions (`src/features/auth/actions.ts`). El login permite 5 intentos por IP cada 15 minutos y responde siempre lo mismo ante cualquier credencial rechazada.
   - Las cookies de sesión son httpOnly, SameSite=Lax y Secure en https.
-- **Hasta F4-03 no existe la página de login:** `/admin` redirige a `/admin/login`, que todavía da 404. `/admin` muestra por ahora solo un título y el nombre del staff; el listado llega en F4-04.
+- **Login** (`/admin/login`, F4-03): email y contraseña, sin registro ni "olvidé mi contraseña" (el reseteo se hace desde Supabase → Authentication → Users). Funciona sin JavaScript. Si ya tenés sesión de staff, te lleva a `/admin`. Con `?error=forbidden` explica que la cuenta no tiene acceso y ofrece "Usar otra cuenta". Las páginas del panel llevan `noindex` y no usan el shell público.
+- **Cerrar sesión:** el botón de la barra superior del panel.
+- `/admin` muestra por ahora solo un título; el listado llega en F4-04.
 
 ## Estructura
 

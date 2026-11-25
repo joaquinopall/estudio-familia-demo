@@ -1,6 +1,6 @@
 /**
  * Barriers of the panel without a valid session (SPEC §6.4, MT-08): the proxy sends /admin/* to
- * the login. The login page itself arrives in F4-03; until then it is a 404.
+ * the login (F4-03, admin-login.spec.ts), which is never redirected.
  */
 import { expect, test } from "@playwright/test";
 

@@ -42,7 +42,8 @@ flowchart LR
 | `src/app/layout.tsx`          | ✅ F1-07    | Layout raíz: `lang="es-AR"`, fuentes (`next/font`), metadata base.                             |
 | `src/app/globals.css`         | ✅ F1-07    | Tokens de diseño (SPEC §11.1).                                                                 |
 | `src/app/(public)/`           | ✅ F2-07    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
-| `src/app/admin/`              | 🟨 F4       | ✅ `(protected)/layout.tsx` con `requireStaff()` y un `/admin` mínimo (F4-02). ⏳ login (F4-03; hasta entonces `/admin/login` da 404), listado (F4-04) y detalle (F4-05). |
+| `src/app/admin/`              | 🟨 F4       | ✅ `layout.tsx` común (`noindex`, encabezado propio), `(protected)/layout.tsx` con `requireStaff()` y la barra de sesión, un `/admin` mínimo (F4-02) y `login/` (F4-03). ⏳ listado (F4-04) y detalle (F4-05). |
+| `src/components/forms/`       | ✅ F4-03    | Estilos compartidos de controles nativos (`controlClass`, `focusOutlineClass`): formulario de consultas y login. |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
 | `src/app/icon.tsx`, `apple-icon.tsx` | ✅ F2-07 | Íconos con el monograma de `site.config.ts`, generados en el build. `/favicon.ico` se reescribe a `/icon`. |
 | `src/app/not-found.tsx`, `error.tsx` y los de `(public)/` | ✅ F2-07 | Páginas de error amigables (FR-16). |
@@ -140,6 +141,18 @@ flowchart LR
 - **Alta de staff:** `npm run staff:add -- --email x --name y` (`scripts/staff-add.ts`, con `tsx`) busca al usuario en `auth.users` con un `$queryRaw` parametrizado (la conexión de Prisma puede leerla; sin service role key) y crea o reactiva el `StaffMember` mediante `addStaffMember` (`staff-service.ts`). Idempotente. Para desactivar a alguien: `active = false` en el Table Editor.
 - **Logs:** `auth.forbidden` (`no_staff` o `inactive`, con `staffId` si existe), `auth.user_check_unavailable` y `auth.staff_lookup_failed`. Sin emails ni nombres.
 
+### Página de login (F4-03)
+
+- **Estructura** (`app/admin/login/page.tsx`): el título y `LoginForm` forman parte del shell estático, así el formulario nunca se reemplaza mientras alguien escribe. Solo `LoginSessionCheck` espera a la request (cookies y `searchParams`), dentro de `<Suspense>`:
+  - si ya sos staff activo (`getCurrentStaff()`), redirige a `/admin`;
+  - con `?error=forbidden`, muestra `ForbiddenNotice` con "Usar otra cuenta" (`signOut`). No dice si la cuenta está inactiva o nunca fue staff.
+- **`LoginForm`** (cliente, `useActionState(signIn, null)`):
+  - Controles nativos con `autocomplete` `username` / `current-password`, sin validación en el navegador: el servidor devuelve el error de cada campo.
+  - El mensaje general va en `role="alert"` y toma el foco.
+  - Después de un error, `signIn` devuelve `values.email` (nunca la contraseña) para que React 19 no borre el email al reiniciar el formulario.
+  - Funciona sin JavaScript.
+- **Layout común** `app/admin/layout.tsx`: `robots: noindex, nofollow` para todo el panel y un encabezado sobrio con `siteConfig.shortName`. No usa el shell público. El layout protegido suma la barra con el nombre del staff y "Cerrar sesión" (`SignOutButton`, un `<form>` que funciona sin JavaScript).
+
 ### Formulario de consulta (F3-07)
 
 - `/contacto` sigue **estática**. `InquiryFormSection` (servidor) dibuja `#formulario` con **un solo** `InquiryForm`. Cuando carga en el navegador, lee `?area=` y completa el área **solo si el selector sigue vacío** (`area-from-query.ts`). La página le pasa un mapa slug → área, así el navegador no carga los textos de las áreas.
@@ -213,7 +226,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Panel admin (F4-03 en adelante):** página de login, listado paginado con filtros, detalle con cambio de estado, notas e historial, y el link del mail al detalle. Todo detrás de `requireStaff()` / `requireStaffForAction()`.
+- **Panel admin (F4-04 en adelante):** listado paginado con filtros, detalle con cambio de estado, notas e historial, y el link del mail al detalle (con vuelta a la página original después del login, F4-06). Todo detrás de `requireStaff()` / `requireStaffForAction()`.
 
 ## Decisiones vigentes
 
