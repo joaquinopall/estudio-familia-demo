@@ -161,7 +161,7 @@ describe("submitInquiry (FR-04, FR-06, FR-08)", () => {
         await ctx.submit({ email: `persona${i}@example.com` });
       }
 
-      expect(await ctx.submit({ email: "otra@example.com" })).toEqual({
+      expect(await ctx.submit({ email: "otra@example.com" })).toMatchObject({
         ok: false,
         error: { code: "RATE_LIMITED", message: DEFAULT_ERROR_MESSAGES.RATE_LIMITED },
       });
@@ -223,7 +223,7 @@ describe("submitInquiry (FR-04, FR-06, FR-08)", () => {
     it("rejects an invalid token and sends the token and the IP to the verifier", async () => {
       ctx.captchaVerifier.respondWith({ status: "invalid", errorCodes: ["timeout-or-duplicate"] });
 
-      expect(await ctx.submit()).toEqual({
+      expect(await ctx.submit()).toMatchObject({
         ok: false,
         error: { code: "CAPTCHA_FAILED", message: DEFAULT_ERROR_MESSAGES.CAPTCHA_FAILED },
       });
@@ -234,7 +234,7 @@ describe("submitInquiry (FR-04, FR-06, FR-08)", () => {
     it("rejects when Turnstile is down and offers WhatsApp (ADR-0013)", async () => {
       ctx.captchaVerifier.respondWith({ status: "unavailable", errorCodes: ["timeout"] });
 
-      expect(await ctx.submit()).toEqual({
+      expect(await ctx.submit()).toMatchObject({
         ok: false,
         error: { code: "CAPTCHA_FAILED", message: CAPTCHA_UNAVAILABLE_MESSAGE },
       });
@@ -256,7 +256,7 @@ describe("submitInquiry (FR-04, FR-06, FR-08)", () => {
     it("answers a generic error when the database fails, and logs only the code", async () => {
       ctx.repository.failWith(new InquiryStoreError());
 
-      expect(await ctx.submit()).toEqual({
+      expect(await ctx.submit()).toMatchObject({
         ok: false,
         error: { code: "INTERNAL", message: DEFAULT_ERROR_MESSAGES.INTERNAL },
       });
@@ -277,6 +277,52 @@ describe("submitInquiry (FR-04, FR-06, FR-08)", () => {
         .map((line) => JSON.parse(line))
         .find((entry) => entry.event === "inquiry.emails_failed");
       expect(failure).toMatchObject({ level: "error", inquiryId: ID });
+    });
+  });
+
+  describe("what was typed is given back on failure (US-03 CA4)", () => {
+    it("returns the form values with a validation error", async () => {
+      const result = await ctx.submit({ message: "corto" });
+
+      expect(result).toMatchObject({
+        ok: false,
+        values: { message: "corto", fullName: "Ana Pérez", area: "SUCCESSION", consent: "on" },
+      });
+    });
+
+    it.each([
+      ["RATE_LIMITED", (c: Ctx) => c.rateLimiter.setUnavailable(false)],
+      [
+        "CAPTCHA_FAILED",
+        (c: Ctx) => c.captchaVerifier.respondWith({ status: "invalid", errorCodes: [] }),
+      ],
+      ["INTERNAL", (c: Ctx) => c.repository.failWith(new InquiryStoreError())],
+    ] as const)("returns them with %s too", async (code, arrange) => {
+      arrange(ctx);
+      if (code === "RATE_LIMITED") {
+        for (let i = 0; i < rateLimits.inquiryByEmail.limit; i++) {
+          await ctx.submit({}, `198.51.100.${i}`);
+        }
+      }
+      const result = await ctx.submit({}, "192.0.2.50");
+
+      expect(result).toMatchObject({
+        ok: false,
+        error: { code },
+        values: { email: "Ana@Example.com" },
+      });
+    });
+
+    it("never gives back the Turnstile token nor the honeypot", async () => {
+      const result = await ctx.submit({ message: "corto" });
+      const values = result.ok ? {} : (result.values ?? {});
+
+      expect(values).not.toHaveProperty("cf-turnstile-response");
+      expect(values).not.toHaveProperty("website");
+    });
+
+    it("gives nothing back on success", async () => {
+      expect(await ctx.submit()).not.toHaveProperty("values");
     });
   });
 

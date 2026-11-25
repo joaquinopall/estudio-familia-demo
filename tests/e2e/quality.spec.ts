@@ -193,14 +193,35 @@ for (const [width, height] of [
   test.describe(`main action at ${width}x${height}`, () => {
     test.use({ viewport: { width, height } });
 
-    for (const path of ["/", "/nosotros", "/contacto", ...AREAS]) {
+    for (const path of ["/", "/nosotros", ...AREAS]) {
       test(`${path} shows it without scrolling`, async ({ page }) => {
         await page.goto(path);
-        const name = path === "/contacto" ? /Escribinos por WhatsApp/ : "Contanos tu caso";
 
-        await expectVisibleAndUncovered(page.getByRole("main").getByRole("link", { name }).first());
+        await expectVisibleAndUncovered(
+          page.getByRole("main").getByRole("link", { name: "Contanos tu caso" }).first(),
+        );
       });
     }
+
+    // Since F3-07 the form goes first on /contacto (where every "Contanos tu caso" leads), and
+    // a channel that works is still one tap away: WhatsApp in the header (US-04 CA1).
+    test("/contacto shows the start of the form and WhatsApp without scrolling", async ({
+      page,
+    }) => {
+      await page.goto("/contacto");
+
+      await expectVisibleAndUncovered(
+        page.getByRole("main").getByRole("heading", { name: "Contanos tu caso" }),
+      );
+      if (width < 1380) {
+        await expectVisibleAndUncovered(
+          page
+            .getByRole("banner")
+            .getByRole("link", { name: /WhatsApp/ })
+            .first(),
+        );
+      }
+    });
   });
 }
 

@@ -17,14 +17,22 @@ import { hashIdentifier } from "@/lib/security/ip";
 
 import { planContact } from "./contact-safety";
 import { toReference } from "./reference";
+import { type InquiryFormValues, extractFormValues } from "./form-values";
 import { isHoneypotFilled, inquirySchema, type InquiryFormInput } from "./schema";
 import type { CreatedInquiry, InquiryService } from "./service";
 import type { NewInquiryForEmail } from "./notifications";
 
 /** What the form needs to show the confirmation, even without JavaScript (US-03 CA3). */
 export type SubmitInquiryOutput = { reference: string; doNotContact: boolean };
+/**
+ * On failure it also carries what the person typed (never the token nor the honeypot), so
+ * the form can restore it (US-03 CA4).
+ */
+export type SubmitInquiryResult = ActionResult<SubmitInquiryOutput> & {
+  values?: InquiryFormValues;
+};
 /** useActionState state: null before the first submit. */
-export type SubmitInquiryState = ActionResult<SubmitInquiryOutput> | null;
+export type SubmitInquiryState = SubmitInquiryResult | null;
 
 export const TURNSTILE_TOKEN_FIELD = "cf-turnstile-response";
 
@@ -78,7 +86,13 @@ export function createSubmitInquiryHandler(deps: SubmitInquiryDeps) {
     return retryAfter;
   }
 
-  return async function submitInquiry({
+  /** Any failure gives back what was typed, so the form does not lose it (US-03 CA4). */
+  return async function submitInquiry(request: SubmitInquiryRequest): Promise<SubmitInquiryResult> {
+    const result = await handle(request);
+    return result.ok ? result : { ...result, values: extractFormValues(request.formData) };
+  };
+
+  async function handle({
     formData,
     clientIp,
   }: SubmitInquiryRequest): Promise<ActionResult<SubmitInquiryOutput>> {
@@ -150,5 +164,5 @@ export function createSubmitInquiryHandler(deps: SubmitInquiryDeps) {
     });
 
     return ok({ reference: created.reference, doNotContact: planContact(data).doNotContact });
-  };
+  }
 }
