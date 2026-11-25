@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.21 (24/11/2026) |
+| Versión | 1.22 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -184,7 +184,8 @@ src/
       notifications.ts           # contenido y envío de los mails de una consulta nueva
       labels.ts                  # nombres en español de los enums (§8.1, FR-11)
       emails/                    # React Email: NewInquiryEmail, InquiryReceiptEmail, render.ts, styles.ts
-      components/                # InquiryForm (client), InquiryTable, StatusBadge, ...
+      form-values.ts             # valores del formulario que la action devuelve al fallar
+      components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, StatusBadge (F4)
       __tests__/
     auth/
       dal.ts                     # requireStaff(), getCurrentStaff()
@@ -226,6 +227,7 @@ src/
     about.ts                     # textos de /nosotros (enfoque y valores)
     faq-page.ts                  # textos de /preguntas-frecuentes
     contact-page.ts              # textos de /contacto
+    inquiry-form.ts              # textos del formulario de consulta
     urgent-help.ts               # ayuda ante peligro y plazos (§11.5)
     error-pages.ts               # textos de la 404 y de la página de error
     emails.ts                    # textos del aviso al estudio y del acuse (neutro)
@@ -293,7 +295,7 @@ type ActionResult<T> =
 
 | Action | Input | Output OK | Errores posibles |
 |---|---|---|---|
-| `submitInquiry(prev, formData)` | campos de §8.1 + `cf-turnstile-response` + `website` (honeypot) | `{ reference: string; doNotContact: boolean }` (`doNotContact`: sin medio seguro, la confirmación no promete contacto, US-03 CA3) | VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, INTERNAL |
+| `submitInquiry(prev, formData)` | campos de §8.1 + `cf-turnstile-response` + `website` (honeypot) | `{ reference: string; doNotContact: boolean }` (`doNotContact`: sin medio seguro, la confirmación no promete contacto, US-03 CA3). Con un error devuelve además `values` (lo que escribió la persona, sin el token ni el honeypot) para no perderlo (US-03 CA4) | VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, INTERNAL |
 | `updateInquiryStatus({ id, status })` | UUID + enum | `{ status }` | UNAUTHORIZED, FORBIDDEN, VALIDATION, NOT_FOUND, INTERNAL |
 | `updateInquiryNotes({ id, notes })` | UUID + string ≤ 5000 | `{ updatedAt }` | ídem |
 | `signIn(prev, formData)` | email + password | redirect `/admin` | VALIDATION, UNAUTHORIZED (mensaje genérico), RATE_LIMITED |
@@ -489,7 +491,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 - **Área:** introducción en lenguaje simple con la jurisdicción y el aviso de plazos, "¿Cuándo consultar?", "¿Qué documentación suele hacer falta?", preguntas frecuentes del área y llamado a la acción con el área preseleccionada en el formulario (`/contacto?area=sucesiones`).
 - **Nosotros:** llamado a la acción en el encabezado, enfoque del estudio, profesionales (nombre, matrícula, formación) y valores.
 - **Preguntas frecuentes:** 8 a 12 preguntas agrupadas.
-- **Contacto:** datos de contacto (WhatsApp primero), horarios, mapa y formulario. Mientras el formulario no exista, los canales que funcionan van antes; en F3 se revisa el orden.
+- **Contacto:** formulario "Contanos tu caso" primero (es adonde llevan todos los CTA), después datos de contacto (WhatsApp, teléfono, email), horarios, mapa y preguntas destacadas. WhatsApp sigue a un toque en el header (US-04). En escritorio, el formulario a la izquierda y los datos a la derecha (F3-07).
 
 ### 11.4 Restricciones éticas y legales del contenido
 - Respetar las normas de publicidad profesional del colegio que corresponda (CPACF en CABA): **sin promesas de resultados**, sin comparaciones con otros colegas y sin lenguaje sensacionalista.
@@ -622,3 +624,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 24/11/2026 | 1.19 | F3-04. §6.2: `reference.ts`, `errors.ts`; el service declara `InquiryRepository` y el repository lo implementa. §13: tests de integración de repositories con `npm run test:db` (proyecto `db` de Vitest), fuera de la CI hasta F5-06. | [tu nombre] |
 | 24/11/2026 | 1.20 | F3-05. §6.5: `submitInquiry` devuelve también `doNotContact`. §9: las variables de la Fase 3 (salvo `DIRECT_URL`) son obligatorias, con valores ficticios en la CI. §6.2: `submit-inquiry.ts`, `notifications.ts` y `labels.ts` en `features/inquiries`. | [tu nombre] |
 | 24/11/2026 | 1.21 | F3-06. US-03 CA5: el acuse se firma con `shortName`, que no puede incluir la especialidad. §6.2: `content/emails.ts` y `render.ts`/`styles.ts` en `emails/`. React Email 6: los componentes vienen del paquete `react-email` (`@react-email/components` está deprecado); preview con `npm run email:dev`. | [tu nombre] |
+| 25/11/2026 | 1.22 | F3-07. §6.5: `submitInquiry` devuelve `values` con los errores (US-03 CA4). §11.3: en Contacto, el formulario va primero. §6.2: `form-values.ts`, `components/` del formulario y `content/inquiry-form.ts`; se quita `InquiryFormSlot`. | [tu nombre] |

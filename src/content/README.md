@@ -31,7 +31,7 @@ Contenido del sitio como datos tipados, separado de los componentes (SPEC §6.1,
 
 ## Contacto (nota para F3)
 
-- `InquiryFormSlot` (`#formulario`) es el lugar reservado: F3 lo reemplaza por el formulario sin tocar el resto de la página.
+- El formulario (`#formulario`) toma sus textos de `inquiry-form.ts`, y los mails, de `emails.ts`. Los mensajes de validación están con el schema (`src/features/inquiries/schema.ts`).
 - Las áreas linkean a `/contacto?area=<slug>`. Para preseleccionar el área **sin volver dinámica la página**, leé el parámetro en el formulario (componente cliente, `useSearchParams` dentro de `<Suspense>`), no con `searchParams` del servidor.
 
 ## Política de privacidad

@@ -4,6 +4,19 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F3-07 · Formulario de 2 pasos
+
+- **Agregado:** el formulario "Contanos tu caso" en `/contacto`.
+  - **Pasos:** "Tu consulta" (área, urgencia y mensaje) y "Tus datos" (nombre, email, "¿Este email es privado?", teléfono, canal, "¿Es seguro…?" solo con teléfono o WhatsApp, consentimiento y Turnstile).
+  - **Sin JavaScript** se ven los dos pasos juntos y aparece un aviso con WhatsApp, teléfono y email.
+  - **Errores:** cada uno junto a su campo, más un resumen con links y foco. Se valida en el cliente con el mismo schema antes de enviar.
+  - **No se pierde lo escrito:** la action devuelve los valores cuando falla.
+  - **Confirmación:** con la referencia; sin un medio seguro, no promete contacto.
+  - **Área preseleccionada** con `?area=<slug>`; la página sigue estática.
+- **Cambiado:** en `/contacto` el formulario va primero; los datos de contacto después (a la derecha en escritorio). WhatsApp sigue en el header. Se quita el lugar reservado (`InquiryFormSlot`).
+- **Corregido durante la tarea:** los controles y botones del formulario usan el contorno de foco global (3:1); `outline-none` de shadcn lo anulaba.
+- **Agregado:** tests de componente del formulario (pasos, errores accesibles, preguntas de seguridad, envío, confirmaciones, valores restaurados, área, honeypot, sin JavaScript) y de los `values` de la action. El e2e de la primera pantalla de `/contacto` refleja el orden nuevo. MT-02 detallado y MT-19 actualizado. SPEC v1.22.
+
 ### F3-06 · Mails
 
 - **Agregado:** plantillas de React Email.
