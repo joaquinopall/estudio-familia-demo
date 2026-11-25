@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.24 (25/11/2026) |
+| Versión | 1.25 (25/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -188,11 +188,16 @@ src/
       components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, StatusBadge (F4)
       __tests__/
     auth/
-      dal.ts                     # requireStaff(), getCurrentStaff()
-      schema.ts                  # signInSchema
+      dal.ts                     # requireStaff() (páginas), requireStaffForAction() (actions), getCurrentStaff()
+      access.ts                  # checkStaffAccess: la regla de acceso, pura (ADR-0015)
+      types.ts                   # StaffMember, AuthUser (sin Prisma)
+      schema.ts                  # signInSchema, staffMemberInputSchema
       sign-in.ts                 # lógica de signIn/signOut con dependencias por parámetro
       actions.ts                 # signIn, signOut ("use server", finas)
-      repository.ts              # StaffMember
+      staff-service.ts           # addStaffMember; declara StaffRepository
+      staff-add-args.ts          # argumentos de npm run staff:add
+      repository.ts              # StaffMember y lectura de auth.users (implementa StaffRepository)
+      errors.ts                  # StaffStoreError
       __tests__/
   lib/
     env.ts                       # server-only: exporta env (públicas + privadas validadas); entrada para código de servidor
@@ -243,6 +248,7 @@ src/
   generated/prisma/              # cliente de Prisma generado (prisma generate); fuera de git
   proxy.ts                       # Next 16: en src/, al lado de app/ (en la raíz no corre). Solo /admin/:path*
 prisma.config.ts                 # config de la CLI de Prisma 7: carga .env* y usa DIRECT_URL (ADR-0012)
+scripts/staff-add.ts             # npm run staff:add (tsx --conditions=react-server, ADR-0015)
 prisma/
   schema.prisma
   migrations/
@@ -379,7 +385,7 @@ model StaffMember {
 **Reglas:**
 - Migraciones solo con `prisma migrate` versionadas en git. Nunca `db push` contra producción.
 - **RLS habilitado en todas las tablas del esquema `public`** (`inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`, que crea Prisma), **sin políticas** para `anon` ni `authenticated`: la Data API de Supabase no puede leerlas. Prisma accede con la conexión de Postgres. Se hace en una migración SQL, y un test verifica que toda tabla nueva lo tenga.
-- Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase).
+- Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase). Busca al usuario en `auth.users` por email con la conexión de Prisma (sin service role key) y guarda el email de Auth. Es idempotente: si ya era staff, lo reactiva y actualiza el nombre. La baja es `active = false` (ADR-0015).
 - Retención: las consultas en `CLOSED` o `DISCARDED` con más de 24 meses se eliminan (script manual en v1; cron en v2). Documentado en la política de privacidad.
 
 ---
@@ -635,3 +641,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.22 | F3-07. §6.5: `submitInquiry` devuelve `values` con los errores (US-03 CA4). §11.3: en Contacto, el formulario va primero. §6.2: `form-values.ts`, `components/` del formulario y `content/inquiry-form.ts`; se quita `InquiryFormSlot`. | [tu nombre] |
 | 25/11/2026 | 1.23 | F3-08. §13: el e2e del envío usa las direcciones de prueba de Resend, borra sus filas `E2E-` (y las de más de un día), se saltea sin la clave de prueba de Turnstile, y Playwright nunca reusa un servidor abierto. §8.2: Zod corre en modo `jitless` (sin `'unsafe-eval'` en la CSP); en local la IP es `::1` y el límite por IP se cuenta; fuera de Vercel, `x-forwarded-for` necesita un proxy que lo pise. | [tu nombre] |
 | 25/11/2026 | 1.24 | F4-01 (ADR-0014). §6.2: `proxy.ts` va en `src/` (Next 16 no lo ejecuta desde la raíz cuando existe `src/app`) y cubre solo `/admin/:path*`; `lib/supabase/` suma `session.ts`, `cookie-options.ts` y `auth-gateway.ts`, y no tiene `client.ts` (sin cliente de navegador); se agregan `lib/admin-paths.ts`, el port `AuthGateway` y `features/auth/schema.ts` y `sign-in.ts`. §9: las variables de Supabase Auth son obligatorias desde F4-01. | [tu nombre] |
+| 25/11/2026 | 1.25 | F4-02 (ADR-0015). §6.2: `features/auth` suma `access.ts`, `types.ts`, `staff-service.ts`, `staff-add-args.ts` y `errors.ts`; `dal.ts` agrega `requireStaffForAction()` para las actions; se agrega `scripts/staff-add.ts` (con `tsx`). §7: cómo `staff:add` encuentra al usuario (`auth.users` por SQL), su idempotencia y la baja con `active = false`. | [tu nombre] |
