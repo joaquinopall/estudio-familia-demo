@@ -21,9 +21,16 @@ export default defineConfig({
   webServer: {
     command: "npm run build && npm run start",
     url: BASE_URL,
-    reuseExistingServer: !isCI,
+    // Never reuse a running server (e.g. `npm run dev`): it would ignore the env below, and the
+    // submission e2e would email a real inbox. If port 3000 is busy, the run fails right away.
+    reuseExistingServer: false,
     timeout: 180_000,
-    // Deterministic demo banner for the layout e2e, regardless of the local .env.local.
-    env: { NEXT_PUBLIC_DEMO_MODE: "true" },
+    env: {
+      // Deterministic demo banner for the layout e2e, regardless of the local .env.local.
+      NEXT_PUBLIC_DEMO_MODE: "true",
+      // The submission e2e send real emails: the firm notice goes to Resend's test address,
+      // which simulates a delivery without reaching any inbox (inquiry-submit.spec.ts).
+      FIRM_NOTIFICATION_EMAIL: "delivered+e2e-firm@resend.dev",
+    },
   },
 });
