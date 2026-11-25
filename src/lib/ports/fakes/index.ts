@@ -13,6 +13,7 @@ import type {
   SignInCredentials,
   SignInOutcome,
   SignOutOutcome,
+  VerifiedUserOutcome,
 } from "@/lib/ports/auth-gateway";
 import type { Clock } from "@/lib/ports/clock";
 import type { EmailMessage, EmailSendResult, EmailSender } from "@/lib/ports/email-sender";
@@ -86,8 +87,20 @@ export class FakeAuthGateway implements AuthGateway {
   signOutCalls = 0;
   private forced: SignInOutcome | null = null;
   private signOutResult: SignOutOutcome = { ok: true };
+  /** No session by default; setVerifiedUser() simulates one. */
+  private verifiedUser: VerifiedUserOutcome = { status: "none" };
+  getVerifiedUserCalls = 0;
 
   constructor(private readonly account: SignInCredentials | null = null) {}
+
+  setVerifiedUser(outcome: VerifiedUserOutcome): void {
+    this.verifiedUser = outcome;
+  }
+
+  async getVerifiedUser(): Promise<VerifiedUserOutcome> {
+    this.getVerifiedUserCalls += 1;
+    return this.verifiedUser;
+  }
 
   respondWith(outcome: SignInOutcome | null): void {
     this.forced = outcome;

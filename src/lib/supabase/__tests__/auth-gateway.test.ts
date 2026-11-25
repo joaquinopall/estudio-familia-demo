@@ -14,15 +14,22 @@ const CREDENTIALS = { email: "staff@example.com", password: "una-clave-larga-y-s
 type SignInAnswer = Awaited<ReturnType<SupabaseAuthClient["signInWithPassword"]>>;
 type SignOutAnswer = Awaited<ReturnType<SupabaseAuthClient["signOut"]>>;
 
+const NO_USER: SignInAnswer = { data: { user: null }, error: null };
+
 /** Each answer is returned as is, or thrown when it is an Error. */
 function clientAnswering(
   signIn: SignInAnswer | Error,
   signOut: SignOutAnswer | Error = { error: null },
+  getUser: SignInAnswer | Error = NO_USER,
 ) {
   const client: SupabaseAuthClient = {
     signInWithPassword: vi.fn(async () => {
       if (signIn instanceof Error) throw signIn;
       return signIn;
+    }),
+    getUser: vi.fn(async () => {
+      if (getUser instanceof Error) throw getUser;
+      return getUser;
     }),
     signOut: vi.fn(async () => {
       if (signOut instanceof Error) throw signOut;
@@ -115,6 +122,42 @@ describe("Supabase AuthGateway: signInWithPassword", () => {
     );
 
     expect(JSON.stringify(await gateway.signInWithPassword(CREDENTIALS))).not.toContain("staff");
+  });
+});
+
+describe("Supabase AuthGateway: getVerifiedUser", () => {
+  const withUser = (answer: SignInAnswer | Error) =>
+    clientAnswering(NO_USER, { error: null }, answer);
+
+  it("returns the user id confirmed by the Auth server", async () => {
+    const { gateway, client } = withUser({ data: { user: { id: "u-1" } }, error: null });
+
+    expect(await gateway.getVerifiedUser()).toEqual({ status: "ok", userId: "u-1" });
+    expect(client.getUser).toHaveBeenCalledTimes(1);
+  });
+
+  it.each<[string, SignInAnswer]>([
+    ["no session", rejected(new AuthApiError("Auth session missing!", 400, undefined))],
+    ["an expired or revoked session", rejected(new AuthApiError("bad", 403, "session_not_found"))],
+    ["a deleted user", rejected(new AuthApiError("gone", 404, "user_not_found"))],
+    ["an answer without a user", NO_USER],
+  ])("returns none for %s", async (_case, answer) => {
+    expect(await withUser(answer).gateway.getVerifiedUser()).toEqual({ status: "none" });
+  });
+
+  it.each<[string, SignInAnswer | Error, string]>([
+    [
+      "a network failure",
+      rejected(new AuthRetryableFetchError("fetch failed", 0)),
+      "AuthRetryableFetchError",
+    ],
+    ["a 5xx", rejected(new AuthApiError("boom", 503, "unexpected_failure")), "unexpected_failure"],
+    ["a thrown error", new TypeError("fetch failed"), "TypeError"],
+  ])("returns unavailable for %s, so callers fail closed", async (_case, answer, errorCode) => {
+    expect(await withUser(answer).gateway.getVerifiedUser()).toEqual({
+      status: "unavailable",
+      errorCode,
+    });
   });
 });
 

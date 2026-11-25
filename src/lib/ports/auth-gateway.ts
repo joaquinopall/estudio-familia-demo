@@ -24,8 +24,21 @@ export type SignInOutcome =
 
 export type SignOutOutcome = { ok: true } | { ok: false; errorCode: string };
 
+export type VerifiedUserOutcome =
+  /** The Auth server confirmed the session belongs to this user (SPEC §6.4). */
+  | { status: "ok"; userId: string }
+  /** No session, or one the Auth server rejects (expired, revoked, user deleted). */
+  | { status: "none" }
+  /** The Auth server could not answer: callers fail closed. */
+  | { status: "unavailable"; errorCode: string };
+
 export interface AuthGateway {
   signInWithPassword(credentials: SignInCredentials): Promise<SignInOutcome>;
+  /**
+   * The user of the current session, verified with the Auth server (not only the cookie's
+   * JWT), so a revoked session is caught even before the JWT expires.
+   */
+  getVerifiedUser(): Promise<VerifiedUserOutcome>;
   /** Ends the session of this browser only, never the ones on other devices. */
   signOut(): Promise<SignOutOutcome>;
 }
