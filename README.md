@@ -11,7 +11,7 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 - Aviso por mail al estudio y acuse de recibo neutro a quien consulta, solo si su email es privado.
 - Panel de administración para gestionar las consultas.
 
-**Estado actual:** Fase 1 (fundaciones) completa. Fases 2 (sitio público) y 3 (formulario y backend de consultas) implementadas, pendientes de sus tests manuales de cierre. En curso: Fase 4 (panel admin): sesión y login del lado del servidor (F4-01) y autorización con `requireStaff()` y alta de staff (F4-02). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
+**Estado actual:** Fase 1 (fundaciones) completa. Fases 2 (sitio público) y 3 (formulario y backend de consultas) implementadas, pendientes de sus tests manuales de cierre. En curso: Fase 4 (panel admin): sesión, autorización y login (F4-01 a F4-03) y el listado de consultas (F4-04). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Stack
 
@@ -157,7 +157,7 @@ Login del staff con email y contraseña, todo del lado del servidor ([ADR 0014](
   - Las cookies de sesión son httpOnly, SameSite=Lax y Secure en https.
 - **Login** (`/admin/login`, F4-03): email y contraseña, sin registro ni "olvidé mi contraseña" (el reseteo se hace desde Supabase → Authentication → Users). Funciona sin JavaScript. Si ya tenés sesión de staff, te lleva a `/admin`. Con `?error=forbidden` explica que la cuenta no tiene acceso y ofrece "Usar otra cuenta". Las páginas del panel llevan `noindex` y no usan el shell público.
 - **Cerrar sesión:** el botón de la barra superior del panel.
-- `/admin` muestra por ahora solo un título; el listado llega en F4-04.
+- **Listado** (`/admin`, F4-04): consultas de la más nueva a la más vieja, 20 por página, con fecha y hora del estudio (`siteConfig.timeZone`), referencia, nombre y email, área, urgencia, estado y contacto ("No iniciar contacto" destacado cuando no hay un medio seguro). Se filtra por estado, área y urgencia, y se busca por nombre o email. Los filtros quedan en la URL: un listado filtrado se puede compartir. La búsqueda no ignora tildes. El detalle de cada consulta llega en F4-05.
 
 ## Estructura
 

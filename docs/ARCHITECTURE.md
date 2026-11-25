@@ -42,7 +42,7 @@ flowchart LR
 | `src/app/layout.tsx`          | ✅ F1-07    | Layout raíz: `lang="es-AR"`, fuentes (`next/font`), metadata base.                             |
 | `src/app/globals.css`         | ✅ F1-07    | Tokens de diseño (SPEC §11.1).                                                                 |
 | `src/app/(public)/`           | ✅ F2-07    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
-| `src/app/admin/`              | 🟨 F4       | ✅ `layout.tsx` común (`noindex`, encabezado propio), `(protected)/layout.tsx` con `requireStaff()` y la barra de sesión, un `/admin` mínimo (F4-02) y `login/` (F4-03). ⏳ listado (F4-04) y detalle (F4-05). |
+| `src/app/admin/`              | 🟨 F4       | ✅ `layout.tsx` común (`noindex`, encabezado propio), `(protected)/layout.tsx` con `requireStaff()` y la barra de sesión (F4-02), `login/` (F4-03), el listado en `(protected)/page.tsx` y su `error.tsx` (F4-04). ⏳ detalle (F4-05). |
 | `src/components/forms/`       | ✅ F4-03    | Estilos compartidos de controles nativos (`controlClass`, `focusOutlineClass`): formulario de consultas y login. |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
 | `src/app/icon.tsx`, `apple-icon.tsx` | ✅ F2-07 | Íconos con el monograma de `site.config.ts`, generados en el build. `/favicon.ico` se reescribe a `/icon`. |
@@ -54,7 +54,7 @@ flowchart LR
 | `src/content/`                | ✅ F2-07    | Áreas, preguntas, textos de cada página y de error, ayuda urgente y privacidad como datos.     |
 | `src/lib/seo/`                | ✅ F2-07    | Metadata, rutas del sitemap, datos estructurados, `<JsonLd>` seguro e íconos.                  |
 | `src/lib/format-date.ts`      | ✅ F2-04    | Fechas largas en es-AR.                                                                        |
-| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06), formulario (F3-07). ⏳ lo del panel. |
+| `src/features/inquiries/`     | 🟨 F3–F4    | Consultas. ✅ schemas, medio seguro (F3-02), `createInquiry` y repository (F3-04), `submitInquiry` (F3-05), plantillas de mail (F3-06), formulario (F3-07), listado del panel (F4-04). ⏳ detalle y acciones (F4-05). |
 | `src/lib/security/ip.ts`      | ✅ F3-05    | IP del visitante (`x-forwarded-for` en Vercel) y HMAC-SHA256 con `IP_HASH_SALT`.               |
 | `src/features/auth/`          | ✅ F4-02    | `signIn`/`signOut` con rate limit (F4-01); reglas de acceso (`access.ts`), DAL (`requireStaff`, `requireStaffForAction`), alta de staff y repositorio (F4-02). |
 | `scripts/staff-add.ts`        | ✅ F4-02    | `npm run staff:add`: vincula un usuario de Supabase Auth como staff activo ([ADR 0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md)). |
@@ -153,6 +153,27 @@ flowchart LR
   - Funciona sin JavaScript.
 - **Layout común** `app/admin/layout.tsx`: `robots: noindex, nofollow` para todo el panel y un encabezado sobrio con `siteConfig.shortName`. No usa el shell público. El layout protegido suma la barra con el nombre del staff y "Cerrar sesión" (`SignOutButton`, un `<form>` que funciona sin JavaScript).
 
+### Listado del panel (F4-04)
+
+```mermaid
+flowchart LR
+  U["GET /admin?status=…&q=…&page=…"] --> P["page.tsx<br/>requireStaff()"]
+  P --> Z[listFiltersSchema<br/>inválido → se ignora]
+  Z --> S["getInquiryService()<br/>.listInquiries()"]
+  S --> R["repository.list()<br/>count + findMany en $transaction"]
+  R --> S
+  S --> T["Tabla + paginación<br/>(Server Components)"]
+```
+
+- **Lectura en Server Components** (SPEC §6.4 paso 3): la página → `features/inquiries/server.ts` (`getInquiryService()`, la composición con Prisma, que también usa `submitInquiry`) → service → repository.
+- **Paginación en el servidor:** 20 por página, ordenadas por `createdAt desc, id desc`, apoyada en los índices de §7. Una página fuera de rango muestra la última.
+- **Filtros en la URL:** un formulario `GET` sin JavaScript y links armados con `buildListHref`. La URL es el único estado: se comparte, se recarga y funciona con "Atrás".
+- **Minimización:** el `select` del listado no trae el mensaje, el teléfono ni las notas. El email sí, porque el estudio lo necesita para identificar la consulta.
+- **"No iniciar contacto":** `doNotContact` se calcula con `planContact`, la misma regla que usan los mails y la confirmación.
+- **Búsqueda:** `ILIKE` parametrizado en el nombre y el email, con `%`, `_` y `\` escapados (`escapeLike`). No ignora tildes: queda como mejora (extensión `unaccent`).
+- **Fechas:** en la zona del estudio (`siteConfig.timeZone`), no en la del servidor (UTC en Vercel).
+- **Errores:** `inquiry.list_failed` (solo el nombre del error) y `app/admin/(protected)/error.tsx`, con un mensaje genérico y "Probar de nuevo".
+
 ### Formulario de consulta (F3-07)
 
 - `/contacto` sigue **estática**. `InquiryFormSection` (servidor) dibuja `#formulario` con **un solo** `InquiryForm`. Cuando carga en el navegador, lee `?area=` y completa el área **solo si el selector sigue vacío** (`area-from-query.ts`). La página le pasa un mapa slug → área, así el navegador no carga los textos de las áreas.
@@ -226,7 +247,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Panel admin (F4-04 en adelante):** listado paginado con filtros, detalle con cambio de estado, notas e historial, y el link del mail al detalle (con vuelta a la página original después del login, F4-06). Todo detrás de `requireStaff()` / `requireStaffForAction()`.
+- **Panel admin (F4-05 en adelante):** detalle con cambio de estado, notas e historial, y el link del mail al detalle (con vuelta a la página original después del login, F4-06). Todo detrás de `requireStaff()` / `requireStaffForAction()`.
 
 ## Decisiones vigentes
 

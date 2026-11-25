@@ -2,23 +2,25 @@
 
 Todo lo relacionado con una consulta (`Inquiry`): el formulario público, el guardado, los mails y la gestión desde el panel.
 
-| Archivo / carpeta   | Contenido                                                                                                                                     | Tarea        |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `schema.ts`         | `inquirySchema`, `updateStatusSchema`, `updateNotesSchema`, `listFiltersSchema`, honeypot (SPEC §8)                                           | F3-02 ✅     |
-| `types.ts`          | Enums y tipos de dominio (sincronizados con Prisma por test)                                                                                  | F3-02 ✅     |
-| `contact-safety.ts` | `planContact`: medio seguro, "No iniciar contacto" y acuse (US-03 CA5–CA7)                                                                    | F3-02 ✅     |
-| `reference.ts`      | `toReference(id)` → `C-7F3A9B21` (FR-09)                                                                                                      | F3-04 ✅     |
-| `errors.ts`         | Errores de dominio: `InquiryStoreError`, `InvalidInquiryInputError`                                                                           | F3-04 ✅     |
-| `repository.ts`     | Acceso a Prisma: consulta + evento `CREATED` en una escritura atómica                                                                         | F3-04 ✅     |
-| `service.ts`        | `createInquiry` ✅ (F3-04); `listInquiries`, `getInquiry`, `changeStatus`, `updateNotes` (F4)                                                 | F3-04, F4    |
-| `actions.ts`        | `submitInquiry` ✅ (F3-05); `updateInquiryStatus`, `updateInquiryNotes` (F4-05)                                                               | F3-05, F4-05 |
-| `submit-inquiry.ts` | Lógica de `submitInquiry` con dependencias por parámetro (orden de FR-06)                                                                     | F3-05 ✅     |
-| `notifications.ts`  | Aviso al estudio y acuse (texto provisorio con las reglas de privacidad) y su envío                                                           | F3-05 ✅     |
-| `labels.ts`         | Nombres en español de áreas, urgencias, canales y estados                                                                                     | F3-05 ✅     |
-| `emails/`           | Plantillas React Email: aviso al estudio (`new-inquiry-email.tsx`) y acuse (`inquiry-receipt-email.tsx`); `render.ts` las pasa a HTML y texto | F3-06 ✅     |
-| `form-values.ts`    | Lo que escribió la persona, para devolverlo cuando hay error (US-03 CA4)                                                                      | F3-07 ✅     |
-| `components/`       | `InquiryFormSection`, `InquiryForm` y sus partes ✅ (F3-07); `InquiryTable`, `StatusBadge`, … (F4-04)                                         | F3-07, F4-04 |
-| `__tests__/`        | Tests unitarios y de integración de la feature                                                                                                | F3, F4       |
+| Archivo / carpeta   | Contenido                                                                                                                                     | Tarea           |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `schema.ts`         | `inquirySchema`, `updateStatusSchema`, `updateNotesSchema`, `listFiltersSchema`, honeypot (SPEC §8)                                           | F3-02 ✅        |
+| `types.ts`          | Enums y tipos de dominio (sincronizados con Prisma por test)                                                                                  | F3-02 ✅        |
+| `contact-safety.ts` | `planContact`: medio seguro, "No iniciar contacto" y acuse (US-03 CA5–CA7)                                                                    | F3-02 ✅        |
+| `reference.ts`      | `toReference(id)` → `C-7F3A9B21` (FR-09)                                                                                                      | F3-04 ✅        |
+| `errors.ts`         | Errores de dominio: `InquiryStoreError`, `InvalidInquiryInputError`                                                                           | F3-04 ✅        |
+| `repository.ts`     | Acceso a Prisma: consulta + evento `CREATED` en una escritura atómica (F3-04); listado con filtros y búsqueda (F4-04)                         | F3-04, F4-04 ✅ |
+| `service.ts`        | `createInquiry` ✅ (F3-04); `listInquiries` ✅ (F4-04); `getInquiry`, `changeStatus`, `updateNotes` (F4-05)                                   | F3-04, F4       |
+| `server.ts`         | `getInquiryService()`: el service con Prisma, el reloj y la política vigente, para Server Components y actions                                | F4-04 ✅        |
+| `list-href.ts`      | `buildListHref`: URLs del listado con los filtros (se pueden compartir)                                                                       | F4-04 ✅        |
+| `actions.ts`        | `submitInquiry` ✅ (F3-05); `updateInquiryStatus`, `updateInquiryNotes` (F4-05)                                                               | F3-05, F4-05    |
+| `submit-inquiry.ts` | Lógica de `submitInquiry` con dependencias por parámetro (orden de FR-06)                                                                     | F3-05 ✅        |
+| `notifications.ts`  | Aviso al estudio y acuse (texto provisorio con las reglas de privacidad) y su envío                                                           | F3-05 ✅        |
+| `labels.ts`         | Nombres en español de áreas, urgencias, canales y estados                                                                                     | F3-05 ✅        |
+| `emails/`           | Plantillas React Email: aviso al estudio (`new-inquiry-email.tsx`) y acuse (`inquiry-receipt-email.tsx`); `render.ts` las pasa a HTML y texto | F3-06 ✅        |
+| `form-values.ts`    | Lo que escribió la persona, para devolverlo cuando hay error (US-03 CA4)                                                                      | F3-07 ✅        |
+| `components/`       | `InquiryFormSection`, `InquiryForm` y sus partes ✅ (F3-07); `InquiryTable`, `InquiryFilters`, `InquiryPagination` y los badges ✅ (F4-04)    | F3-07, F4-04    |
+| `__tests__/`        | Tests unitarios y de integración de la feature                                                                                                | F3, F4          |
 
 ## Reglas de validación (`schema.ts`)
 
@@ -30,13 +32,8 @@ Todo lo relacionado con una consulta (`Inquiry`): el formulario público, el gua
 ## Guardar una consulta (`service.ts` + `repository.ts`)
 
 ```ts
-// En la action (F3-05): el único lugar que conecta las piezas reales.
-const service = createInquiryService({
-  repository: createPrismaInquiryRepository(getDb()),
-  clock: getClock(),
-  privacyPolicyVersion: privacyPolicy.version,
-});
-const { id, reference } = await service.createInquiry(data, { ipHash, source });
+// server.ts es el único lugar que conecta las piezas reales (lo usan las actions y las páginas).
+const { id, reference } = await getInquiryService().createInquiry(data, { ipHash, source });
 ```
 
 - El service declara la interfaz `InquiryRepository` y el repository la cumple: el service nunca importa Prisma.
@@ -45,6 +42,19 @@ const { id, reference } = await service.createInquiry(data, { ipHash, source });
 - `ipHash` tiene que ser un hash de 64 caracteres (si no, `InvalidInquiryInputError`): una IP cruda nunca llega a la base. `source` se recorta a 100 caracteres.
 - Si la base falla, sale `InquiryStoreError`, sin datos personales en el mensaje; la action lo traduce a `INTERNAL`.
 - **Tests:** `service.test.ts` usa `FakeInquiryRepository` (`__tests__/fake-inquiry-repository.ts`). `repository.db.test.ts` prueba Prisma contra Supabase dev con `npm run test:db`.
+
+## Listado del panel (F4-04)
+
+`/admin` (`app/admin/(protected)/page.tsx`) llama a `requireStaff()`, valida `searchParams` con `listFiltersSchema` (un valor inválido se ignora) y pide `getInquiryService().listInquiries(filters)`.
+
+- **Service:** 20 por página, de la más nueva a la más vieja. Si la página pedida no existe, muestra la última. Agrega la referencia y `doNotContact` (con `planContact`, la única fuente de la regla).
+- **Repository:** `count` y `findMany` en una sola `$transaction`, con un `select` de solo los campos de la tabla: **nunca el mensaje, el teléfono ni las notas**. Ordena por `createdAt desc, id desc` (índices de §7). La búsqueda hace `contains` sin distinguir mayúsculas en el nombre y en el email, con `%`, `_` y `\` escapados (`escapeLike`): Prisma no los escapa y funcionarían como comodines. No ignora tildes: "perez" no encuentra "Pérez".
+- **Componentes** (de servidor, sin JavaScript):
+  - `InquiryFilters`: un `<form method="get">`, así los filtros quedan en la URL.
+  - `InquiryTable`: `<table>` con `caption`, la hora en `siteConfig.timeZone` y la referencia como link al detalle (`adminPaths.inquiry`). Muestra el canal preferido o, destacado, "No iniciar contacto".
+  - `InquiryPagination`: arma sus links con `buildListHref`, que conserva los filtros y vuelve a la página 1 cuando cambia uno.
+- **Errores:** si la base falla, la página loguea `inquiry.list_failed` (solo el nombre del error) y muestra `app/admin/(protected)/error.tsx`.
+- **Tests:** `list-inquiries.test.ts` (service con `FakeInquiryRepository`), `list-href.test.ts`, `escape-like.test.ts`, `components/__tests__/inquiry-list.test.tsx` y `list.db.test.ts` contra dev.
 
 ## Enviar una consulta (`actions.ts` + `submit-inquiry.ts`)
 
