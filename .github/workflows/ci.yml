@@ -36,6 +36,8 @@ jobs:
       UPSTASH_REDIS_REST_URL: https://ci.upstash.invalid
       UPSTASH_REDIS_REST_TOKEN: ci-fake-token
       IP_HASH_SALT: ci-fake-salt-not-a-secret-0123456789
+      # 32 zero bytes: a valid shape, never a real key (ADR-0017).
+      FIELD_ENCRYPTION_KEYS: "ci:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - name: Checkout

@@ -7,6 +7,8 @@
  */
 import { z } from "zod";
 
+import { parseFieldEncryptionKeys } from "./security/field-keys";
+
 type EnvSource = Record<string, string | undefined>;
 
 /** Treats `KEY=` (empty string) the same as a missing variable. */
@@ -56,6 +58,15 @@ export const serverEnvSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: required(nonEmpty()),
   // IP and email HMAC (lib/security/ip.ts).
   IP_HASH_SALT: required(z.string().min(32, { error: "debe tener al menos 32 caracteres" })),
+  // AES-256-GCM of the inquiry message and the internal notes (F5-02, ADR-0017). Validated
+  // here so a malformed key fails the build, not the first inquiry. Kept as the raw string:
+  // the adapter parses it again (never logged).
+  FIELD_ENCRYPTION_KEYS: required(
+    nonEmpty().superRefine((value, ctx) => {
+      const parsed = parseFieldEncryptionKeys(value);
+      if (!parsed.ok) ctx.addIssue({ code: "custom", message: parsed.error });
+    }),
+  ),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

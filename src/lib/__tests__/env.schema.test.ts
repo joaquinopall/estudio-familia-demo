@@ -28,6 +28,7 @@ const validServer = {
   UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
   UPSTASH_REDIS_REST_TOKEN: "token",
   IP_HASH_SALT: "a".repeat(32),
+  FIELD_ENCRYPTION_KEYS: "k1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
 };
 
 function errorMessageOf(fn: () => unknown): string {
@@ -164,6 +165,17 @@ describe("parseServerEnv", () => {
     });
 
     expect(env.IP_HASH_SALT).toHaveLength(32);
+  });
+
+  it("validates FIELD_ENCRYPTION_KEYS without ever echoing the key (ADR-0017)", () => {
+    const material = Buffer.alloc(16, 7).toString("base64"); // 16 bytes: too short
+    const message = errorMessageOf(() =>
+      parseServerEnv({ ...validServer, FIELD_ENCRYPTION_KEYS: `k1:${material}` }),
+    );
+
+    expect(message).toContain("FIELD_ENCRYPTION_KEYS");
+    expect(message).toContain("32 bytes");
+    expect(message).not.toContain(material);
   });
 });
 

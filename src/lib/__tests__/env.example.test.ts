@@ -41,6 +41,7 @@ describe(".env.example", () => {
       UPSTASH_REDIS_REST_URL: "https://fake.upstash.invalid",
       UPSTASH_REDIS_REST_TOKEN: "fake",
       IP_HASH_SALT: "x".repeat(32),
+      FIELD_ENCRYPTION_KEYS: "k1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
     };
     const withCredentials = Object.fromEntries(
       Object.entries(example).map(([key, value]) => [key, value || filled[key] || ""]),
@@ -55,6 +56,7 @@ describe(".env.example", () => {
       "RESEND_API_KEY",
       "UPSTASH_REDIS_REST_TOKEN",
       "IP_HASH_SALT",
+      "FIELD_ENCRYPTION_KEYS",
     ]) {
       expect(example[key]).toBe("");
     }

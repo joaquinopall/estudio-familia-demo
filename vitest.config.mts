@@ -41,6 +41,8 @@ export default defineConfig({
             UPSTASH_REDIS_REST_URL: "https://fake.upstash.invalid",
             UPSTASH_REDIS_REST_TOKEN: "fake-upstash-token",
             IP_HASH_SALT: "fake-salt-for-unit-tests-only-0123456789",
+            // 32 zero bytes: a valid shape, never a real key (ADR-0017).
+            FIELD_ENCRYPTION_KEYS: "test:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
           },
           environment: "jsdom",
           setupFiles: ["./vitest.setup.ts"],
