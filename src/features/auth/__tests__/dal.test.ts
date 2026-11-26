@@ -27,6 +27,8 @@ const MEMBER: StaffMember = {
 const mocks = vi.hoisted(() => ({
   user: { status: "none" } as VerifiedUserOutcome,
   member: null as StaffMember | null,
+  /** Order of the calls that matter for the prerender fix. */
+  calls: [] as string[],
 }));
 
 vi.mock("next/navigation", () => ({
@@ -34,8 +36,16 @@ vi.mock("next/navigation", () => ({
     throw new RedirectSignal(url);
   },
 }));
+vi.mock("next/server", () => ({
+  connection: async () => {
+    mocks.calls.push("connection");
+  },
+}));
 vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: async () => ({ auth: {} }),
+  createSupabaseServerClient: async () => {
+    mocks.calls.push("supabase");
+    return { auth: {} };
+  },
 }));
 vi.mock("@/lib/supabase/auth-gateway", () => ({
   createSupabaseAuthGateway: () => ({ getVerifiedUser: async () => mocks.user }),
@@ -59,7 +69,23 @@ function given(user: VerifiedUserOutcome, member: StaffMember | null = null) {
   mocks.member = member;
 }
 
-afterEach(() => given({ status: "none" }));
+afterEach(() => {
+  given({ status: "none" });
+  mocks.calls.length = 0;
+});
+
+describe("request time only (prerender noise in the Vercel logs, 2026-11-26)", () => {
+  it("waits for connection() before touching Supabase", async () => {
+    // In a prerender pass connection() never resolves, so Supabase's Date.now() and its
+    // aborted fetch (logged as auth.user_check_unavailable) never happen.
+    given({ status: "ok", userId: USER_ID }, MEMBER);
+    const { requireStaffForAction } = await import("@/features/auth/dal");
+
+    await requireStaffForAction();
+
+    expect(mocks.calls).toEqual(["connection", "supabase"]);
+  });
+});
 
 describe("requireStaff (pages)", () => {
   it("returns the active staff member", async () => {
