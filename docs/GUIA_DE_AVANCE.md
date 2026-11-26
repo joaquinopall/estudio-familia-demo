@@ -24,7 +24,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 3 / 8 | 🟨 |
-| F5 — Calidad, seguridad y lanzamiento | 80–100% | 0 / 9 | ⬜ |
+| F5 — Calidad, seguridad y lanzamiento | 80–100% | 1 / 9 | 🟨 |
 
 Estados: ⬜ sin empezar · 🟨 en curso · ✅ cerrada.
 
@@ -217,8 +217,8 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 
 ## FASE 5 — Calidad, seguridad y lanzamiento (80% → 100%)
 
-- [ ] **F5-01 · CSP aplicada** (IA) · NFR-SEC-05
-  - [ ] Se pasa de report-only a aplicada, sin romper Turnstile, Supabase ni Vercel. Verificado en el preview.
+- [X] **F5-01 · CSP aplicada** (IA) · NFR-SEC-05
+  - [X] Se pasa de report-only a aplicada, sin romper Turnstile, Supabase ni Vercel. Verificado en el preview.
 
 - [ ] **F5-02 · Auditoría de seguridad** (IA + Vos) · SPEC §10
   - [ ] Revisión punto por punto de la tabla de amenazas, con evidencia (test, config o captura) para cada mitigación. Resultado en `docs/SECURITY_REVIEW.md`.
