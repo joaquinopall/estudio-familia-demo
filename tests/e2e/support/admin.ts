@@ -6,10 +6,27 @@
  * staff by themselves, so a run that was cut short never leaves it half-configured.
  * Everything goes through `pg` against DATABASE_URL (dev), like support/db.ts.
  */
+import { randomUUID } from "node:crypto";
+
 import { type Page, expect } from "@playwright/test";
 
 import { adminPanelContent } from "../../../src/content/admin-panel";
+import { createAesGcmFieldCipher } from "../../../src/lib/adapters/aes-gcm-field-cipher";
+import { parseFieldEncryptionKeys } from "../../../src/lib/security/field-keys";
 import { e2eEnv, withClient } from "./db";
+
+/** The message of every seeded inquiry, after the marker; the detail e2e reads it back. */
+export const SEED_MESSAGE = "consulta de prueba de los e2e del panel; se borra al terminar.";
+
+/**
+ * The same cipher the app uses (ADR-0017), with FIELD_ENCRYPTION_KEYS from the environment
+ * (.env.local, or the shell, which wins): the seeded messages must decrypt in the panel.
+ */
+function seedCipher() {
+  const parsed = parseFieldEncryptionKeys(process.env.FIELD_ENCRYPTION_KEYS ?? "");
+  if (!parsed.ok) throw new Error(`FIELD_ENCRYPTION_KEYS: ${parsed.error}`);
+  return createAesGcmFieldCipher(parsed.keys);
+}
 
 /** The staff name of the test user. Marked E2E- like every row the e2e touch. */
 export const E2E_STAFF_NAME = "E2E-Staff";
@@ -76,23 +93,25 @@ export type SeedInquiry = {
 };
 
 /**
- * Inserts inquiries with their CREATED event. Names and messages start with `marker`, so the
- * list can be narrowed to them and the cleanup finds them. Returns their ids, in input order.
+ * Inserts inquiries with their CREATED event. Names start with `marker` and emails carry it, so
+ * the list can be narrowed to them and the cleanup finds them. The message goes encrypted, as
+ * the app stores it. Returns their ids, in input order.
  */
 export function seedInquiries(
   marker: string,
   inquiries: readonly SeedInquiry[],
 ): Promise<string[]> {
+  const cipher = seedCipher();
   return withClient(async (client) => {
     const ids: string[] = [];
     for (const [index, inquiry] of inquiries.entries()) {
+      const id = randomUUID();
       const createdAt = new Date(Date.UTC(2026, 10, 26, 12, inquiry.minute));
-      const { rows } = await client.query<{ id: string }>(
+      await client.query(
         `insert into inquiries (id, created_at, updated_at, full_name, email, phone, area, urgency,
                                 message, preferred_channel, safe_to_contact, email_is_private,
                                 consent_at, privacy_policy_version)
-         values (gen_random_uuid(), $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $1, '1.1')
-         returning id::text as id`,
+         values ($11::uuid, $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $1, '1.1')`,
         [
           createdAt,
           `${marker} ${inquiry.name}`,
@@ -100,13 +119,17 @@ export function seedInquiries(
           inquiry.preferredChannel === "EMAIL" ? null : "+54 9 11 5555-0000",
           inquiry.area,
           inquiry.urgency,
-          `${marker} consulta de prueba de los e2e del panel; se borra al terminar.`,
+          cipher.encrypt(`${marker} ${SEED_MESSAGE}`, {
+            table: "inquiries",
+            column: "message",
+            rowId: id,
+          }),
           inquiry.preferredChannel,
           inquiry.safeToContact,
           inquiry.emailIsPrivate,
+          id,
         ],
       );
-      const id = rows[0]?.id ?? "";
       await client.query(
         `insert into inquiry_events (id, inquiry_id, type, created_at)
          values (gen_random_uuid(), $1::uuid, 'CREATED', $2)`,

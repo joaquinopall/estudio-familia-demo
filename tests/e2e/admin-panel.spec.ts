@@ -20,6 +20,7 @@ import { type Page, expect, test } from "@playwright/test";
 import { adminPanelContent } from "../../src/content/admin-panel";
 import {
   E2E_STAFF_NAME,
+  SEED_MESSAGE,
   SERVER_LOG_FILE,
   ensureE2eStaff,
   hasStaffCredentials,
@@ -170,6 +171,8 @@ test.describe("admin panel with a session (F4-07)", () => {
     await expect(page.getByRole("region", { name: copy.detail.contact.title })).toContainText(
       "Contactar por WhatsApp",
     );
+    // Stored encrypted (ADR-0017), shown as text.
+    await expect(page.getByRole("main")).toContainText(`${MARKER} ${SEED_MESSAGE}`);
     await expectNoSeriousAxeViolations(page);
 
     // Status.
