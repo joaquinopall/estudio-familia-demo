@@ -224,7 +224,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 
 ## Seguridad
 
-- **Headers** en todas las rutas: HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` y una CSP en modo **report-only** (no bloquea; las violaciones se ven en la consola del navegador como `[Report Only]`). Se definen en `src/lib/security/headers.ts`. Ver [ADR 0007](docs/adr/0007-csp-report-only-sin-nonces.md).
+- **Headers** en todas las rutas: HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` y una **Content Security Policy aplicada** (bloquea). Se definen en `src/lib/security/headers.ts`. La CSP solo permite recursos propios y Cloudflare Turnstile. En los deploys de Preview suma la barra de Vercel, según `VERCEL_ENV`, que pone Vercel solo. **Si agregás un script, iframe, fuente o servicio de otro origen, no va a cargar** hasta que lo sumes ahí; los e2e lo detectan. Ver [ADR 0016](docs/adr/0016-csp-aplicada-con-unsafe-inline.md).
 - **Variables de entorno** validadas al arrancar; secretos solo del lado del servidor (`server-only`).
 - **Base de datos:** RLS sin políticas en todas las tablas y sin service role key ([ADR 0002](docs/adr/0002-supabase-con-prisma-y-rls.md)); conexiones con TLS verificado ([ADR 0012](docs/adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)).
 - **Logs** estructurados en JSON, sin datos personales (`src/lib/logger.ts`).

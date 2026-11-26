@@ -1,44 +1,66 @@
 /**
- * Security headers for every route (NFR-SEC-04) and the base Content Security Policy
- * in report-only mode (NFR-SEC-05, Phase 1). Enforcing the CSP is task F5-01.
+ * Security headers for every route (NFR-SEC-04) and the enforced Content Security Policy
+ * (NFR-SEC-05, F5-01, ADR-0016).
  *
  * Pure module: no `server-only` and no `@/` alias, because `next.config.ts` imports it.
  */
 
 export type SecurityHeader = { key: string; value: string };
 
-type Options = { isDev: boolean };
+type Options = {
+  isDev: boolean;
+  /** Vercel Toolbar (comments on Preview deployments). Only in Preview, never in production. */
+  vercelToolbar: boolean;
+};
 
-/** Cloudflare Turnstile (anti-bot widget, Phase 3): loads a script and renders an iframe. */
+/** Cloudflare Turnstile (anti-bot widget): loads a script and renders an iframe. */
 const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
-export const CSP_HEADER_NAME = "Content-Security-Policy-Report-Only";
+/**
+ * Origins the Vercel Toolbar needs, as listed by Vercel
+ * (https://vercel.com/docs/vercel-toolbar/managing-toolbar).
+ */
+const VERCEL_TOOLBAR = {
+  script: ["https://vercel.live"],
+  style: ["https://vercel.live"],
+  img: ["https://vercel.live", "https://vercel.com"],
+  font: ["https://vercel.live", "https://assets.vercel.com"],
+  connect: ["https://vercel.live", "wss://ws-us3.pusher.com"],
+  frame: ["https://vercel.live"],
+} as const;
 
-export function buildContentSecurityPolicy({ isDev }: Options): string {
+export const CSP_HEADER_NAME = "Content-Security-Policy";
+
+export function buildContentSecurityPolicy({ isDev, vercelToolbar }: Options): string {
+  const toolbar = (sources: readonly string[]) => (vercelToolbar ? sources : []);
+
   const directives: Record<string, string[]> = {
     // Anything not listed below is only allowed from our own origin.
     "default-src": ["'self'"],
-    // 'unsafe-inline': statically rendered pages carry Next's inline bootstrap scripts and
-    // cannot use per-request nonces without giving up SSG (see F5-01).
+    // 'unsafe-inline': statically rendered pages (Cache Components) carry Next's inline
+    // bootstrap and RSC payload scripts; nonces would make every page dynamic and Next's
+    // SRI does not hash inline scripts (ADR-0016).
     // 'unsafe-eval' only in dev: React uses eval for debugging; production does not.
     "script-src": [
       "'self'",
       "'unsafe-inline'",
       TURNSTILE_ORIGIN,
       ...(isDev ? ["'unsafe-eval'"] : []),
+      ...toolbar(VERCEL_TOOLBAR.script),
     ],
     // Next and Tailwind may inject inline styles.
-    "style-src": ["'self'", "'unsafe-inline'"],
-    "img-src": ["'self'", "data:", "blob:"],
+    "style-src": ["'self'", "'unsafe-inline'", ...toolbar(VERCEL_TOOLBAR.style)],
+    "img-src": ["'self'", "data:", "blob:", ...toolbar(VERCEL_TOOLBAR.img)],
     // next/font self-hosts the fonts.
-    "font-src": ["'self'"],
-    // Same-origin fetches and Server Actions (Supabase is added in Phase 4 if the browser needs it).
-    "connect-src": ["'self'"],
-    "frame-src": [TURNSTILE_ORIGIN],
+    "font-src": ["'self'", ...toolbar(VERCEL_TOOLBAR.font)],
+    // Same-origin fetches and Server Actions. Supabase is not here: the browser never talks
+    // to it, every Auth call goes through the server (ADR-0014).
+    "connect-src": ["'self'", ...toolbar(VERCEL_TOOLBAR.connect)],
+    "frame-src": [TURNSTILE_ORIGIN, ...toolbar(VERCEL_TOOLBAR.frame)],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
     "form-action": ["'self'"],
-    // Not enforced while report-only: X-Frame-Options covers clickjacking meanwhile.
+    // Clickjacking; X-Frame-Options stays for browsers without CSP level 2.
     "frame-ancestors": ["'none'"],
   };
 

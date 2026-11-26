@@ -4,6 +4,20 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-01 · CSP aplicada
+
+- **Cambiado:** la Content Security Policy pasa de `Content-Security-Policy-Report-Only` a `Content-Security-Policy` (aplicada) en todas las rutas y entornos (NFR-SEC-05).
+  - Permite solo recursos propios y Cloudflare Turnstile.
+  - En los deploys de Preview suma la barra de Vercel (`vercel.live` y los orígenes que documenta Vercel), según `VERCEL_ENV`. En producción, local y CI no.
+  - Supabase no se agrega: el navegador nunca lo llama (ADR 0014).
+- **Agregado:** `parseVercelEnv` en `env.schema.ts`. Valida `VERCEL_ENV`, la variable de sistema de Vercel, que no va en `.env.example`.
+- **Decidido:** [ADR 0016](docs/adr/0016-csp-aplicada-con-unsafe-inline.md), que reemplaza a la 0007. Se mantiene `'unsafe-inline'` en `script-src`. Probé el SRI experimental de Next sin `'unsafe-inline'`: bloquea los scripts inline de Next (26 violaciones en el inicio) y la página no hidrata. Los nonces harían dinámicas todas las páginas.
+- **Agregado:** `tests/e2e/support/csp.ts`, que junta las violaciones del evento `securitypolicyviolation` y de la consola. Reemplaza tres copias del colector.
+  - `security-headers.spec.ts` verifica el header aplicado y recorre todas las páginas públicas, una 404 y `/admin/login` sin violaciones.
+  - `admin-panel.spec.ts` suma el chequeo en el listado y en el detalle con sesión.
+- **Agregado:** tests unitarios de los orígenes por entorno (sin Supabase, Vercel solo en Preview) y de `parseVercelEnv`.
+- **Documentado:** SPEC v1.32 (NFR-SEC-05, §6.2), README, ARCHITECTURE y TESTING: caso manual **MT-28** "CSP aplicada en el preview" y qué hacer si un test de CSP falla.
+
 ### F4-08 · Cierre de fase (documentación)
 
 - **Actualizado:** README (estado del proyecto: Fase 4 implementada, pendiente de sus tests manuales de cierre) y TESTING (el login exitoso lo cubre `admin-panel.spec.ts`; MT-07, MT-09 y MT-26 describen el panel como quedó: listado en `/admin` y detalle en la referencia).

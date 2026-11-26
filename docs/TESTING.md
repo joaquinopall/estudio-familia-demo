@@ -39,9 +39,11 @@ Detalles de los e2e:
     - detalle con cambio de estado, notas guardadas después de recargar e historial con el actor y sin el texto de las notas;
     - del link del mail al detalle, pasando por el login (F4-06);
     - acceso denegado, con el staff desactivado un momento y reactivado siempre;
-    - axe en el listado y en el detalle.
+    - axe en el listado y en el detalle;
+    - ninguna violación de la CSP en el login, el listado, el detalle y sus acciones (F5-01).
   - **Datos:** inserta 3 consultas `E2E-<corrida>-…` por SQL (no gasta Turnstile, mails ni rate limit) y las borra al terminar. También borra las `E2E-` de más de un día. Cada escenario manda su propia IP de documentación en `x-forwarded-for`.
   - **Log limpio:** el último test revisa que `e2e-server.log` no tenga "while prerendering" ni `auth.user_check_unavailable`. Es la regresión del 26/11/2026: si alguien saca el `connection()` del DAL, la pantalla sigue andando y solo este test se entera (lo comprobé quitándolo: falla con 25 líneas).
+- **`security-headers.spec.ts`, la CSP aplicada** (F5-01): verifica que el header sea `Content-Security-Policy` (no el report-only) y recorre todas las páginas públicas, una 404 y `/admin/login` sin una sola violación. Las violaciones se juntan con `tests/e2e/support/csp.ts` (el evento `securitypolicyviolation` y la consola); el envío con Turnstile y el panel con sesión usan el mismo helper.
 - **`inquiry-submit.spec.ts` envía consultas reales** (F3-08):
   - **Base:** usa la de `.env.local`, que tiene que ser **Supabase dev**. Escribe filas cuyo mensaje empieza con `E2E-<corrida>-` y las borra al final, aunque el test falle. También borra las filas `E2E-` de más de un día, que quedan si una corrida se corta.
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
@@ -84,7 +86,7 @@ Próxima fase (F5): e2e en la CI (F5-06), Lighthouse y accesibilidad (F5-03) y l
 ### Cuando falla un test "especial"
 
 - **`design-tokens.test.ts`:** un par de colores de `globals.css` no llega al contraste WCAG AA (texto 4.5:1; foco y bordes de campos 3:1). Ajustá el color, no el umbral.
-- **`security-headers.spec.ts` → "without report-only CSP violations":** algo del inicio carga un recurso que la CSP no permite. Mirá la consola del navegador (`[Report Only]`) y decidí si se agrega a la política en `src/lib/security/headers.ts` o se quita el recurso.
+- **"without CSP violations"** (`security-headers.spec.ts`, y el chequeo de CSP de `inquiry-submit`, `admin-login` y `admin-panel`): la CSP **aplicada** bloqueó algo, así que en producción eso tampoco anda. El mensaje dice la directiva y la URL bloqueada (`event: script-src blocked https://…`). Decidí si el origen se agrega a la política en `src/lib/security/headers.ts`, con su test en `security-headers.test.ts` y una línea en la [ADR 0016](adr/0016-csp-aplicada-con-unsafe-inline.md), o se quita el recurso. Nunca saques la página del recorrido para que pase.
 - **`layout.spec.ts` → axe:** el mensaje lista la regla (por ejemplo `color-contrast`, `label`); la ayuda de cada regla está en <https://dequeuniversity.com/rules/axe/>.
 - **`quality.spec.ts`:** cubre lo que axe no ve. Si falla el foco, el anillo no llega a 3:1 sobre su fondo (típico: fondo primario, redefiní `--ring`). Si falla "uncovered", algo tapa el texto o el botón (típico: el botón de WhatsApp) o ya no entra en la primera pantalla. Al agregar una página, sumala a `PAGES`. Si falla "sticky index", un índice fijo quedó más alto que la ventana y no scrollea. Si falla "125%", algo no achica ni parte línea con la letra del navegador agrandada (típico: `whitespace-nowrap` en el header). Si falla "305px", algo no entra en un celular chico o con scrollbar clásico. Si falla "does not move the page", alguien puso `scroll-padding` en `html`: usá `scroll-margin`.
 - **`env.example.test.ts`:** agregaste o sacaste una variable del schema y no actualizaste `.env.example` (o al revés).
@@ -188,6 +190,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-25 | Alta de staff con `npm run staff:add`                   | F4-02         | **Detallado** · dev en F4-02, prod en F5-08 |
 | MT-26 | Listado de consultas: orden, filtros, búsqueda y páginas | F4-04        | **Detallado** · se ejecuta en F4-04 y F4-08 |
 | MT-27 | Del mail al detalle, pasando por el login                | F4-06         | **Detallado** · se ejecuta en F4-06 y F4-08 |
+| MT-28 | CSP aplicada en el preview                               | F5-01         | **Detallado** · se ejecuta en F5-01 (preview) y F5-08 (producción) |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -667,6 +670,32 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 4: después de ingresar, el listado conserva el filtro (`?status=NEW&area=DIVORCE`).
 - Paso 5: en los tres casos terminás en `/admin`. **Nunca** en otro sitio ni en una página pública.
 - Paso 6: vas directo al detalle.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
+
+### MT-28 — CSP aplicada en el preview
+
+- **Objetivo:** que la Content Security Policy bloquee de verdad y que no rompa nada que el sitio usa: Turnstile, el panel ni la barra de Vercel en los previews. Los e2e corren en local; esto lo comprueba en Vercel.
+- **Requisitos:** NFR-SEC-05, NFR-SEC-04, SPEC §10.2 (XSS, clickjacking), [ADR 0016](adr/0016-csp-aplicada-con-unsafe-inline.md).
+- **Precondiciones:** el preview de Vercel del PR (o producción, en F5-08). Una **ventana privada sin extensiones**: las extensiones inyectan scripts y generan violaciones que no son del sitio. Tu usuario es staff en dev (MT-25).
+
+**Pasos**
+
+1. Abrí DevTools (F12) → **Network**, cargá el inicio y elegí el primer request (el documento). Mirá **Response Headers**.
+2. Dejá abierta la pestaña **Console** y recorré: inicio, `/areas`, un área, `/nosotros`, `/preguntas-frecuentes`, `/privacidad` y `/no-existe`.
+3. Andá a `/contacto`. Esperá el widget de Turnstile, completá el formulario y enviá una consulta (marcá el mensaje con `PRUEBA MT-28`).
+4. Ingresá a `/admin`, abrí la consulta del paso 3, cambiale el estado, guardá una nota y cerrá sesión.
+5. **Solo en el preview:** abrí la barra de Vercel (abajo) y dejá un comentario de prueba en alguna página. Después borralo.
+6. **Solo en producción (F5-08):** repetí el paso 1.
+
+**Resultado esperado**
+
+- Paso 1: está `content-security-policy` con `default-src 'self'`, `frame-ancestors 'none'` y `https://challenges.cloudflare.com`. **No** está `content-security-policy-report-only`. En el preview el header incluye `https://vercel.live`.
+- Pasos 2 a 4: la consola no muestra ningún mensaje "Refused to…" ni "violates the following Content Security Policy directive". Turnstile carga, la consulta se envía y el panel funciona.
+- Paso 5: la barra se ve y el comentario se guarda.
+- Paso 6: el header **no** incluye `vercel.live`, `vercel.com` ni `pusher`.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

@@ -8,31 +8,21 @@
 import { randomUUID } from "node:crypto";
 
 import AxeBuilder from "@axe-core/playwright";
-import { type Page, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { adminPanelContent } from "../../src/content/admin-panel";
+import { collectCspViolations } from "./support/csp";
 
 const copy = adminPanelContent;
 const RUN = randomUUID().slice(0, 8);
 /** A documentation IPv6 per run, so the e2e never spend your own rate limit (5 every 15 min). */
 const CLIENT_IP = `2001:db8:${RUN.slice(0, 4)}:${RUN.slice(4, 8)}::4f3`;
 
-function collectCspViolations(page: Page): string[] {
-  const violations: string[] = [];
-  page.on("console", (message) => {
-    const text = message.text();
-    if (text.includes("Content Security Policy") || text.includes("[Report Only]")) {
-      violations.push(text);
-    }
-  });
-  return violations;
-}
-
 test.describe("admin login page", () => {
   test("lands there from /admin, out of any index, accessible and without CSP violations", async ({
     page,
   }) => {
-    const violations = collectCspViolations(page);
+    const violations = await collectCspViolations(page);
 
     await page.goto("/admin");
 

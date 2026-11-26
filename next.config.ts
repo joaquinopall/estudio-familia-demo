@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
-import { validateEnv } from "./src/lib/env.schema";
+import { parseVercelEnv, validateEnv } from "./src/lib/env.schema";
 import { buildSecurityHeaders } from "./src/lib/security/headers";
 
 // Fails `next dev`, `next build` and `next start` early if a required env var is missing
@@ -10,6 +10,8 @@ validateEnv(process.env);
 
 export default function config(phase: string): NextConfig {
   const isDev = phase === PHASE_DEVELOPMENT_SERVER;
+  // The Vercel Toolbar (comments) only exists on Preview deployments (ADR-0016).
+  const vercelToolbar = parseVercelEnv(process.env) === "preview";
 
   return {
     cacheComponents: true,
@@ -35,7 +37,7 @@ export default function config(phase: string): NextConfig {
     },
     // Security headers for every route (NFR-SEC-04, NFR-SEC-05).
     async headers() {
-      return [{ source: "/(.*)", headers: buildSecurityHeaders({ isDev }) }];
+      return [{ source: "/(.*)", headers: buildSecurityHeaders({ isDev, vercelToolbar }) }];
     },
   };
 }

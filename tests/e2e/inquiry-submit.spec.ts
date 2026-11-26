@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { type Page, expect, test } from "@playwright/test";
 
 import { privacyPolicy } from "../../src/content/legal/privacy";
+import { collectCspViolations } from "./support/csp";
 import {
   deleteInquiriesByMarker,
   deleteStaleE2eInquiries,
@@ -45,18 +46,6 @@ test.describe("inquiry submission (US-03)", () => {
     expect(await findInquiryByMarker(marker("safe"))).toBeNull();
     expect(await findInquiryByMarker(marker("unsafe"))).toBeNull();
   });
-
-  /** Report-only CSP violations, which the console shows (NFR-SEC-05). */
-  function collectCspViolations(page: Page): string[] {
-    const violations: string[] = [];
-    page.on("console", (message) => {
-      const text = message.text();
-      if (text.includes("Content Security Policy") || text.includes("[Report Only]")) {
-        violations.push(text);
-      }
-    });
-    return violations;
-  }
 
   async function fillDetails(page: Page, message: string) {
     const form = page.locator("#formulario");
@@ -100,7 +89,7 @@ test.describe("inquiry submission (US-03)", () => {
   test("with a safe channel: from an area page to the confirmation, stored with its event", async ({
     page,
   }) => {
-    const violations = collectCspViolations(page);
+    const violations = await collectCspViolations(page);
     const id = marker("safe");
     await page.setExtraHTTPHeaders({ "x-forwarded-for": clientIp(1) });
 

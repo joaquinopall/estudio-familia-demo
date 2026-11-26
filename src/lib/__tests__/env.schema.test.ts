@@ -5,6 +5,7 @@ import {
   parseDirectUrl,
   parsePublicEnv,
   parseServerEnv,
+  parseVercelEnv,
   publicEnvSchema,
   serverEnvSchema,
   validateEnv,
@@ -176,6 +177,23 @@ describe("parseDirectUrl (prisma.config.ts)", () => {
       "postgres://u:p@h:5432/db",
     );
     expect(() => parseDirectUrl({ DIRECT_URL: "http://nope" })).toThrow(EnvValidationError);
+  });
+});
+
+describe("parseVercelEnv (next.config.ts, ADR-0016)", () => {
+  it("is undefined outside Vercel (missing or empty)", () => {
+    expect(parseVercelEnv({})).toBeUndefined();
+    expect(parseVercelEnv({ VERCEL_ENV: "" })).toBeUndefined();
+  });
+
+  it("returns each value Vercel sets", () => {
+    expect(parseVercelEnv({ VERCEL_ENV: "development" })).toBe("development");
+    expect(parseVercelEnv({ VERCEL_ENV: "preview" })).toBe("preview");
+    expect(parseVercelEnv({ VERCEL_ENV: "production" })).toBe("production");
+  });
+
+  it("rejects anything else, naming the variable", () => {
+    expect(() => parseVercelEnv({ VERCEL_ENV: "staging" })).toThrow(/VERCEL_ENV/);
   });
 });
 
