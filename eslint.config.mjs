@@ -3,9 +3,68 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier/flat";
 
+/**
+ * Security guards (SPEC §10, F5-02, docs/SECURITY_REVIEW.md). Tested in
+ * src/lib/__tests__/eslint-security.test.ts.
+ */
+const unsafeSql = [
+  {
+    selector: "MemberExpression[property.name=/^\\$(queryRawUnsafe|executeRawUnsafe)$/]",
+    message:
+      "SQL injection (SPEC §10.2): use Prisma's query API or the $queryRaw`...` tagged template, which parameterizes.",
+  },
+  {
+    selector: "MemberExpression[object.name='Prisma'][property.name='raw']",
+    message: "SQL injection (SPEC §10.2): Prisma.raw inserts text without parameters.",
+  },
+];
+
+const rawHtml = {
+  selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+  message:
+    "XSS (SPEC §10.2): no dangerouslySetInnerHTML. JSON-LD goes through <JsonLd> (src/lib/seo/json-ld.tsx).",
+};
+
+const securityRules = [
+  {
+    files: ["**/*.{ts,tsx,mts,mjs}"],
+    rules: { "no-restricted-syntax": ["error", ...unsafeSql, rawHtml] },
+  },
+  // The only allowed raw HTML: the JSON-LD helper, which serializes safely (ADR-0010).
+  {
+    files: ["src/lib/seo/json-ld.tsx"],
+    rules: { "no-restricted-syntax": ["error", ...unsafeSql] },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "process",
+          property: "env",
+          message:
+            "Env vars only through src/lib/env.ts (server) or env.public.ts (client), validated with Zod (CLAUDE.md §4).",
+        },
+      ],
+    },
+  },
+  // Where reading process.env is the point: the validated env modules and the tests.
+  {
+    files: [
+      "src/lib/env.ts",
+      "src/lib/env.public.ts",
+      "src/lib/env.schema.ts",
+      "src/**/__tests__/**",
+    ],
+    rules: { "no-restricted-properties": "off" },
+  },
+];
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  ...securityRules,
   // Must stay last among rule configs: turns off rules that conflict with Prettier.
   prettier,
   // Override default ignores of eslint-config-next.
