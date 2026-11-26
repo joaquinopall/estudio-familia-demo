@@ -44,6 +44,7 @@ Detalles de los e2e:
   - **Datos:** inserta 3 consultas `E2E-<corrida>-…` por SQL (no gasta Turnstile, mails ni rate limit) y las borra al terminar. También borra las `E2E-` de más de un día. Cada escenario manda su propia IP de documentación en `x-forwarded-for`.
   - **Log limpio:** el último test revisa que `e2e-server.log` no tenga "while prerendering" ni `auth.user_check_unavailable`. Es la regresión del 26/11/2026: si alguien saca el `connection()` del DAL, la pantalla sigue andando y solo este test se entera (lo comprobé quitándolo: falla con 25 líneas).
 - **`security-headers.spec.ts`, la CSP aplicada** (F5-01): verifica que el header sea `Content-Security-Policy` (no el report-only) y recorre todas las páginas públicas, una 404 y `/admin/login` sin una sola violación. Las violaciones se juntan con `tests/e2e/support/csp.ts` (el evento `securitypolicyviolation` y la consola); el envío con Turnstile y el panel con sesión usan el mismo helper.
+- **`csrf.spec.ts`** (F5-02, SPEC §10.2): captura el POST real de la action de login y lo repite desde `https://otro-sitio.example` (Next lo rechaza: "Invalid Server Actions request" en `e2e-server.log`) y desde el origen propio (control: la action corre y responde el error genérico). Consulta a Supabase dev con una cuenta que no existe y cuenta un intento del rate limit, con una IP de documentación propia.
 - **`inquiry-submit.spec.ts` envía consultas reales** (F3-08):
   - **Base:** usa la de `.env.local`, que tiene que ser **Supabase dev**. Escribe filas cuyo mensaje empieza con `E2E-<corrida>-` y las borra al final, aunque el test falle. También borra las filas `E2E-` de más de un día, que quedan si una corrida se corta.
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
@@ -58,7 +59,7 @@ Detalles de los e2e:
 
 | Nivel       | Herramienta                  | Dónde                                        | Qué cubre hoy                                                                                     |
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas, regla de medio seguro, referencia y service con un repository falso (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter |
+| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas, regla de medio seguro, referencia y service con un repository falso (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter, reglas de seguridad de ESLint y autorización estructural del panel (F5-02) |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Auth        | Vitest + fakes               | `src/features/auth/__tests__/`, `src/lib/supabase/__tests__/` | `signIn`: OK, VALIDATION, mismo UNAUTHORIZED para email inexistente y contraseña incorrecta, rate limit propio (5 en 15 min) y de Supabase, Upstash caído, Supabase caído, logs sin email ni contraseña. `signOut` aunque Supabase falle. Traducción de errores de Supabase. Proxy: redirect sin sesión, sin loop en el login, cookies y headers de no-caché, cookies httpOnly/Secure/Lax |
@@ -90,6 +91,9 @@ Próxima fase (F5): e2e en la CI (F5-06), Lighthouse y accesibilidad (F5-03) y l
 - **`layout.spec.ts` → axe:** el mensaje lista la regla (por ejemplo `color-contrast`, `label`); la ayuda de cada regla está en <https://dequeuniversity.com/rules/axe/>.
 - **`quality.spec.ts`:** cubre lo que axe no ve. Si falla el foco, el anillo no llega a 3:1 sobre su fondo (típico: fondo primario, redefiní `--ring`). Si falla "uncovered", algo tapa el texto o el botón (típico: el botón de WhatsApp) o ya no entra en la primera pantalla. Al agregar una página, sumala a `PAGES`. Si falla "sticky index", un índice fijo quedó más alto que la ventana y no scrollea. Si falla "125%", algo no achica ni parte línea con la letra del navegador agrandada (típico: `whitespace-nowrap` en el header). Si falla "305px", algo no entra en un celular chico o con scrollbar clásico. Si falla "does not move the page", alguien puso `scroll-padding` en `html`: usá `scroll-margin`.
 - **`env.example.test.ts`:** agregaste o sacaste una variable del schema y no actualizaste `.env.example` (o al revés).
+- **`eslint-security.test.ts`:** una regla de seguridad de `eslint.config.mjs` dejó de disparar o bloquea algo permitido. Si `npm run lint` te marca `no-restricted-syntax` o `no-restricted-properties`, no la desactives con un comentario: usá `$queryRaw` con template, `<JsonLd>` o `env` de `src/lib/env.ts`. Ver [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md).
+- **`panel-authorization.test.ts`:** agregaste una página en `app/admin/(protected)` sin `await requireStaff()`, una página de `/admin` fuera de `(protected)`, o una Server Action nueva. Si es una action, clasificala en `PUBLIC_ACTIONS` o `PANEL_ACTIONS`; las del panel empiezan con `requireStaffForAction()` (ADR-0015).
+- **`csrf.spec.ts`:** si el pedido desde otro origen **no** se rechaza, Next cambió su chequeo de origen o alguien agregó `serverActions.allowedOrigins`: es un problema de seguridad, no un test frágil. Si falla el control (el pedido propio), mirá `e2e-server.log` y el rate limit de login.
 - **`prisma/__tests__/rls.test.ts`:** agregaste un modelo o una tabla sin activarle RLS. Sumá `ALTER TABLE "<tabla>" ENABLE ROW LEVEL SECURITY;` en su migración (README → Base de datos). Nunca lo desactives.
 - **`schema.test.ts` → "still reports the channel rules when … is invalid":** un campo del schema quedó "abortado" (`pipe`, `abort: true` o `z.stringbool`) y Zod dejó de correr las reglas que dependen del canal. Validá ese campo con una sola regla (`refine`) en lugar de encadenar varias.
 - **`contact-safety.test.ts`:** la tabla es la definición de US-03 CA6 y CA7. Si falla, la que está mal es la regla, no la tabla, salvo que cambie el SPEC.
@@ -135,6 +139,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-24 | El caso en **prod** | En **F5-08**. | En F4-01 se configura y verifica dev; prod se verifica antes del lanzamiento. |
 | MT-25 | El caso en **prod** | En **F5-08**, después de `db:deploy`. | En F4-02 se da de alta el staff de dev; el de prod, antes del lanzamiento. |
 | MT-07 y MT-09 | El caso completo en **dev** | En **F4-03** (y de nuevo en el cierre, F4-08). Antes, MT-25 con tu usuario. | Necesitaban la página de login, que llega en F4-03. |
+| MT-29 | El caso en **prod** | En **F5-08**. | En F5-02 se revisa dev y el proyecto de Vercel; prod se revisa en el lanzamiento. |
 | MT-28 | El paso 6 en **producción** (el header sin `vercel.live`) | En **F5-08**, con el dominio de la demo. | En F5-01 se probó el preview; producción se verifica en el lanzamiento. |
 
 ### Plantilla
@@ -192,6 +197,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-26 | Listado de consultas: orden, filtros, búsqueda y páginas | F4-04        | **Detallado** · se ejecuta en F4-04 y F4-08 |
 | MT-27 | Del mail al detalle, pasando por el login                | F4-06         | **Detallado** · se ejecuta en F4-06 y F4-08 |
 | MT-28 | CSP aplicada en el preview                               | F5-01         | **Detallado** · se ejecuta en F5-01 (preview) y F5-08 (producción) |
+| MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev en F5-02, prod en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -701,6 +707,40 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
 | 26/11/2026 | Preview de Vercel (`estudio-familia-demo-git-feat-f5-01-cs-45bc87-joaquin-palladino.vercel.app`), Brave en escritorio | ✅ pasa | Pasos 1 a 5: `content-security-policy` aplicada con `vercel.live`, sin report-only; consola sin violaciones de CSP en todas las páginas, envío con Turnstile, panel y barra de Vercel. Único aviso: "Unrecognized feature: 'browsing-topics'" de `Permissions-Policy`, propio de Brave (no implementa la Topics API), no es de la CSP. El paso 6 (producción) queda para F5-08. |
+
+### MT-29 — Configuración de seguridad de los servicios
+
+- **Objetivo:** comprobar lo que el código no puede ver: la configuración de Supabase, Vercel y GitHub que sostiene la revisión de seguridad ([`SECURITY_REVIEW.md`](SECURITY_REVIEW.md)).
+- **Requisitos:** NFR-SEC-03, NFR-SEC-08, NFR-SEC-09, NFR-SEC-10, NFR-MANT-02, SPEC §9.
+- **Precondiciones:** acceso de dueño a Supabase (dev; prod en F5-08), al proyecto de Vercel y al repo de GitHub. Sacá una captura por paso y guardala **fuera del repo** (pueden mostrar datos de las cuentas). **No copies ningún valor de variable.**
+
+**Pasos**
+
+1. **Supabase → Authentication → Sign In / Providers:** mirá "Allow new users to sign up" y, en Email, el largo mínimo de contraseña.
+2. **Supabase → Authentication → Rate Limits:** anotá los límites de inicio de sesión.
+3. **Supabase → Database → SSL Configuration:** mirá "Enforce SSL on incoming connections".
+4. **Supabase → Advisors → Security Advisor:** corré el análisis.
+5. **Supabase → Project Settings → API Keys:** confirmá que la app no usa la service role key (no está en Vercel ni en `.env.local`; buscá solo el **nombre** de la variable).
+6. **Vercel → Settings → Environment Variables:** revisá los nombres de cada variable y sus entornos (Production, Preview, Development).
+7. **Vercel → Settings → Deployment Protection:** mirá qué protege los previews.
+8. **GitHub → Settings → Branches (o Rules):** mirá la protección de `main`.
+9. **GitHub → Settings → Code security:** mirá Dependabot alerts y Dependabot security updates. En la pestaña Security, mirá si hay alertas abiertas.
+
+**Resultado esperado**
+
+- Paso 1: registro deshabilitado; contraseña mínima de 12 o más (NFR-SEC-10).
+- Paso 2: los límites por defecto o más estrictos; anotalos en la fila.
+- Paso 3: Enforce SSL activado.
+- Paso 4: sin "RLS Disabled in Public". "RLS Enabled No Policy" es lo buscado (ADR-0002).
+- Paso 5: ninguna variable con la service role key en ningún lado.
+- Paso 6: solo empiezan con `NEXT_PUBLIC_` las 5 públicas de SPEC §9 (`SITE_URL`, `DEMO_MODE`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `TURNSTILE_SITE_KEY`). Ningún secreto con ese prefijo. Production usa las claves reales de Turnstile y el Supabase de prod; Preview, las de prueba y dev (§8.2, §9). No hay `E2E_STAFF_*` en Vercel.
+- Paso 7: los previews piden login de Vercel (Vercel Authentication) o una protección equivalente.
+- Paso 8: PR obligatorio y el check de CI requerido para mergear a `main`.
+- Paso 9: alertas y actualizaciones de seguridad de Dependabot activadas; ninguna alerta alta o crítica abierta.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
 
 ### MT-10 — Cambio de estado, notas e historial
 

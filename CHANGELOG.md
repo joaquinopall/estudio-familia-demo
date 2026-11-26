@@ -4,6 +4,20 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-02 · Auditoría de seguridad (PR 1 de 2)
+
+- **Agregado:** [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md). Revisa NFR-SEC-01 a 10 y cada amenaza de SPEC §10.2, con la evidencia linkeada (tests, configuración, MT-xx) y su estado. Suma la lista de auditoría de Next 16, 3 hallazgos y 7 riesgos residuales.
+- **Agregado:** reglas de ESLint de seguridad en `eslint.config.mjs`, con su test (`eslint-security.test.ts`). Rechazan:
+  - `$queryRawUnsafe`, `$executeRawUnsafe` y `Prisma.raw`;
+  - `dangerouslySetInnerHTML` fuera del helper de JSON-LD;
+  - `process.env` fuera de `src/lib/env*.ts` y los tests.
+- **Agregado:** `panel-authorization.test.ts`. Exige `requireStaff()` en el layout y en cada página de `app/admin/(protected)`, que ninguna página de `/admin` salvo el login quede afuera, y que cada Server Action esté clasificada como pública o del panel; las del panel pasan por `requireStaffForAction()`.
+- **Agregado:** e2e `csrf.spec.ts`. La action de login repetida desde otro origen se rechaza sin ejecutarse; la misma desde el origen propio corre (control).
+- **Corregido:** alerta moderada de Dependabot en `minimatch` (solo desarrollo), subiendo `shadcn` a 4.23.1. `npm audit` da 0.
+- **Agregado:** caso manual **MT-29** "Configuración de seguridad de los servicios" (Supabase, Vercel y GitHub).
+- **Decidido:** el mensaje y las notas internas se cifran a nivel de aplicación en el PR 2 de F5-02, antes de F5-08 (hallazgo H1). SPEC v1.33.
+- **Pendiente para cerrar la revisión:** MT-23, MT-24 y MT-29 en dev, y el PR 2.
+
 ### F5-01 · CSP aplicada
 
 - **Cambiado:** la Content Security Policy pasa de `Content-Security-Policy-Report-Only` a `Content-Security-Policy` (aplicada) en todas las rutas y entornos (NFR-SEC-05).

@@ -299,7 +299,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Fase 5 (calidad, seguridad y lanzamiento):** CSP aplicada (F5-01, hecho); siguen la auditoría de seguridad (F5-02), rendimiento y accesibilidad, observabilidad, retención, e2e en CI, tests manuales y lanzamiento. Los tests manuales de cierre de las Fases 2 a 4 siguen pendientes.
+- **Fase 5 (calidad, seguridad y lanzamiento):** CSP aplicada (F5-01, hecho). Auditoría de seguridad (F5-02): revisión en [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md) y guardas de ESLint; falta el cifrado del mensaje y de las notas (PR 2). Siguen rendimiento y accesibilidad, observabilidad, retención, e2e en CI, tests manuales y lanzamiento. Los tests manuales de cierre de las Fases 2 a 4 siguen pendientes.
 
 ## Decisiones vigentes
 

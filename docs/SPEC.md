@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.32 (26/11/2026) |
+| Versión | 1.33 (26/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -263,7 +263,7 @@ prisma/
   certs/supabase-ca.crt          # CA pública de Supabase para verificar TLS
 tests/e2e/                       # Playwright
 docs/
-  SPEC.md · GUIA_DE_AVANCE.md · ARCHITECTURE.md · TESTING.md · adr/
+  SPEC.md · GUIA_DE_AVANCE.md · ARCHITECTURE.md · TESTING.md · SECURITY_REVIEW.md · adr/
 ```
 
 ### 6.3 Flujo: enviar consulta
@@ -602,7 +602,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 - Dominio de la demo (¿subdominio de la SAS?) y dominio verificado en Resend.
 - Nombre ficticio del estudio y textos finales (se definen en la Fase 2).
 - ¿Sentry o solo los logs de Vercel en la Fase 5?
-- **Para F5-02: cifrado a nivel de aplicación del mensaje y de las notas internas** (`Inquiry.message` e `internalNotes`).
+- **Para F5-02: cifrado a nivel de aplicación del mensaje y de las notas internas** (`Inquiry.message` e `internalNotes`). **Decidido el 26/11/2026: se implementa en un segundo PR de F5-02, antes de F5-08** (hallazgo H1 de `docs/SECURITY_REVIEW.md`). Su ADR y los cambios de §7, §9 y §10 van en ese PR.
   - **Qué sería:** AES-256-GCM en el servidor, con una clave en las variables de Vercel y no en la base. Se cifra antes de guardar y se descifra solo para el detalle. Hoy hay TLS en tránsito y cifrado de disco del proveedor en reposo, pero quien ve la base (dashboard, Table Editor, un backup o export) ve esos textos en claro.
   - **Protege** contra quien accede a la base sin la clave. **No protege** de un servidor comprometido ni de una sesión de staff robada.
   - **Alcance:** nombre, email y teléfono quedan en claro, porque se usan para buscar y para el aviso al estudio. **No es extremo a extremo**, y no hay que presentarlo así: el servidor necesita leer los datos.
@@ -662,3 +662,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.30 | §15: nueva pregunta abierta para F5-02, el cifrado a nivel de aplicación del mensaje y de las notas internas (no es extremo a extremo). No cambia ningún requisito vigente. | [tu nombre] |
 | 25/11/2026 | 1.31 | F4-06. §6.4 paso 1: el proxy agrega `?next=` con la página pedida (salvo `/admin`). §6.5: `signIn` recibe `next` (campo oculto) y redirige ahí si es una ruta del panel. §10.2: amenaza nueva, el redirect abierto, mitigada con `safeNextPath`. | [tu nombre] |
 | 26/11/2026 | 1.32 | F5-01 (ADR-0016, reemplaza a ADR-0007). NFR-SEC-05: la CSP pasa a aplicada; permite self y Turnstile, y la barra de Vercel solo en Preview. Supabase no se agrega porque no hay cliente de navegador (ADR-0014). Se mantiene `'unsafe-inline'` en `script-src`: los nonces harían dinámicas todas las páginas y el SRI de Next no hashea los scripts inline (probado). §6.2: comentario de `security/headers.ts`. `env.schema.ts` valida `VERCEL_ENV`, la variable de sistema de Vercel, que no va en `.env.example`. | [tu nombre] |
+| 26/11/2026 | 1.33 | F5-02 (auditoría). §6.2: `docs/SECURITY_REVIEW.md`. §15: el cifrado del mensaje y de las notas queda decidido, para un segundo PR de F5-02. Sin cambios de requisitos: las reglas de ESLint y el test de autorización del panel hacen cumplir los que ya estaban (CLAUDE.md §4 y §5, NFR-SEC-02). | [tu nombre] |
