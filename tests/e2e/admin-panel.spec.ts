@@ -27,6 +27,7 @@ import {
   setE2eStaffActive,
   signInOnLoginPage,
 } from "./support/admin";
+import { collectCspViolations } from "./support/csp";
 import { deleteInquiriesByMarker, deleteStaleE2eInquiries } from "./support/db";
 
 const copy = adminPanelContent;
@@ -127,6 +128,7 @@ test.describe("admin panel with a session (F4-07)", () => {
   test("lists newest first, filters through the URL and flags 'No iniciar contacto'", async ({
     page,
   }) => {
+    const violations = await collectCspViolations(page);
     await signInTo(page, 2, listPath);
     const rows = page.getByRole("table").getByRole("row");
 
@@ -152,11 +154,13 @@ test.describe("admin panel with a session (F4-07)", () => {
     // The filtered URL is shareable: reloading it shows the same list.
     await page.reload();
     await expect(rows).toHaveCount(2);
+    expect(violations).toEqual([]); // NFR-SEC-05: login and list under the enforced CSP
   });
 
   test("changes the status and saves notes, recorded in the history with the actor", async ({
     page,
   }) => {
+    const violations = await collectCspViolations(page);
     await signInTo(page, 3, listPath);
     await page
       .getByRole("row", { name: new RegExp(`${MARKER} Carla`) })
@@ -193,6 +197,7 @@ test.describe("admin panel with a session (F4-07)", () => {
     await expect(page.getByRole("row", { name: new RegExp(`${MARKER} Carla`) })).toContainText(
       "En revisión",
     );
+    expect(violations).toEqual([]); // NFR-SEC-05: detail and its actions under the enforced CSP
   });
 
   test("the email link goes through the login and back to the inquiry (F4-06)", async ({

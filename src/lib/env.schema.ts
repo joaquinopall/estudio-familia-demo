@@ -104,6 +104,24 @@ const directUrlSchema = serverEnvSchema.pick({ DIRECT_URL: true });
 export const parseDirectUrl = (source: EnvSource): string | undefined =>
   parseWith(directUrlSchema, source).DIRECT_URL;
 
+/**
+ * VERCEL_ENV is a system variable that Vercel sets on every build and function; it is not
+ * part of .env.example. next.config.ts uses it to allow the Vercel Toolbar only in Preview
+ * (ADR-0016). Missing (local, CI) means "not on Vercel".
+ */
+const vercelEnvSchema = z.object({
+  VERCEL_ENV: optional(
+    z.enum(["development", "preview", "production"], {
+      error: 'debe ser "development", "preview" o "production"',
+    }),
+  ),
+});
+
+export type VercelEnv = z.infer<typeof vercelEnvSchema>["VERCEL_ENV"];
+
+export const parseVercelEnv = (source: EnvSource): VercelEnv =>
+  parseWith(vercelEnvSchema, source).VERCEL_ENV;
+
 /** Validates public and server variables together and reports every problem at once. */
 export function validateEnv(source: EnvSource): void {
   const errors: string[] = [];
