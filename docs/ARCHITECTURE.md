@@ -299,7 +299,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Panel admin (F4-07):** los e2e del panel con sesión (login, filtrar, cambiar estado, historial y acceso denegado).
+- **Cierre de la Fase 4 (F4-08):** tests manuales MT-07 a MT-10 y docs al día. Después, la Fase 5 (calidad, seguridad y lanzamiento).
 
 ## Decisiones vigentes
 

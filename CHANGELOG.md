@@ -4,6 +4,22 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-07 · E2E del admin
+
+- **Agregado:** `tests/e2e/admin-panel.spec.ts`, el panel con una sesión real contra Supabase dev:
+  - login, nombre en la barra y logout;
+  - listado y filtros en la URL, con "No iniciar contacto";
+  - detalle con cambio de estado, notas e historial con el actor;
+  - del link del mail al detalle, pasando por el login (F4-06);
+  - acceso denegado.
+
+  Corre axe en el listado y en el detalle.
+
+- **Agregado:** `tests/e2e/support/admin.ts`. Da de alta como staff (`E2E-Staff`) al usuario de prueba, carga consultas `E2E-` por SQL y hace el login por la interfaz con una IP de documentación por escenario.
+- **Agregado:** el log del servidor de los e2e va a `e2e-server.log`, y el spec del panel verifica que no tenga errores de prerender ni `auth.user_check_unavailable` falsos. Comprobado: sin el arreglo del DAL, falla con 25 líneas.
+- **Agregado:** `E2E_STAFF_EMAIL` y `E2E_STAFF_PASSWORD`, solo para los e2e, comentadas en `.env.example`. Sin ellas, el spec se saltea.
+- **Documentado:** TESTING (preparación, qué cubre y qué hacer si falla) y README.
+
 ### Corrección F4 · Errores falsos en los logs del panel
 
 - **Corregido:** en el preview de Vercel, cada Server Action del panel (cambiar estado, guardar notas, cerrar sesión) dejaba en los logs, sin que el usuario viera nada:

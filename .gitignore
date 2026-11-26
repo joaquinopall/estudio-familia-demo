@@ -16,6 +16,8 @@
 /test-results
 /blob-report
 /playwright/.cache
+# output of the e2e web server (playwright.config.ts)
+/e2e-server.log
 
 # next.js
 /.next/

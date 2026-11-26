@@ -19,7 +19,9 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // Tests run against the production build, as recommended by the Next.js testing guide.
   webServer: {
-    command: "npm run build && npm run start",
+    // The server's output goes to e2e-server.log (gitignored): the panel e2e check it has no
+    // prerender errors nor false "Supabase unavailable" lines (admin-panel.spec.ts).
+    command: "npm run build && npm run start > e2e-server.log 2>&1",
     url: BASE_URL,
     // Never reuse a running server (e.g. `npm run dev`): it would ignore the env below, and the
     // submission e2e would email a real inbox. If port 3000 is busy, the run fails right away.
