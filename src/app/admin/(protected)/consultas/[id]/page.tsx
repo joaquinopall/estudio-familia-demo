@@ -9,6 +9,7 @@ import { z } from "zod";
 import { siteConfig } from "@/config/site.config";
 import { requireStaff } from "@/features/auth/dal";
 import { InquiryDetail } from "@/features/inquiries/components/inquiry-detail";
+import { storeErrorCode } from "@/features/inquiries/errors";
 import { getInquiryService } from "@/features/inquiries/server";
 import { logger } from "@/lib/logger";
 
@@ -19,7 +20,11 @@ async function getOrFail(id: string) {
   try {
     return await getInquiryService().getInquiry(id);
   } catch (error) {
-    logger.error("inquiry.detail_failed", { inquiryId: id, error });
+    logger.error("inquiry.detail_failed", {
+      inquiryId: id,
+      error,
+      errorCode: storeErrorCode(error),
+    });
     throw new Error("inquiry.detail_failed");
   }
 }

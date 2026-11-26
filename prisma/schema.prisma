@@ -61,7 +61,7 @@ model Inquiry {
   phone                String?        @db.VarChar(30)
   area                 PracticeArea
   urgency              Urgency
-  message              String         @db.VarChar(2000)
+  message              String // encrypted, enc:v1:… (ADR-0017); text ≤ 2000 chars (Zod)
   preferredChannel     ContactChannel @map("preferred_channel")
   /// US-03 CA6. Null when the preferred channel is EMAIL.
   safeToContact        Boolean?       @map("safe_to_contact")
@@ -70,7 +70,7 @@ model Inquiry {
   consentAt            DateTime       @map("consent_at")
   privacyPolicyVersion String         @map("privacy_policy_version") @db.VarChar(20)
   status               InquiryStatus  @default(NEW)
-  internalNotes        String?        @map("internal_notes") @db.VarChar(5000)
+  internalNotes        String?        @map("internal_notes") // encrypted (ADR-0017); text ≤ 5000 chars (Zod)
   /// HMAC-SHA256 of the IP (NFR-SEC-06). Never the raw IP.
   ipHash               String?        @map("ip_hash") @db.VarChar(64)
   /// utm_source or origin.
