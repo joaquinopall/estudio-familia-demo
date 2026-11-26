@@ -61,7 +61,7 @@ flowchart LR
 | `src/lib/env*.ts`             | ✅ F1-04    | Variables de entorno validadas ([ADR 0006](adr/0006-validacion-de-variables-de-entorno.md)).   |
 | `src/lib/action-result.ts`    | ✅ F1-04    | Contrato `ActionResult<T>` de las Server Actions (SPEC §6.5).                                  |
 | `src/lib/logger.ts`           | ✅ F1-04    | Logger JSON sin datos personales.                                                              |
-| `src/lib/security/headers.ts` | ✅ F1-06    | Headers de seguridad y CSP ([ADR 0007](adr/0007-csp-report-only-sin-nonces.md)).               |
+| `src/lib/security/headers.ts` | ✅ F5-01    | Headers de seguridad y CSP aplicada ([ADR 0016](adr/0016-csp-aplicada-con-unsafe-inline.md)).  |
 | `src/lib/whatsapp.ts`, `utils.ts` | ✅ F1-07 | Link de WhatsApp (FR-13) y `cn()`.                                                           |
 | `src/lib/ports/`, `adapters/` | ✅ F3-03    | Ports sin excepciones, adapters de Resend, Turnstile y Upstash, y fakes para tests ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)). |
 | `src/config/rate-limits.ts`   | ✅ F3-03    | Límites anti-abuso de SPEC §8.2.                                                               |
@@ -289,7 +289,7 @@ sequenceDiagram
   Note over B: Hidrata solo los componentes cliente<br/>(MobileMenu, NavLinks y, en /contacto, el formulario)
 ```
 
-- Los headers (HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`, CSP report-only) se aplican a **todas** las rutas desde `next.config.ts`.
+- Los headers (HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` y la CSP) se aplican a **todas** las rutas desde `next.config.ts`. La CSP está **aplicada** (F5-01): solo permite recursos propios y Turnstile; en los deploys de Preview suma la barra de Vercel (`VERCEL_ENV=preview`). Mantiene `'unsafe-inline'` en `script-src` porque las páginas estáticas llevan scripts inline de Next ([ADR 0016](adr/0016-csp-aplicada-con-unsafe-inline.md)). Un recurso nuevo de otro origen falla hasta agregarlo en `headers.ts`.
 - El layout público arma la página con datos de `site.config.ts`: banner de demo (salvo `NEXT_PUBLIC_DEMO_MODE=false`, [ADR 0011](adr/0011-modo-demo-por-defecto.md)), header, `<main id="contenido">`, footer con la ayuda ante peligro, botón de WhatsApp y JSON-LD `LegalService`.
 - **Header y WhatsApp:** debajo del breakpoint `gutter` (86.25rem = 1380 px) el header es fijo y lleva WhatsApp; desde ahí WhatsApp flota en el margen. Debajo de `lg` el nombre del estudio puede partir en dos líneas (letra del navegador agrandada). El espacio para el header fijo se da con `scroll-margin-top` en el contenido, **no** con `scroll-padding` en `html` (haría saltar la página al enfocar el header).
 - **Página actual:** `NavLinks` lee `usePathname` en un subcomponente que no dibuja nada, dentro de `Suspense`. No envuelvas la lista en ese `Suspense`: React reemplazaría los links al cargar y se perdería el foco.
@@ -299,7 +299,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Cierre de la Fase 4 (F4-08):** tests manuales MT-07 a MT-10 y docs al día. Después, la Fase 5 (calidad, seguridad y lanzamiento).
+- **Fase 5 (calidad, seguridad y lanzamiento):** CSP aplicada (F5-01, hecho); siguen la auditoría de seguridad (F5-02), rendimiento y accesibilidad, observabilidad, retención, e2e en CI, tests manuales y lanzamiento. Los tests manuales de cierre de las Fases 2 a 4 siguen pendientes.
 
 ## Decisiones vigentes
 
@@ -311,7 +311,7 @@ sequenceDiagram
 | [0004](adr/0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (se implementa en F3) |
 | [0005](adr/0005-mails-despues-de-responder.md)                   | Mails con `after()`, sin el mensaje completo                   | Aceptada (se implementa en F3) |
 | [0006](adr/0006-validacion-de-variables-de-entorno.md)           | Validación de env en `next.config.ts`, pública/privada         | Aceptada                   |
-| [0007](adr/0007-csp-report-only-sin-nonces.md)                   | CSP report-only sin nonces para mantener SSG                   | Aceptada (se revisa en F5-01) |
+| [0007](adr/0007-csp-report-only-sin-nonces.md)                   | CSP report-only sin nonces para mantener SSG                   | Reemplazada por 0016       |
 | [0008](adr/0008-politica-de-npm-audit-en-ci.md)                  | `npm audit` bloqueante solo para producción                    | Aceptada                   |
 | [0009](adr/0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con 404 real                       | Aceptada                   |
 | [0010](adr/0010-seo-json-ld-seguro-y-noindex-en-demo.md)         | JSON-LD seguro y noindex en modo demo                          | Aceptada                   |
@@ -320,5 +320,6 @@ sequenceDiagram
 | [0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md) | Ports sin excepciones; rate limit caído deja pasar, Turnstile caído rechaza | Aceptada |
 | [0014](adr/0014-auth-supabase-ssr-solo-servidor.md) | Supabase Auth solo en el servidor, cookies httpOnly, proxy solo en `/admin` | Aceptada |
 | [0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md) | `requireStaff()` con `getUser()` en cada página y action; `staff:add` con `tsx` y `auth.users` por SQL | Aceptada |
+| [0016](adr/0016-csp-aplicada-con-unsafe-inline.md) | CSP aplicada con `'unsafe-inline'`; barra de Vercel solo en Preview; sin Supabase | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).

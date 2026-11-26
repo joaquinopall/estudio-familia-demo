@@ -1,6 +1,6 @@
 # 0007. Content Security Policy en report-only y sin nonces
 
-- **Estado:** Aceptada (se revisa en F5-01)
+- **Estado:** Reemplazada por [0016](0016-csp-aplicada-con-unsafe-inline.md) (F5-01, 26/11/2026)
 - **Fecha:** 18/11/2026
 - **Relacionado:** SPEC NFR-SEC-04, NFR-SEC-05, §6.1 (SSG), NFR-PERF-01, tarea F1-06
 

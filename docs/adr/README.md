@@ -18,7 +18,7 @@ Reglas:
 | [0004](0004-anti-abuso-honeypot-rate-limit-turnstile.md)     | Anti-abuso: honeypot + rate limit + Turnstile                  | Aceptada (adapters en F3-03; orden en F3-05) |
 | [0005](0005-mails-despues-de-responder.md)                   | Mails después de responder, sin el mensaje completo            | Aceptada (envío en F3-05; plantillas en F3-06) |
 | [0006](0006-validacion-de-variables-de-entorno.md)           | Validación de variables de entorno al arrancar                 | Aceptada                       |
-| [0007](0007-csp-report-only-sin-nonces.md)                   | CSP en report-only y sin nonces                                | Aceptada (se revisa en F5-01)  |
+| [0007](0007-csp-report-only-sin-nonces.md)                   | CSP en report-only y sin nonces                                | Reemplazada por 0016           |
 | [0008](0008-politica-de-npm-audit-en-ci.md)                  | Política de `npm audit` en la CI                               | Aceptada                       |
 | [0009](0009-rutas-dinamicas-estaticas-con-cache-components.md) | Rutas dinámicas estáticas con Cache Components (404 real)    | Aceptada                       |
 | [0010](0010-seo-json-ld-seguro-y-noindex-en-demo.md) | SEO: JSON-LD seguro y noindex en modo demo | Aceptada |
@@ -27,6 +27,7 @@ Reglas:
 | [0013](0013-ports-sin-excepciones-y-caidas-de-servicios.md) | Ports sin excepciones y qué hacer si un servicio externo se cae | Aceptada |
 | [0014](0014-auth-supabase-ssr-solo-servidor.md) | Supabase Auth solo del lado del servidor, con el proxy limitado al panel | Aceptada |
 | [0015](0015-autorizacion-del-panel-y-alta-de-staff.md) | Autorización del panel con `requireStaff()` y alta de staff por script | Aceptada |
+| [0016](0016-csp-aplicada-con-unsafe-inline.md) | CSP aplicada, con `'unsafe-inline'` y la barra de Vercel solo en Preview | Aceptada |
 
 ## Plantilla
 

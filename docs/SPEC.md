@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.31 (25/11/2026) |
+| Versión | 1.32 (26/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -228,7 +228,7 @@ src/
     format-date.ts               # formatLongDate (fechas en es-AR, sin depender de la zona horaria)
     logger.ts                    # logger estructurado sin PII
     security/ip.ts               # obtener IP de headers y hashearla (HMAC-SHA256 con IP_HASH_SALT)
-    security/headers.ts          # headers de seguridad y CSP (NFR-SEC-04/05); lo usa next.config.ts
+    security/headers.ts          # headers de seguridad y CSP aplicada (NFR-SEC-04/05, ADR-0016); lo usa next.config.ts
     seo/json-ld.tsx              # serialización segura de JSON-LD
     seo/structured-data.ts       # builders de schema.org
     seo/page-metadata.ts         # metadata por página (canonical, OG) y robots
@@ -467,7 +467,7 @@ Etiquetas de interfaz:
 | NFR-SEC-02 | Autorización en cada página y action del admin vía `requireStaff()` (no solo en el proxy). |
 | NFR-SEC-03 | RLS habilitado en todas las tablas, sin acceso por la Data API. |
 | NFR-SEC-04 | Headers: `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` restrictiva, `X-Frame-Options: DENY` o `frame-ancestors 'none'`. |
-| NFR-SEC-05 | Content Security Policy: primero en modo report-only (Fase 1); en Fase 5 se aplica permitiendo solo self, Turnstile, Supabase y Vercel. |
+| NFR-SEC-05 | Content Security Policy: en modo report-only en las Fases 1 a 4; aplicada desde F5-01 (ADR-0016). Permite solo self y Turnstile, más la barra de Vercel únicamente en Preview (`VERCEL_ENV=preview`). Supabase no figura porque el navegador nunca lo llama (ADR-0014). `script-src` mantiene `'unsafe-inline'` por los scripts inline de las páginas estáticas. |
 | NFR-SEC-06 | Sin PII en logs. IP guardada solo como HMAC. |
 | NFR-SEC-07 | Cookies de sesión httpOnly, Secure y SameSite=Lax (manejadas por `@supabase/ssr`). |
 | NFR-SEC-08 | Dependencias: Dependabot activo (npm y GitHub Actions, semanal). En CI, `npm audit --omit=dev --audit-level=high` bloquea (dependencias que van a producción) y `npm audit --audit-level=high` completo corre como paso informativo, sin bloquear. |
@@ -661,3 +661,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.29 | F4-05. §6.5: `updateInquiryStatus` y `updateInquiryNotes` reciben `(prev, formData)`, para `useActionState` y para funcionar sin JavaScript. Devuelven `changed`: el mismo valor no crea un evento. Las notas vuelven en `values` si el guardado falla. El acceso se valida antes que el input. §6.2: `update-inquiry.ts`, los componentes del detalle y `not-found.tsx` del detalle. En el detalle, teléfono y email van sin links (§11.5). | [tu nombre] |
 | 25/11/2026 | 1.30 | §15: nueva pregunta abierta para F5-02, el cifrado a nivel de aplicación del mensaje y de las notas internas (no es extremo a extremo). No cambia ningún requisito vigente. | [tu nombre] |
 | 25/11/2026 | 1.31 | F4-06. §6.4 paso 1: el proxy agrega `?next=` con la página pedida (salvo `/admin`). §6.5: `signIn` recibe `next` (campo oculto) y redirige ahí si es una ruta del panel. §10.2: amenaza nueva, el redirect abierto, mitigada con `safeNextPath`. | [tu nombre] |
+| 26/11/2026 | 1.32 | F5-01 (ADR-0016, reemplaza a ADR-0007). NFR-SEC-05: la CSP pasa a aplicada; permite self y Turnstile, y la barra de Vercel solo en Preview. Supabase no se agrega porque no hay cliente de navegador (ADR-0014). Se mantiene `'unsafe-inline'` en `script-src`: los nonces harían dinámicas todas las páginas y el SRI de Next no hashea los scripts inline (probado). §6.2: comentario de `security/headers.ts`. `env.schema.ts` valida `VERCEL_ENV`, la variable de sistema de Vercel, que no va en `.env.example`. | [tu nombre] |
