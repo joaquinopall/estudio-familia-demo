@@ -26,6 +26,22 @@ Detalles de los e2e:
 
 - Playwright hace `npm run build && npm run start` y espera a `http://localhost:3000`. **Nunca reusa un servidor abierto:** si el puerto 3000 está ocupado (por ejemplo, por tu `npm run dev`), la corrida falla enseguida con "http://localhost:3000 is already used". Cerralo y volvé a correr. Así siempre se aplican las variables que fija la config: el modo demo prendido y el aviso al estudio dirigido a la dirección de prueba de Resend.
 - Necesita las variables de `.env.local`, las mismas que `npm run dev`.
+- **El log del servidor** de los e2e queda en `e2e-server.log` (fuera de git). Si un e2e falla del lado del servidor, buscá ahí el error.
+- **`admin-panel.spec.ts`, el panel con sesión** (F4-07):
+  - **Preparación, una sola vez:**
+    1. En Supabase **dev**, creá un usuario: Authentication → Users → Add user, con "Auto Confirm User" y una contraseña de 12 caracteres o más.
+    2. Cargá `E2E_STAFF_EMAIL` y `E2E_STAFF_PASSWORD` en `.env.local` (ver `.env.example`). No van a Vercel ni a `env.schema.ts`.
+
+    No hace falta `staff:add`: el spec da de alta a ese usuario como staff activo, con el nombre `E2E-Staff`, y lo reactiva si una corrida anterior se cortó. Sin las variables, el spec se saltea con su motivo.
+  - **Qué cubre**, en serie, porque comparten el usuario:
+    - login, nombre en la barra y logout;
+    - listado de la más nueva a la más vieja, filtros en la URL, recarga y "No iniciar contacto";
+    - detalle con cambio de estado, notas guardadas después de recargar e historial con el actor y sin el texto de las notas;
+    - del link del mail al detalle, pasando por el login (F4-06);
+    - acceso denegado, con el staff desactivado un momento y reactivado siempre;
+    - axe en el listado y en el detalle.
+  - **Datos:** inserta 3 consultas `E2E-<corrida>-…` por SQL (no gasta Turnstile, mails ni rate limit) y las borra al terminar. También borra las `E2E-` de más de un día. Cada escenario manda su propia IP de documentación en `x-forwarded-for`.
+  - **Log limpio:** el último test revisa que `e2e-server.log` no tenga "while prerendering" ni `auth.user_check_unavailable`. Es la regresión del 26/11/2026: si alguien saca el `connection()` del DAL, la pantalla sigue andando y solo este test se entera (lo comprobé quitándolo: falla con 25 líneas).
 - **`inquiry-submit.spec.ts` envía consultas reales** (F3-08):
   - **Base:** usa la de `.env.local`, que tiene que ser **Supabase dev**. Escribe filas cuyo mensaje empieza con `E2E-<corrida>-` y las borra al final, aunque el test falle. También borra las filas `E2E-` de más de un día, que quedan si una corrida se corta.
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
@@ -49,7 +65,7 @@ Detalles de los e2e:
 | Login (UI)  | Vitest + Testing Library     | `src/features/auth/components/__tests__/`    | `LoginForm`: labels y `autocomplete`, funciona sin JavaScript, error general en `role="alert"` con foco, errores de campo con `aria-describedby`, email conservado y contraseña no, botón pendiente. `LoginSessionCheck`: redirect del staff a `/admin`, aviso de `?error=forbidden` sin detalles |
 | Autorización | Vitest + fakes              | `src/features/auth/__tests__/access.test.ts`, `dal.test.ts`, `staff-service.test.ts`, `staff-add-args.test.ts` | `requireStaff()`: sin sesión, sesión sin staff, staff inactivo, staff OK, Supabase y base caídos (falla cerrado), redirects de páginas y `ActionResult` de actions, logs sin datos personales. `staff:add`: usuario inexistente, alta, reactivación idempotente y argumentos |
 | Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; detalle (`detail.db.test.ts`: estado y notas con su evento en una transacción, `fromStatus` real, nada si no cambia, actor que ya no existe); listado (`list.db.test.ts`: orden, cada filtro, búsqueda sin distinguir mayúsculas en nombre y email, `%` como texto, paginación y campos del `select`); staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
-| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev |
+| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev, y el panel con sesión: login, filtros, estado, notas, historial, link del mail y acceso denegado (F4-07) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
 Próximas fases: services con fakes de repos y ports, actions (validación, auth, rate limit, captcha), formulario y e2e de envío (F3), admin (F4).
@@ -81,6 +97,12 @@ Próximas fases: services con fakes de repos y ports, actions (validación, auth
 - **`site-config.test.ts` → "keeps shortName neutral":** el nombre corto del estudio incluye la especialidad, y ese nombre firma el acuse. Elegí un nombre corto sin la especialidad.
 - **`inquiry-submit.spec.ts`:** si se saltea, mirá el motivo (falta `DATABASE_URL` o la clave de Turnstile no es la de prueba). Si falla esperando el token de Turnstile, revisá la conexión a `challenges.cloudflare.com`. Si falla en la confirmación, mirá el snapshot del error (`test-results/…/error-context.md`): el resumen de errores dice qué respondió la action. Cada escenario manda su propia IP de documentación (`2001:db8:…`) en `x-forwarded-for`, así no comparte el rate limit con otras corridas ni con tus pruebas a mano; si ves "Hiciste demasiados intentos seguidos", revisá que eso siga así. Si queda alguna fila `E2E-`, la próxima corrida la borra cuando tenga más de un día, o borrala desde el Table Editor de Supabase dev.
 - **`features/auth/__tests__/repository.db.test.ts` → "can read auth.users":** si da "permission denied", Supabase le quitó a `postgres` la lectura de `auth.users` y `staff:add` no puede buscar usuarios. Mirá el plan B en ADR-0015 (`--auth-user-id`). Si queda alguna fila `E2E-` en `staff_members`, borrala desde el Table Editor de dev.
+- **`admin-panel.spec.ts`:**
+  - **Si se saltea,** faltan `E2E_STAFF_EMAIL` o `E2E_STAFF_PASSWORD` en `.env.local`.
+  - **Si falla en `beforeAll` con "no existe en Supabase Auth",** el usuario de prueba se borró en dev: crealo de nuevo.
+  - **Si falla el login,** revisá la contraseña, o si el rate limit te frenó: cada escenario usa su IP, pero 5 corridas seguidas en 15 minutos con la misma IP lo agotan.
+  - **Si falla "no prerender errors",** buscá en `e2e-server.log` la ruta y el error. Casi seguro es código del panel que lee la sesión o la hora antes de `connection()`.
+  - **Si una corrida se corta,** el usuario puede quedar inactivo: la próxima lo reactiva al empezar. Las consultas `E2E-` se borran cuando tienen más de un día.
 - **`safe-next-path.test.ts`:** si un caso de la tabla de ataques empieza a pasar, el login quedó como redirect abierto: corregí `safeNextPath`, nunca la tabla (SPEC §10.2).
 - **`access.test.ts` o `dal.test.ts`:** si un caso que debería ser `forbidden` o `unauthenticated` pasa como `ok`, es un agujero de seguridad: corregí el código, nunca el test (NFR-SEC-02).
 - **`repository.db.test.ts`:** si falla al conectar, revisá `DATABASE_URL` (y que las migraciones estén aplicadas: `npx prisma migrate status`). Si queda alguna fila `E2E-` en `inquiries`, borrala desde el Table Editor de Supabase dev.
