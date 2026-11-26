@@ -42,7 +42,7 @@ flowchart LR
 | `src/app/layout.tsx`          | ✅ F1-07    | Layout raíz: `lang="es-AR"`, fuentes (`next/font`), metadata base.                             |
 | `src/app/globals.css`         | ✅ F1-07    | Tokens de diseño (SPEC §11.1).                                                                 |
 | `src/app/(public)/`           | ✅ F2-07    | Layout público y las páginas de FR-01. El formulario de Contacto llega en F3.                  |
-| `src/app/admin/`              | 🟨 F4       | ✅ `layout.tsx` común (`noindex`, encabezado propio), `(protected)/layout.tsx` con `requireStaff()` y la barra de sesión (F4-02), `login/` (F4-03), el listado en `(protected)/page.tsx` y su `error.tsx` (F4-04), y el detalle en `(protected)/consultas/[id]/` con su `not-found.tsx` (F4-05). |
+| `src/app/admin/`              | 🟨 F4       | ✅ `layout.tsx` común (`noindex`, encabezado propio), `(protected)/layout.tsx` con `requireStaff()` y la barra de sesión (F4-02), `login/` (F4-03), el listado en `(protected)/page.tsx` y su `error.tsx` (F4-04), y el detalle en `(protected)/consultas/[id]/` con su `not-found.tsx` (F4-05). Los dos tienen `loading.tsx`, para que la navegación entre ellos no espere a la base sin mostrar nada. |
 | `src/components/forms/`       | ✅ F4-03    | Estilos compartidos de controles nativos (`controlClass`, `focusOutlineClass`): formulario de consultas y login. |
 | `src/app/sitemap.ts`, `robots.ts`, `opengraph-image.tsx` | ✅ F2-06 | SEO técnico, generado en el build.                                  |
 | `src/app/icon.tsx`, `apple-icon.tsx` | ✅ F2-07 | Íconos con el monograma de `site.config.ts`, generados en el build. `/favicon.ico` se reescribe a `/icon`. |
@@ -202,6 +202,7 @@ flowchart LR
 - **Búsqueda:** `ILIKE` parametrizado en el nombre y el email, con `%`, `_` y `\` escapados (`escapeLike`). No ignora tildes: queda como mejora (extensión `unaccent`).
 - **Fechas:** en la zona del estudio (`siteConfig.timeZone`), no en la del servidor (UTC en Vercel).
 - **Errores:** `inquiry.list_failed` (solo el nombre del error) y `app/admin/(protected)/error.tsx`, con un mensaje genérico y "Probar de nuevo".
+- **Carga:** `loading.tsx` del listado y del detalle muestran "Cargando…" (`PanelLoading`, `role="status"`) apenas se navega, y los datos llegan después. Sin ellos, Next 16.4 avisa en `next dev` ("uncached data during prerendering or a navigation"), porque al ir del listado al detalle el layout no se vuelve a renderizar y la página quedaba bloqueada esperando a la base. No se usa `"use cache"`: son datos personales que tienen que estar frescos. Tampoco `instant = false`, que solo calla el aviso.
 
 ### Detalle, estado y notas (F4-05)
 
