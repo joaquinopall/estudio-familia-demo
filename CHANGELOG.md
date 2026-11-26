@@ -4,6 +4,18 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### Corrección F4 · Errores falsos en los logs del panel
+
+- **Corregido:** en el preview de Vercel, cada Server Action del panel (cambiar estado, guardar notas, cerrar sesión) dejaba en los logs, sin que el usuario viera nada:
+  - "Next.js encountered the unstable value `Date.now()` while prerendering";
+  - `auth.user_check_unavailable` (`AuthRetryableFetchError`), como si Supabase se hubiera caído.
+
+  Venían de una pasada de prerender de Cache Components, en la que el chequeo de sesión de Supabase llama a `Date.now()`. Ahora `getStaffAccess` (DAL) espera a `connection()` antes de tocar Supabase.
+
+- **Verificado** en local con el build de producción y el usuario de prueba: login, detalle, cambio de estado, notas y logout. Antes: 4 errores "while prerendering" y 6 `user_check_unavailable`. Después: 0.
+- **Agregado:** un test que verifica que el DAL espera a `connection()` antes de crear el cliente de Supabase.
+- **Por qué importa:** `auth.user_check_unavailable` es la señal de que Supabase no responde (ADR-0014). Con estos falsos positivos, una caída real se perdía entre el ruido.
+
 ### F4-06 · Link del mail al detalle
 
 - **Agregado:** volver a la página pedida después del login. El link "Ver en el panel" del aviso al estudio lleva a la consulta, aunque haya que iniciar sesión.

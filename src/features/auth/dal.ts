@@ -8,6 +8,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import type { ActionResult } from "@/lib/action-result";
@@ -26,6 +27,11 @@ import { createPrismaStaffRepository } from "./repository";
 import type { StaffMember } from "./types";
 
 const getStaffAccess = cache(async (): Promise<StaffAccess> => {
+  // Request time only. With Cache Components, Next also renders the panel in a prerender pass
+  // (e.g. after a Server Action). There, Supabase's session check would call Date.now(), which
+  // Next rejects, and its aborted fetch would be logged as "Supabase unavailable" although
+  // nothing failed. connection() stops that pass here; real requests go on as before.
+  await connection();
   const supabase = await createSupabaseServerClient();
   return checkStaffAccess({
     authGateway: createSupabaseAuthGateway(supabase.auth),

@@ -129,6 +129,8 @@ flowchart LR
 
 - **`checkStaffAccess`** (`features/auth/access.ts`): la regla, pura, testeada con `FakeAuthGateway` y `FakeStaffRepository`. Falla cerrado: si Supabase o la base no responden, `unavailable`.
 - **`dal.ts`** (`server-only`): conecta la regla con Supabase y Prisma. Con `cache()` de React, una sola verificación por request.
+  - **Empieza con `await connection()`.** Con Cache Components, Next también dibuja el panel en una pasada de prerender (por ejemplo, después de una Server Action). Ahí, el chequeo de sesión de Supabase llama a `Date.now()`, que Next rechaza ("encountered the unstable value `Date.now()` while prerendering"), y su `fetch` cortado quedaba en el log como `auth.user_check_unavailable` sin que nada fallara.
+  - `connection()` detiene esa pasada antes de tocar Supabase; las requests reales siguen igual. Se detectó en los logs del preview de Vercel y se reprodujo en local con el build de producción.
 
   | Función | Para | Sin sesión / caído | Sin acceso | OK |
   | --- | --- | --- | --- | --- |
