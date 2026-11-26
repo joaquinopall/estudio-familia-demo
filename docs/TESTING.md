@@ -47,7 +47,7 @@ Detalles de los e2e:
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
   - **Turnstile:** necesita la clave de prueba que aprueba sola (`1x00000000000000000000AA`). Con otra clave, o sin `DATABASE_URL`, los dos escenarios se saltean con su motivo: nunca resuelven un desafío real.
   - Cubre: llegar desde un área con el área preseleccionada, los dos pasos, Turnstile, la confirmación con y sin medio seguro, lo guardado en la base (con su evento `CREATED`) y que no haya violaciones de la CSP.
-- **`admin-login.spec.ts`** (F4-03, F4-06): `next` en el formulario (y conservado después de un error) e ignorado si es externo; la página de login con `noindex`, sin violaciones de axe ni de la CSP, el orden de teclado, el aviso de `?error=forbidden` y credenciales incorrectas (mensaje genérico con foco, email conservado). Ese último escenario **consulta a Supabase dev** con una cuenta que no existe, y cuenta un intento del rate limit con una IP de documentación propia de la corrida. El login exitoso llega en F4-07.
+- **`admin-login.spec.ts`** (F4-03, F4-06): `next` en el formulario (y conservado después de un error) e ignorado si es externo; la página de login con `noindex`, sin violaciones de axe ni de la CSP, el orden de teclado, el aviso de `?error=forbidden` y credenciales incorrectas (mensaje genérico con foco, email conservado). Ese último escenario **consulta a Supabase dev** con una cuenta que no existe, y cuenta un intento del rate limit con una IP de documentación propia de la corrida. El login exitoso lo cubre `admin-panel.spec.ts`.
 - **`admin-redirect.spec.ts`** (F4-01, F4-02, F4-06): sin sesión o con una cookie de sesión falsificada, `/admin` y `/admin/consultas/…` responden 307 a `/admin/login`, con `?next=` para volver a la página pedida; el login no se redirige, y `/contacto` no recibe cookies de sesión. No inicia sesión ni toca Supabase Auth: alcanza con que las dos variables de Supabase estén definidas.
 - Reporte HTML de la última corrida: `npx playwright show-report`.
 - Correr un archivo o un test: `npx playwright test tests/e2e/layout.spec.ts` o `-g "nombre del test"`.
@@ -68,7 +68,7 @@ Detalles de los e2e:
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev, y el panel con sesión: login, filtros, estado, notas, historial, link del mail y acceso denegado (F4-07) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
-Próximas fases: services con fakes de repos y ports, actions (validación, auth, rate limit, captcha), formulario y e2e de envío (F3), admin (F4).
+Próxima fase (F5): e2e en la CI (F5-06), Lighthouse y accesibilidad (F5-03) y la guía de tests manuales completa (F5-07).
 
 ### Convenciones
 
@@ -633,7 +633,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 1: terminás en `/admin/login`, con el título "Ingresar al panel" y sin el banner de demo, WhatsApp ni el footer del sitio.
 - Pasos 2 y 3: el **mismo** mensaje, "El email o la contraseña no son correctos.", recibe el foco. El email sigue escrito y la contraseña queda vacía.
 - Paso 4: "Ingresá un email válido" junto al campo de email, que queda marcado en rojo.
-- Paso 5: entrás a `/admin` y ves "Panel de consultas" y tu nombre en la barra superior.
+- Paso 5: entrás a `/admin` y ves el listado ("Consultas") y tu nombre en la barra superior.
 - Paso 6: te lleva directo a `/admin`.
 - Paso 7: volvés a `/admin/login`, y `/admin` te devuelve al login.
 - Paso 8: el lector anuncia los nombres de los campos y lee el mensaje de error apenas aparece.
@@ -747,7 +747,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 6: no hay error: se ignora el estado inválido y se muestra la última página.
 - Paso 7: "Página 2 de N · M consultas". "Anterior" y "Siguiente" conservan el filtro.
 - Paso 8: se llega a todos los filtros, al botón, a los links y a la tabla con Tab, con el foco visible.
-- El link de la referencia lleva a `/admin/consultas/<id>`, que da 404 hasta F4-05.
+- El link de la referencia abre el detalle de esa consulta (`/admin/consultas/<id>`, MT-10).
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
@@ -803,7 +803,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Pasos 1 y 2: terminás en `/admin/login?error=forbidden`, con el aviso "Esta cuenta no tiene acceso al panel" y el botón "Usar otra cuenta". Nunca se ve ningún dato del panel, ni por un instante. "Usar otra cuenta" cierra la sesión y deja el login limpio.
 - Paso 3: ahora sí ve el panel.
 - Paso 4: vuelve a `/admin/login?error=forbidden` sin tener que cerrar sesión.
-- Paso 5: ves "Panel de consultas" (hasta F4-04; después, el listado) y tu nombre en la barra superior.
+- Paso 5: ves el listado de consultas y tu nombre en la barra superior.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |

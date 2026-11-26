@@ -4,6 +4,11 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F4-08 · Cierre de fase (documentación)
+
+- **Actualizado:** README (estado del proyecto: Fase 4 implementada, pendiente de sus tests manuales de cierre) y TESTING (el login exitoso lo cubre `admin-panel.spec.ts`; MT-07, MT-09 y MT-26 describen el panel como quedó: listado en `/admin` y detalle en la referencia).
+- **Pendiente para cerrar la fase:** ejecutar y registrar MT-07 a MT-10 (y los otros manuales de F4: MT-23 a MT-27).
+
 ### F4-07 · E2E del admin
 
 - **Agregado:** `tests/e2e/admin-panel.spec.ts`, el panel con una sesión real contra Supabase dev:
