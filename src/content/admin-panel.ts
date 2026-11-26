@@ -51,6 +51,8 @@ export const adminPanelContent = {
       inquiry: "consulta",
       inquiries: "consultas",
     },
+    /** loading.tsx: shown at once on a navigation, while the list streams in. */
+    loading: "Cargando consultas…",
     loadError: {
       title: "No pudimos cargar las consultas",
       body: "Puede ser un problema momentáneo. Probá de nuevo en unos segundos.",
@@ -58,6 +60,8 @@ export const adminPanelContent = {
     },
   },
   detail: {
+    /** loading.tsx: shown at once on a navigation, while the inquiry streams in. */
+    loading: "Cargando la consulta…",
     backToList: "Volver al listado",
     receivedAt: "Recibida el",
     contact: {
