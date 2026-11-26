@@ -23,7 +23,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "staff:add": "tsx --conditions=react-server scripts/staff-add.ts"
+    "staff:add": "tsx --conditions=react-server scripts/staff-add.ts",
+    "inquiries:encrypt": "tsx --conditions=react-server scripts/encrypt-inquiries.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
