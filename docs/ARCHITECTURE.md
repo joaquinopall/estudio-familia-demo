@@ -63,7 +63,7 @@ flowchart LR
 | `src/lib/logger.ts`           | ✅ F1-04    | Logger JSON sin datos personales.                                                              |
 | `src/lib/security/headers.ts` | ✅ F5-01    | Headers de seguridad y CSP aplicada ([ADR 0016](adr/0016-csp-aplicada-con-unsafe-inline.md)).  |
 | `src/lib/whatsapp.ts`, `utils.ts` | ✅ F1-07 | Link de WhatsApp (FR-13) y `cn()`.                                                           |
-| `src/lib/ports/`, `adapters/` | ✅ F3-03    | Ports sin excepciones, adapters de Resend, Turnstile y Upstash, y fakes para tests ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)). |
+| `src/lib/ports/`, `adapters/` | ✅ F3-03, F5-02 | Ports sin excepciones, adapters de Resend, Turnstile y Upstash, `FieldCipher` con AES-256-GCM ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)), y fakes para tests ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)). |
 | `src/config/rate-limits.ts`   | ✅ F3-03    | Límites anti-abuso de SPEC §8.2.                                                               |
 | `src/lib/db.ts`, `db-tls.ts`  | ✅ F3-01    | `getDb()`: cliente Prisma único y lazy, por el pooler, con TLS verificado ([ADR 0012](adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)). |
 | `src/lib/supabase/`           | ✅ F4-01    | Cliente de servidor, refresh de sesión del proxy, opciones de cookie y adapter `AuthGateway` ([ADR 0014](adr/0014-auth-supabase-ssr-solo-servidor.md)). Sin cliente de navegador. |
@@ -85,6 +85,13 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Flujo:** Server Action → toma los ports de `lib/adapters` → se los pasa al service. Los services y sus tests solo conocen los ports, y en tests usan los fakes de `lib/ports/fakes`.
 - **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
 - **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
+
+### Cifrado del mensaje y de las notas (F5-02)
+
+- **Qué:** `message` e `internalNotes` se guardan cifrados con AES-256-GCM (`enc:v1:<id de clave>:<iv>:<cifrado>`), atados a su fila y columna ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)). Nombre, email y teléfono quedan en claro.
+- **Dónde:** el repository recibe el port `FieldCipher` (adapter `aes-gcm-field-cipher.ts`, tomado de `getFieldCipher()`): cifra al crear la consulta y al guardar notas, y descifra en el detalle. Service, actions, mails y UI solo ven texto. El listado no lee esos campos.
+- **Claves:** `FIELD_ENCRYPTION_KEYS` (la primera cifra, todas descifran). Rotar o cifrar filas viejas: `npm run inquiries:encrypt` (`reencryption.ts` + `scripts/encrypt-inquiries.ts`).
+- **Si algo no descifra:** `InquiryStoreError` con código `decrypt_failed`. El panel muestra su error genérico; el log, el id y el código. Nunca se muestra el valor guardado.
 
 ### Sesión y login del panel (F4-01)
 
@@ -299,7 +306,7 @@ sequenceDiagram
 
 ## Flujos planificados
 
-- **Fase 5 (calidad, seguridad y lanzamiento):** CSP aplicada (F5-01, hecho). Auditoría de seguridad (F5-02): revisión en [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md) y guardas de ESLint; falta el cifrado del mensaje y de las notas (PR 2). Siguen rendimiento y accesibilidad, observabilidad, retención, e2e en CI, tests manuales y lanzamiento. Los tests manuales de cierre de las Fases 2 a 4 siguen pendientes.
+- **Fase 5 (calidad, seguridad y lanzamiento):** CSP aplicada (F5-01, hecho). Auditoría de seguridad (F5-02): revisión en [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md), guardas de ESLint y cifrado del mensaje y de las notas. Siguen rendimiento y accesibilidad, observabilidad, retención, e2e en CI, tests manuales y lanzamiento. Los tests manuales de cierre de las Fases 2 a 4 siguen pendientes.
 
 ## Decisiones vigentes
 
@@ -321,5 +328,6 @@ sequenceDiagram
 | [0014](adr/0014-auth-supabase-ssr-solo-servidor.md) | Supabase Auth solo en el servidor, cookies httpOnly, proxy solo en `/admin` | Aceptada |
 | [0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md) | `requireStaff()` con `getUser()` en cada página y action; `staff:add` con `tsx` y `auth.users` por SQL | Aceptada |
 | [0016](adr/0016-csp-aplicada-con-unsafe-inline.md) | CSP aplicada con `'unsafe-inline'`; barra de Vercel solo en Preview; sin Supabase | Aceptada |
+| [0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md) | Mensaje y notas cifrados con AES-256-GCM en el repository; clave en `FIELD_ENCRYPTION_KEYS`, con rotación | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).

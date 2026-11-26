@@ -28,6 +28,7 @@ Reglas:
 | [0014](0014-auth-supabase-ssr-solo-servidor.md) | Supabase Auth solo del lado del servidor, con el proxy limitado al panel | Aceptada |
 | [0015](0015-autorizacion-del-panel-y-alta-de-staff.md) | Autorización del panel con `requireStaff()` y alta de staff por script | Aceptada |
 | [0016](0016-csp-aplicada-con-unsafe-inline.md) | CSP aplicada, con `'unsafe-inline'` y la barra de Vercel solo en Preview | Aceptada |
+| [0017](0017-cifrado-de-campos-a-nivel-de-aplicacion.md) | Cifrado del mensaje y de las notas a nivel de aplicación | Aceptada |
 
 ## Plantilla
 
