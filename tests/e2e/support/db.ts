@@ -17,6 +17,9 @@ loadEnvConfig(process.cwd(), false, { info() {}, error: console.error });
 export const e2eEnv = {
   databaseUrl: process.env.DATABASE_URL,
   turnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+  /** Test user of the panel e2e (F4-07): created by hand in Supabase dev, never in Vercel. */
+  staffEmail: process.env.E2E_STAFF_EMAIL?.trim().toLowerCase(),
+  staffPassword: process.env.E2E_STAFF_PASSWORD,
 };
 
 /** Cloudflare's test site keys that pass on their own (visible and invisible). */
@@ -25,7 +28,7 @@ const PASSING_TEST_SITE_KEYS = ["1x00000000000000000000AA", "1x00000000000000000
 export const usesTurnstileTestKey = () =>
   PASSING_TEST_SITE_KEYS.includes(e2eEnv.turnstileSiteKey ?? "");
 
-async function withClient<T>(run: (client: Client) => Promise<T>): Promise<T> {
+export async function withClient<T>(run: (client: Client) => Promise<T>): Promise<T> {
   const connectionString = e2eEnv.databaseUrl;
   if (!connectionString) throw new Error("Los e2e que escriben necesitan DATABASE_URL (dev).");
   assertNoSslParams("DATABASE_URL", connectionString);
