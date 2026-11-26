@@ -229,7 +229,8 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - **Base de datos:** RLS sin políticas en todas las tablas y sin service role key ([ADR 0002](docs/adr/0002-supabase-con-prisma-y-rls.md)); conexiones con TLS verificado ([ADR 0012](docs/adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)).
 - **Logs** estructurados en JSON, sin datos personales (`src/lib/logger.ts`).
 - **Panel:** registro público deshabilitado en Supabase, login con rate limit y mensaje genérico, cookies httpOnly y proxy como primera barrera ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)). `requireStaff()` en cada página y action, con el usuario verificado contra Supabase y una lista de staff activo ([ADR 0015](docs/adr/0015-autorizacion-del-panel-y-alta-de-staff.md)).
-- Detalle completo de requisitos y amenazas en SPEC §10.
+- **Guardas automáticas** (F5-02): ESLint rechaza SQL crudo inseguro, `dangerouslySetInnerHTML` (salvo el JSON-LD) y `process.env` fuera de `src/lib/env*.ts`; un test exige `requireStaff()` en cada página del panel y clasifica cada Server Action; un e2e prueba que Next rechaza una action desde otro origen (CSRF).
+- Detalle completo de requisitos y amenazas en SPEC §10. La revisión punto por punto, con la evidencia de cada mitigación, los hallazgos y los riesgos aceptados, está en [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md).
 
 ## Calidad y CI
 
