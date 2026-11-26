@@ -135,6 +135,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-24 | El caso en **prod** | En **F5-08**. | En F4-01 se configura y verifica dev; prod se verifica antes del lanzamiento. |
 | MT-25 | El caso en **prod** | En **F5-08**, después de `db:deploy`. | En F4-02 se da de alta el staff de dev; el de prod, antes del lanzamiento. |
 | MT-07 y MT-09 | El caso completo en **dev** | En **F4-03** (y de nuevo en el cierre, F4-08). Antes, MT-25 con tu usuario. | Necesitaban la página de login, que llega en F4-03. |
+| MT-28 | El paso 6 en **producción** (el header sin `vercel.live`) | En **F5-08**, con el dominio de la demo. | En F5-01 se probó el preview; producción se verifica en el lanzamiento. |
 
 ### Plantilla
 
@@ -699,7 +700,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 26/11/2026 | Preview de Vercel (`estudio-familia-demo-git-feat-f5-01-cs-45bc87-joaquin-palladino.vercel.app`), Brave en escritorio | ✅ pasa | Pasos 1 a 5: `content-security-policy` aplicada con `vercel.live`, sin report-only; consola sin violaciones de CSP en todas las páginas, envío con Turnstile, panel y barra de Vercel. Único aviso: "Unrecognized feature: 'browsing-topics'" de `Permissions-Policy`, propio de Brave (no implementa la Topics API), no es de la CSP. El paso 6 (producción) queda para F5-08. |
 
 ### MT-10 — Cambio de estado, notas e historial
 
