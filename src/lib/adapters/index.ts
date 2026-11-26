@@ -11,8 +11,11 @@ import { env } from "@/lib/env";
 import type { CaptchaVerifier } from "@/lib/ports/captcha-verifier";
 import type { Clock } from "@/lib/ports/clock";
 import type { EmailSender } from "@/lib/ports/email-sender";
+import type { FieldCipher } from "@/lib/ports/field-cipher";
 import type { RateLimiter } from "@/lib/ports/rate-limiter";
+import { parseFieldEncryptionKeys } from "@/lib/security/field-keys";
 
+import { createAesGcmFieldCipher } from "./aes-gcm-field-cipher";
 import { createResendEmailSender } from "./resend-email-sender";
 import { systemClock } from "./system-clock";
 import { createTurnstileVerifier } from "./turnstile-verifier";
@@ -21,6 +24,7 @@ import { createUpstashRateLimiter } from "./upstash-rate-limiter";
 let emailSender: EmailSender | undefined;
 let captchaVerifier: CaptchaVerifier | undefined;
 let rateLimiter: RateLimiter | undefined;
+let fieldCipher: FieldCipher | undefined;
 
 export function getEmailSender(): EmailSender {
   emailSender ??= createResendEmailSender({ apiKey: env.RESEND_API_KEY, from: env.EMAIL_FROM });
@@ -45,4 +49,15 @@ export function getRateLimiter(): RateLimiter {
 
 export function getClock(): Clock {
   return systemClock;
+}
+
+/** AES-256-GCM of the inquiry message and the internal notes (ADR-0017). */
+export function getFieldCipher(): FieldCipher {
+  if (!fieldCipher) {
+    // env.ts already validated the format; parsed again here to keep the keys as Buffers.
+    const parsed = parseFieldEncryptionKeys(env.FIELD_ENCRYPTION_KEYS);
+    if (!parsed.ok) throw new Error("FIELD_ENCRYPTION_KEYS inválida.");
+    fieldCipher = createAesGcmFieldCipher(parsed.keys);
+  }
+  return fieldCipher;
 }

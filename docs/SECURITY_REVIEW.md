@@ -15,7 +15,7 @@ Revisión punto por punto de SPEC §10 (requisitos NFR-SEC y tabla de amenazas),
 
 - **Código:** todas las mitigaciones de §10.2 tienen al menos un test automático. F5-02 agrega guardas que impiden que se rompan sin aviso: reglas de ESLint, un test estructural de autorización del panel y un e2e de CSRF.
 - **Configuración de servicios:** depende de pruebas manuales que todavía no se registraron (MT-23, MT-24 y MT-29 en dev). Hasta entonces, esas filas quedan en ⏳ y la revisión no está cerrada.
-- **Hallazgo principal:** el mensaje de la consulta y las notas internas se guardan en claro. Quien acceda a la base (dashboard, backup, export) los lee. Se resuelve con cifrado a nivel de aplicación en el segundo PR de F5-02 (decidido el 26/11/2026).
+- **Hallazgo principal (H1), resuelto:** el mensaje de la consulta y las notas internas se guardaban en claro, y quien accediera a la base (dashboard, backup, export) los leía. Desde el segundo PR de F5-02 van cifrados con AES-256-GCM a nivel de aplicación ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)).
 
 ## Guardas automáticas agregadas en F5-02
 
@@ -58,6 +58,7 @@ Revisión punto por punto de SPEC §10 (requisitos NFR-SEC y tabla de amenazas),
 | Fuerza bruta en el login | Rate limit + mensajes genéricos + protección de Supabase | `sign-in.test.ts`: 5 intentos por IP cada 15 min, también los malformados; email desconocido igual que contraseña incorrecta; rate limit propio de Supabase mapeado. Contraseña ≥ 12: MT-24. | ✅ (ver residual R4) |
 | Fuga de datos por mail | Aviso al estudio sin el mensaje; link al panel | "never includes the message" en `emails.test.tsx` ([ADR 0005](adr/0005-mails-despues-de-responder.md)). Manual: MT-06. | ✅ |
 | Acuse leído por otra persona | Sin acuse si el email no es privado; textos neutros | `notifications.test.ts`, `emails.test.tsx` (sin área ni especialidad en ninguna de las áreas). Riesgo residual del nombre y el dominio del estudio, ya aceptado en SPEC §10.2. | ✅ ⚠️ |
+| Acceso directo a la base (dashboard, backup, export, credencial filtrada) | Mensaje y notas cifrados con una clave que no está en la base ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)) | [`aes-gcm-field-cipher.test.ts`](../src/lib/adapters/__tests__/aes-gcm-field-cipher.test.ts) (ida y vuelta, IV aleatorio, otra fila o columna, alteración, rotación), [`repository.db.test.ts`](../src/features/inquiries/__tests__/repository.db.test.ts) (en la base queda `enc:v1:…`; un valor en claro, de otra fila o de otra clave da `decrypt_failed`), [`detail.db.test.ts`](../src/features/inquiries/__tests__/detail.db.test.ts) (notas), e2e `inquiry-submit.spec.ts` (`messageIsEncrypted`) y `admin-panel.spec.ts` (el detalle muestra el texto). Manual: MT-30. | ✅ (MT-30 ⏳) ⚠️ R8 |
 | Clickjacking | `frame-ancestors 'none'` + `X-Frame-Options: DENY` | Ahora aplicado (F5-01): `security-headers.test.ts` y `security-headers.spec.ts`. | ✅ |
 | Secretos filtrados | `server-only`, env público/privado, revisión en PR | Ver NFR-SEC-09. | ✅ |
 
@@ -77,7 +78,7 @@ La guía de seguridad de datos de Next ("Auditing") pide revisar estos puntos:
 
 | # | Hallazgo | Severidad | Acción |
 | --- | --- | --- | --- |
-| H1 | El mensaje de la consulta (`Inquiry.message`) y las notas internas (`internalNotes`) están en claro en la base. Pueden contener datos de violencia, menores o salud. Quien accede al dashboard de Supabase, a un backup o a un export los lee. | Media | **Decidido:** cifrado AES-256-GCM a nivel de aplicación, en el segundo PR de F5-02, antes de F5-08 (prod todavía no tiene filas). No es extremo a extremo: protege de quien accede a la base sin la clave, no de un servidor comprometido ni de una sesión de staff robada. |
+| H1 | El mensaje de la consulta (`Inquiry.message`) y las notas internas (`internalNotes`) estaban en claro en la base. Pueden contener datos de violencia, menores o salud. Quien accede al dashboard de Supabase, a un backup o a un export los leía. | Media | **Resuelto** en el PR 2 de F5-02: AES-256-GCM a nivel de aplicación ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)), migración a `text` y `npm run inquiries:encrypt` para las filas existentes. No es extremo a extremo: protege de quien accede a la base sin la clave, no de un servidor comprometido ni de una sesión de staff robada. |
 | H2 | Alerta moderada de Dependabot en `minimatch` (dependencia de la CLI de `shadcn`, solo desarrollo). | Baja | Corregido en este PR: `shadcn` 4.23.1. |
 | H3 | Las convenciones de seguridad (sin SQL crudo inseguro, sin HTML crudo, sin `process.env` suelto, `requireStaff()` en cada página) dependían de la revisión manual del PR. | Baja | Corregido en este PR: reglas de ESLint y test estructural. |
 
@@ -91,7 +92,8 @@ La guía de seguridad de datos de Next ("Auditing") pide revisar estos puntos:
 | R4 | Sin segundo factor (MFA) para el staff. Un ataque distribuido desde muchas IPs esquiva el límite por IP. | Contraseña ≥ 12, mensajes genéricos y la protección propia de Supabase. El panel tiene pocos usuarios. | Candidato para clientes reales: Supabase Auth soporta TOTP. |
 | R5 | El listado del panel muestra el email de cada consulta. | Pedido del dueño (SPEC v1.28); el panel exige staff activo. | — |
 | R6 | Las consultas se guardan sin límite de tiempo hasta F5-05. | La purga de más de 24 meses (NFR-PRIV-01) es la tarea F5-05; la política de privacidad ya la anuncia. | F5-05. |
-| R7 | Los backups y exports de Supabase contienen datos personales. | Los maneja el proveedor; el export manual antes de una migración en prod (§14) queda en la máquina de quien lo hace. Con H1 resuelto, el mensaje y las notas van cifrados. | F5-08: guardar los exports cifrados y borrarlos después. |
+| R7 | Los backups y exports de Supabase contienen datos personales. | Los maneja el proveedor; el export manual antes de una migración en prod (§14) queda en la máquina de quien lo hace. El mensaje y las notas van cifrados (H1); nombre, email y teléfono no. | F5-08: guardar los exports cifrados y borrarlos después. |
+| R8 | Si se pierde `FIELD_ENCRYPTION_KEYS`, los mensajes y las notas cifrados con ella no se pueden recuperar. Y quien tenga la clave **y** la base lee todo. | Es el precio del cifrado (ADR 0017). La clave de cada entorno se guarda en un gestor de contraseñas y en Vercel, nunca en la base ni en el repo. | Al rotar: agregar la nueva adelante, correr el script y recién después sacar la vieja. |
 
 ## Pendiente para cerrar la revisión
 
@@ -99,6 +101,6 @@ La guía de seguridad de datos de Next ("Auditing") pide revisar estos puntos:
 2. **MT-24** en dev: registro deshabilitado y contraseña mínima en Supabase Auth.
 3. **MT-29** (nuevo): configuración de Supabase, Vercel y GitHub.
 4. MT-04, MT-05, MT-08, MT-09 y MT-27 (cierre de F3 y F4), que también son evidencia de esta revisión.
-5. El segundo PR de F5-02 (H1).
+5. **MT-30** en dev: el mensaje y las notas cifrados en la base (segundo PR de F5-02).
 
 En producción, MT-23, MT-24, MT-25, MT-28 (paso 6) y MT-29 se repiten en F5-08.

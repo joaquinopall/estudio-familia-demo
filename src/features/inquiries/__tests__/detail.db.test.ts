@@ -9,12 +9,15 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createPrismaInquiryRepository } from "@/features/inquiries/repository";
 import { getDb } from "@/lib/db";
 
+import { createTestFieldCipher } from "./test-field-cipher";
+
 const RUN = randomUUID().slice(0, 8);
 const MARKER = `E2E-${RUN}`;
+const cipher = createTestFieldCipher();
 
 describe("Prisma inquiry repository: detail and changes (Supabase dev)", () => {
   const db = getDb();
-  const repository = createPrismaInquiryRepository(db);
+  const repository = createPrismaInquiryRepository(db, cipher);
   let inquiryId = "";
   let staffId = "";
 
@@ -107,12 +110,25 @@ describe("Prisma inquiry repository: detail and changes (Supabase dev)", () => {
 
     const row = await repository.findById(inquiryId);
     expect(row?.internalNotes).toBe(`${MARKER} nota privada`);
+    // Stored encrypted (ADR-0017); the same notes again are still "unchanged" below, even
+    // though they would encrypt differently.
+    const stored = await db.inquiry.findUniqueOrThrow({ where: { id: inquiryId } });
+    expect(stored.internalNotes).toMatch(/^enc:v1:test:/);
+    expect(stored.internalNotes).not.toContain("nota privada");
     expect(row?.events.at(-1)).toMatchObject({ type: "NOTES_UPDATED", actorId: staffId });
     expect(JSON.stringify(row?.events)).not.toContain("nota privada");
 
     expect(
       (await repository.updateNotes(inquiryId, `${MARKER} nota privada`, staffId)).result,
     ).toBe("unchanged");
+  });
+
+  it("clears the notes as null, not as an encrypted empty text", async () => {
+    expect((await repository.updateNotes(inquiryId, null, staffId)).result).toBe("changed");
+
+    const stored = await db.inquiry.findUniqueOrThrow({ where: { id: inquiryId } });
+    expect(stored.internalNotes).toBeNull();
+    expect((await repository.findById(inquiryId))?.internalNotes).toBeNull();
   });
 
   it("reports not_found for both changes on an unknown id", async () => {

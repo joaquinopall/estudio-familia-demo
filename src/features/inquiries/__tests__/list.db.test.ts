@@ -11,8 +11,11 @@ import { createPrismaInquiryRepository } from "@/features/inquiries/repository";
 import type { InquiryListQuery } from "@/features/inquiries/service";
 import { getDb } from "@/lib/db";
 
+import { createTestFieldCipher } from "./test-field-cipher";
+
 const RUN = randomUUID().slice(0, 8);
 const MARKER = `E2E-${RUN}`;
+const cipher = createTestFieldCipher();
 
 /** Five rows, one minute apart; name "<MARKER> n", email "e2e-<run>-n@example.com". */
 const SEED = [
@@ -25,7 +28,7 @@ const SEED = [
 
 describe("Prisma inquiry repository: list (Supabase dev)", () => {
   const db = getDb();
-  const repository = createPrismaInquiryRepository(db);
+  const repository = createPrismaInquiryRepository(db, cipher);
   const list = (query: Partial<InquiryListQuery> = {}) =>
     repository.list({ search: MARKER, skip: 0, take: 20, ...query });
 
@@ -36,6 +39,7 @@ describe("Prisma inquiry repository: list (Supabase dev)", () => {
         createdAt: new Date(Date.UTC(2026, 10, 25, 12, index)),
         fullName: `${MARKER} ${index}`,
         email: `e2e-${RUN}-${index}@example.com`,
+        // The list never reads the message, so it is seeded without encrypting it.
         message: `${MARKER} prueba del listado; se borra al terminar.`,
         preferredChannel: "EMAIL",
         safeToContact: null,

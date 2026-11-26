@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.33 (26/11/2026) |
+| Versión | 1.34 (26/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -181,7 +181,8 @@ src/
       service.ts                 # createInquiry, listInquiries, getInquiry, changeStatus, updateNotes; declara InquiryRepository
       repository.ts              # Prisma (implementa InquiryRepository)
       reference.ts               # toReference: C-XXXXXXXX (FR-09)
-      errors.ts                  # InquiryStoreError, InvalidInquiryInputError
+      errors.ts                  # InquiryStoreError (store_failed | decrypt_failed), InvalidInquiryInputError
+      reencryption.ts            # cifra lo que está en claro y recifra con la clave actual (npm run inquiries:encrypt, ADR-0017)
       actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes ("use server", finas)
       submit-inquiry.ts          # lógica de submitInquiry con dependencias por parámetro (FR-06)
       update-inquiry.ts          # lógica de updateInquiryStatus y updateInquiryNotes (requireStaffForAction → Zod → service)
@@ -218,9 +219,9 @@ src/
     supabase/auth-gateway.ts     # adapter de AuthGateway (signIn/signOut con Supabase)
                                  # sin cliente de navegador (ADR-0014)
     admin-paths.ts               # rutas del panel (/admin, /admin/login)
-    ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock, AuthGateway (sin excepciones, ADR-0013)
+    ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock, AuthGateway (sin excepciones, ADR-0013); FieldCipher (ADR-0017)
     ports/fakes/                 # fakes en memoria, solo para tests
-    adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter, systemClock
+    adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter, systemClock, AesGcmFieldCipher
     adapters/index.ts            # raíz de composición: getEmailSender(), getCaptchaVerifier(), getRateLimiter(), getClock()
     action-result.ts             # tipo ActionResult + helpers
     utils.ts                     # cn() (lo genera shadcn)
@@ -228,6 +229,7 @@ src/
     format-date.ts               # formatLongDate (fechas en es-AR, sin depender de la zona horaria)
     logger.ts                    # logger estructurado sin PII
     security/ip.ts               # obtener IP de headers y hashearla (HMAC-SHA256 con IP_HASH_SALT)
+    security/field-keys.ts       # parsea FIELD_ENCRYPTION_KEYS (puro: lo usa env.schema.ts)
     security/headers.ts          # headers de seguridad y CSP aplicada (NFR-SEC-04/05, ADR-0016); lo usa next.config.ts
     seo/json-ld.tsx              # serialización segura de JSON-LD
     seo/structured-data.ts       # builders de schema.org
@@ -256,6 +258,7 @@ src/
   proxy.ts                       # Next 16: en src/, al lado de app/ (en la raíz no corre). Solo /admin/:path*
 prisma.config.ts                 # config de la CLI de Prisma 7: carga .env* y usa DIRECT_URL (ADR-0012)
 scripts/staff-add.ts             # npm run staff:add (tsx --conditions=react-server, ADR-0015)
+scripts/encrypt-inquiries.ts     # npm run inquiries:encrypt (ADR-0017): sin --confirm solo cuenta
 prisma/
   schema.prisma
   migrations/
@@ -345,14 +348,14 @@ model Inquiry {
   phone                String?        @db.VarChar(30)
   area                 PracticeArea
   urgency              Urgency
-  message              String         @db.VarChar(2000)
+  message              String         // cifrado, enc:v1:… (ADR-0017); el texto ≤ 2000 lo valida Zod
   preferredChannel     ContactChannel @map("preferred_channel")
   safeToContact        Boolean?       @map("safe_to_contact")   // US-03 CA6; null si el canal es EMAIL
   emailIsPrivate       Boolean        @map("email_is_private")  // US-03 CA7
   consentAt            DateTime       @map("consent_at")
   privacyPolicyVersion String         @map("privacy_policy_version") @db.VarChar(20)
   status               InquiryStatus  @default(NEW)
-  internalNotes        String?        @map("internal_notes") @db.VarChar(5000)
+  internalNotes        String?        @map("internal_notes")  // cifrado (ADR-0017); el texto ≤ 5000 lo valida Zod
   ipHash               String?        @map("ip_hash") @db.VarChar(64)
   source               String?        @db.VarChar(100)   // utm_source u origen
   events               InquiryEvent[]
@@ -393,6 +396,7 @@ model StaffMember {
 - Migraciones solo con `prisma migrate` versionadas en git. Nunca `db push` contra producción.
 - **RLS habilitado en todas las tablas del esquema `public`** (`inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`, que crea Prisma), **sin políticas** para `anon` ni `authenticated`: la Data API de Supabase no puede leerlas. Prisma accede con la conexión de Postgres. Se hace en una migración SQL, y un test verifica que toda tabla nueva lo tenga.
 - Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase). Busca al usuario en `auth.users` por email con la conexión de Prisma (sin service role key) y guarda el email de Auth. Es idempotente: si ya era staff, lo reactiva y actualiza el nombre. Si el usuario de Auth se borró y se volvió a crear con el mismo email, vincula el staff existente al usuario nuevo y conserva su `id`; si el usuario viejo sigue existiendo, no cambia nada. La baja es `active = false` (ADR-0015).
+- **Cifrado** (F5-02, ADR-0017): `message` e `internalNotes` se guardan cifrados con AES-256-GCM a nivel de aplicación (`enc:v1:<id de clave>:<iv>:<cifrado>`), atados a su fila y columna. Por eso son `text` y el id de la consulta lo genera la app. Nombre, email y teléfono quedan en claro (búsqueda y aviso al estudio). No es cifrado extremo a extremo.
 - Retención: las consultas en `CLOSED` o `DISCARDED` con más de 24 meses se eliminan (script manual en v1; cron en v2). Documentado en la política de privacidad.
 
 ---
@@ -450,6 +454,7 @@ Etiquetas de interfaz:
 | `TURNSTILE_SECRET_KEY` | no | verificación |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | no | rate limit |
 | `IP_HASH_SALT` | no | HMAC de IPs (32+ caracteres aleatorios) |
+| `FIELD_ENCRYPTION_KEYS` | no | cifrado del mensaje y de las notas (ADR-0017): `id:base64` de 32 bytes, varias separadas por comas (la primera cifra). Distinta en dev y prod; si se pierde, esos campos son irrecuperables |
 
 - **No se usa la service role key de Supabase** (mínimo privilegio): la DB va por Prisma y Auth por la clave pública.
 - **Conexiones a la DB cifradas y verificadas:** TLS contra la CA de Supabase (`prisma/certs/supabase-ca.crt`), configurado en el código (`lib/db-tls.ts`). `DATABASE_URL` y `DIRECT_URL` no llevan parámetros `ssl*`. Cada proyecto de Supabase tiene activado "Enforce SSL on incoming connections" (ADR-0012).
@@ -489,6 +494,7 @@ Etiquetas de interfaz:
 | Fuerza bruta en el login | Rate limit + mensajes genéricos + protección propia de Supabase |
 | Fuga de datos por mail | Mail al estudio sin el mensaje completo; link al panel |
 | Acuse leído por otra persona (casilla compartida) | Sin acuse si el email no es privado; remitente, asunto y texto neutros (US-03 CA5 y CA7). Riesgo residual: el nombre y el dominio del estudio siguen identificándolo |
+| Acceso directo a la base (dashboard, backup, export, credencial filtrada) | El mensaje y las notas cifrados con AES-256-GCM y una clave que no está en la base (ADR-0017). Riesgo residual: nombre, email y teléfono en claro; un servidor comprometido tiene la clave |
 | Clickjacking | `frame-ancestors 'none'` |
 | Secretos filtrados | `server-only`, `env.ts` separado en público y privado, revisión en PR |
 
@@ -556,7 +562,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | Manual | `docs/TESTING.md` | Guía MT-xx (ver abajo) |
 
 - Cobertura objetivo: ≥ 80% en `src/features/**`.
-- Los e2e que escriben en la DB usan el proyecto Supabase **dev** y datos con prefijo `E2E-` que el propio test limpia (también los de más de un día que haya dejado una corrida cortada). Mandan los mails a las direcciones de prueba de Resend (`delivered+…@resend.dev`), nunca a una casilla real, y se saltean si la clave de Turnstile no es la de prueba. Playwright nunca reusa un servidor abierto.
+- Los e2e que escriben en la DB usan el proyecto Supabase **dev** y datos marcados con `E2E-` en el nombre o el email (el mensaje va cifrado, ADR-0017) que el propio test limpia (también los de más de un día que haya dejado una corrida cortada). Mandan los mails a las direcciones de prueba de Resend (`delivered+…@resend.dev`), nunca a una casilla real, y se saltean si la clave de Turnstile no es la de prueba. Playwright nunca reusa un servidor abierto.
 - CI (GitHub Actions) en cada PR: install → lint → typecheck → unit e integración → build → `npm audit`. Los e2e corren en local y contra la URL de preview de Vercel (Fase 5: también en CI).
 
 **Casos manuales mínimos** (la IA los detalla en `docs/TESTING.md`):
@@ -602,7 +608,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 - Dominio de la demo (¿subdominio de la SAS?) y dominio verificado en Resend.
 - Nombre ficticio del estudio y textos finales (se definen en la Fase 2).
 - ¿Sentry o solo los logs de Vercel en la Fase 5?
-- **Para F5-02: cifrado a nivel de aplicación del mensaje y de las notas internas** (`Inquiry.message` e `internalNotes`). **Decidido el 26/11/2026: se implementa en un segundo PR de F5-02, antes de F5-08** (hallazgo H1 de `docs/SECURITY_REVIEW.md`). Su ADR y los cambios de §7, §9 y §10 van en ese PR.
+- **Para F5-02: cifrado a nivel de aplicación del mensaje y de las notas internas** (`Inquiry.message` e `internalNotes`). **Resuelto en F5-02 (26/11/2026), [ADR-0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md):** ver §7, §9 y §10.2. Lo que sigue es el análisis original.
   - **Qué sería:** AES-256-GCM en el servidor, con una clave en las variables de Vercel y no en la base. Se cifra antes de guardar y se descifra solo para el detalle. Hoy hay TLS en tránsito y cifrado de disco del proveedor en reposo, pero quien ve la base (dashboard, Table Editor, un backup o export) ve esos textos en claro.
   - **Protege** contra quien accede a la base sin la clave. **No protege** de un servidor comprometido ni de una sesión de staff robada.
   - **Alcance:** nombre, email y teléfono quedan en claro, porque se usan para buscar y para el aviso al estudio. **No es extremo a extremo**, y no hay que presentarlo así: el servidor necesita leer los datos.
@@ -663,3 +669,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 25/11/2026 | 1.31 | F4-06. §6.4 paso 1: el proxy agrega `?next=` con la página pedida (salvo `/admin`). §6.5: `signIn` recibe `next` (campo oculto) y redirige ahí si es una ruta del panel. §10.2: amenaza nueva, el redirect abierto, mitigada con `safeNextPath`. | [tu nombre] |
 | 26/11/2026 | 1.32 | F5-01 (ADR-0016, reemplaza a ADR-0007). NFR-SEC-05: la CSP pasa a aplicada; permite self y Turnstile, y la barra de Vercel solo en Preview. Supabase no se agrega porque no hay cliente de navegador (ADR-0014). Se mantiene `'unsafe-inline'` en `script-src`: los nonces harían dinámicas todas las páginas y el SRI de Next no hashea los scripts inline (probado). §6.2: comentario de `security/headers.ts`. `env.schema.ts` valida `VERCEL_ENV`, la variable de sistema de Vercel, que no va en `.env.example`. | [tu nombre] |
 | 26/11/2026 | 1.33 | F5-02 (auditoría). §6.2: `docs/SECURITY_REVIEW.md`. §15: el cifrado del mensaje y de las notas queda decidido, para un segundo PR de F5-02. Sin cambios de requisitos: las reglas de ESLint y el test de autorización del panel hacen cumplir los que ya estaban (CLAUDE.md §4 y §5, NFR-SEC-02). | [tu nombre] |
+| 26/11/2026 | 1.34 | F5-02, cifrado (ADR-0017). §7: `message` e `internalNotes` cifrados con AES-256-GCM a nivel de aplicación, como `text`; el id de la consulta lo genera la app. §9: `FIELD_ENCRYPTION_KEYS` (obligatoria). §10.2: amenaza nueva, el acceso directo a la base. §13: las filas `E2E-` se marcan por el nombre o el email. §15: la pregunta del cifrado queda resuelta. §6.2: `FieldCipher`, `AesGcmFieldCipher`, `security/field-keys.ts`, `reencryption.ts` y `scripts/encrypt-inquiries.ts`. | [tu nombre] |

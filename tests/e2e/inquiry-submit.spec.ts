@@ -2,7 +2,7 @@
  * End-to-end submission of an inquiry (US-03, FR-04, FR-06, FR-07, SPEC §13): real browser,
  * Turnstile test keys, the dev database and Resend's test addresses (no real inbox).
  *
- * Writes rows whose message starts with E2E-<run>-<scenario> and deletes them at the end, even
+ * Writes rows whose email carries e2e-<run>-<scenario> and deletes them at the end, even
  * if a test fails. Also deletes E2E- rows older than a day (runs cut short).
  * Skipped without DATABASE_URL or without Turnstile's passing test key.
  */
@@ -119,6 +119,8 @@ test.describe("inquiry submission (US-03)", () => {
       emailIsPrivate: true,
       privacyPolicyVersion: privacyPolicy.version,
       events: ["CREATED"],
+      // F5-02 (ADR-0017): the message is never stored as text.
+      messageIsEncrypted: true,
     });
     expect(`C-${stored?.id.slice(0, 8).toUpperCase()}`).toBe(reference);
     expect(violations).toEqual([]);

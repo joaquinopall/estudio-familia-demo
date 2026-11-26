@@ -4,6 +4,19 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-02 · Cifrado del mensaje y de las notas (PR 2 de 2)
+
+- **Agregado:** el mensaje de cada consulta y las notas internas se guardan cifrados con AES-256-GCM a nivel de aplicación ([ADR 0017](docs/adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)). Resuelve el hallazgo H1 de `SECURITY_REVIEW.md`. **No es cifrado extremo a extremo.**
+  - Port `FieldCipher` y adapter `aes-gcm-field-cipher.ts` (`node:crypto`, sin dependencias). Formato `enc:v1:<id de clave>:<iv>:<cifrado>`, con IV aleatorio, atado a la fila y la columna.
+  - El repository cifra al crear y al guardar notas, y descifra en el detalle. El id de la consulta lo genera la app. Service, actions, mails y UI no cambian.
+  - Un valor que no descifra da `InquiryStoreError` con código `decrypt_failed`: error genérico en el panel y `errorCode` en el log, nunca el valor.
+- **Agregado:** variable obligatoria `FIELD_ENCRYPTION_KEYS` (una o más claves `id:base64`; la primera cifra, todas descifran), validada al arrancar. Valores ficticios en la CI y en Vitest.
+- **Agregado:** `npm run inquiries:encrypt`. Cifra lo que está en claro y recifra con la clave actual (rotación). Sin `--confirm` solo cuenta; idempotente; conserva `updatedAt`; nunca imprime contenido.
+- **Migración:** `message` e `internal_notes` pasan de `varchar` a `text` (`20261126120000_encrypted_text_fields`), aplicada en dev. Los límites de 2000 y 5000 caracteres siguen en Zod.
+- **Cambiado:** los e2e y los tests de base marcan sus filas `E2E-` por el nombre y el email (el mensaje ya no se puede buscar). El e2e del envío verifica que el mensaje guardado esté cifrado, y el del panel, que el detalle lo muestre legible.
+- **Documentado:** SPEC v1.34 (§6.2, §7, §9, §10.2, §13, §15), README (generar, guardar, cargar y rotar la clave), ARCHITECTURE, `SECURITY_REVIEW.md` (H1 resuelto, R8 nuevo), TESTING (caso manual **MT-30**).
+- **Pendiente (vos):** generar las claves de dev y prod, cargarlas antes de mergear, cifrar las filas de dev con el script y correr MT-30.
+
 ### F5-02 · Auditoría de seguridad (PR 1 de 2)
 
 - **Agregado:** [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md). Revisa NFR-SEC-01 a 10 y cada amenaza de SPEC §10.2, con la evidencia linkeada (tests, configuración, MT-xx) y su estado. Suma la lista de auditoría de Next 16, 3 hallazgos y 7 riesgos residuales.

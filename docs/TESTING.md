@@ -15,7 +15,7 @@ Cómo correr los tests automáticos, qué cubre cada nivel y la guía de **tests
 Vitest tiene dos proyectos en `vitest.config.mts`:
 
 - **`unit`** (`npm run test`, la CI): todo `*.test.ts(x)` salvo `*.db.test.ts`. Sin red ni base.
-- **`db`** (`npm run test:db`): solo `*.db.test.ts`. Carga `.env.local` (`tests/setup/load-db-env.ts`), crea filas con prefijo `E2E-` y las borra al final.
+- **`db`** (`npm run test:db`): solo `*.db.test.ts`. Carga `.env.local` (`tests/setup/load-db-env.ts`), crea filas con el nombre empezando por `E2E-` y las borra al final. Cifra con una clave aleatoria propia de la corrida (`test-field-cipher.ts`), no con la de `.env.local`: solo lee lo que escribe. **Nunca corre el recifrado completo**: cifraría tus filas de dev con una clave descartable.
   - **Antes de correrlo, confirmá que `DATABASE_URL` de `.env.local` sea la de Supabase dev.** Se niega a correr con `VERCEL_ENV=production`, pero no puede saber a qué proyecto apunta la URL.
   - No corre en la CI todavía (F5-06). Corrélo antes de abrir un PR que toque un repository.
   - `npx vitest run` sin `--project` corre los dos: preferí los scripts de npm.
@@ -41,12 +41,12 @@ Detalles de los e2e:
     - acceso denegado, con el staff desactivado un momento y reactivado siempre;
     - axe en el listado y en el detalle;
     - ninguna violación de la CSP en el login, el listado, el detalle y sus acciones (F5-01).
-  - **Datos:** inserta 3 consultas `E2E-<corrida>-…` por SQL (no gasta Turnstile, mails ni rate limit) y las borra al terminar. También borra las `E2E-` de más de un día. Cada escenario manda su propia IP de documentación en `x-forwarded-for`.
+  - **Datos:** inserta 3 consultas `E2E-<corrida>-…` por SQL (no gasta Turnstile, mails ni rate limit), con el mensaje cifrado con `FIELD_ENCRYPTION_KEYS` de `.env.local`, igual que la app; el detalle verifica que se muestre legible y las borra al terminar. También borra las `E2E-` de más de un día. Cada escenario manda su propia IP de documentación en `x-forwarded-for`.
   - **Log limpio:** el último test revisa que `e2e-server.log` no tenga "while prerendering" ni `auth.user_check_unavailable`. Es la regresión del 26/11/2026: si alguien saca el `connection()` del DAL, la pantalla sigue andando y solo este test se entera (lo comprobé quitándolo: falla con 25 líneas).
 - **`security-headers.spec.ts`, la CSP aplicada** (F5-01): verifica que el header sea `Content-Security-Policy` (no el report-only) y recorre todas las páginas públicas, una 404 y `/admin/login` sin una sola violación. Las violaciones se juntan con `tests/e2e/support/csp.ts` (el evento `securitypolicyviolation` y la consola); el envío con Turnstile y el panel con sesión usan el mismo helper.
 - **`csrf.spec.ts`** (F5-02, SPEC §10.2): captura el POST real de la action de login y lo repite desde `https://otro-sitio.example` (Next lo rechaza: "Invalid Server Actions request" en `e2e-server.log`) y desde el origen propio (control: la action corre y responde el error genérico). Consulta a Supabase dev con una cuenta que no existe y cuenta un intento del rate limit, con una IP de documentación propia.
 - **`inquiry-submit.spec.ts` envía consultas reales** (F3-08):
-  - **Base:** usa la de `.env.local`, que tiene que ser **Supabase dev**. Escribe filas cuyo mensaje empieza con `E2E-<corrida>-` y las borra al final, aunque el test falle. También borra las filas `E2E-` de más de un día, que quedan si una corrida se corta.
+  - **Base:** usa la de `.env.local`, que tiene que ser **Supabase dev**. Escribe filas con `e2e-<corrida>-` en el email (`delivered+e2e-…@resend.dev`; el mensaje va cifrado y no se puede buscar) y las borra al final, aunque el test falle. También borra las filas `E2E-` de más de un día, que quedan si una corrida se corta.
   - **Mails:** van a las direcciones de prueba de Resend (`delivered+…@resend.dev`), que simulan una entrega sin llegar a ninguna casilla. Cuentan para la cuota de Resend.
   - **Turnstile:** necesita la clave de prueba que aprueba sola (`1x00000000000000000000AA`). Con otra clave, o sin `DATABASE_URL`, los dos escenarios se saltean con su motivo: nunca resuelven un desafío real.
   - Cubre: llegar desde un área con el área preseleccionada, los dos pasos, Turnstile, la confirmación con y sin medio seguro, lo guardado en la base (con su evento `CREATED`) y que no haya violaciones de la CSP.
@@ -139,6 +139,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-24 | El caso en **prod** | En **F5-08**. | En F4-01 se configura y verifica dev; prod se verifica antes del lanzamiento. |
 | MT-25 | El caso en **prod** | En **F5-08**, después de `db:deploy`. | En F4-02 se da de alta el staff de dev; el de prod, antes del lanzamiento. |
 | MT-07 y MT-09 | El caso completo en **dev** | En **F4-03** (y de nuevo en el cierre, F4-08). Antes, MT-25 con tu usuario. | Necesitaban la página de login, que llega en F4-03. |
+| MT-30 | El caso en **prod** | En **F5-08**, después de `db:deploy` y con la clave de prod cargada. | En F5-02 se verifica dev; prod se verifica en el lanzamiento. |
 | MT-29 | El caso en **prod** | En **F5-08**. | En F5-02 se revisa dev y el proyecto de Vercel; prod se revisa en el lanzamiento. |
 | MT-28 | El paso 6 en **producción** (el header sin `vercel.live`) | En **F5-08**, con el dominio de la demo. | En F5-01 se probó el preview; producción se verifica en el lanzamiento. |
 
@@ -198,6 +199,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-27 | Del mail al detalle, pasando por el login                | F4-06         | **Detallado** · se ejecuta en F4-06 y F4-08 |
 | MT-28 | CSP aplicada en el preview                               | F5-01         | **Detallado** · se ejecuta en F5-01 (preview) y F5-08 (producción) |
 | MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev en F5-02, prod en F5-08 |
+| MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev en F5-02, prod en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -707,6 +709,36 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
 | 26/11/2026 | Preview de Vercel (`estudio-familia-demo-git-feat-f5-01-cs-45bc87-joaquin-palladino.vercel.app`), Brave en escritorio | ✅ pasa | Pasos 1 a 5: `content-security-policy` aplicada con `vercel.live`, sin report-only; consola sin violaciones de CSP en todas las páginas, envío con Turnstile, panel y barra de Vercel. Único aviso: "Unrecognized feature: 'browsing-topics'" de `Permissions-Policy`, propio de Brave (no implementa la Topics API), no es de la CSP. El paso 6 (producción) queda para F5-08. |
+
+### MT-30 — Mensaje y notas cifrados en la base
+
+- **Objetivo:** que nadie que mire la base (dashboard, backup, export) pueda leer el mensaje de una consulta ni las notas internas, y que el panel los siga mostrando.
+- **Requisitos:** SPEC §7, §9, §10.2, [ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md).
+- **Precondiciones:** `FIELD_ENCRYPTION_KEYS` de dev cargada en `.env.local` y en Vercel → Preview, y guardada en tu gestor de contraseñas. Migraciones aplicadas en dev (`npx prisma migrate status`). Tu usuario es staff en dev (MT-25).
+
+**Pasos**
+
+1. Corré `npm run inquiries:encrypt` (sin `--confirm`) y anotá cuántos campos en claro informa.
+2. Corré `npm run inquiries:encrypt -- --confirm`, y después otra vez sin `--confirm`.
+3. En el preview, enviá una consulta desde `/contacto` con el mensaje `PRUEBA MT-30 texto que no tiene que verse en la base`.
+4. En Supabase dev → Table Editor → `inquiries`, buscá esa consulta (por el email) y mirá las columnas `message` e `internal_notes`.
+5. En el panel del preview, abrí esa consulta. Guardá la nota `PRUEBA MT-30 nota privada`.
+6. Volvé al Table Editor y mirá `internal_notes` de esa fila. Abrí también una consulta vieja (de antes del paso 2) en el panel.
+7. En el Table Editor, copiá el `message` de una consulta y pegalo en el `message` de **otra**. Abrí esa otra en el panel. Después borrá las dos consultas de prueba.
+
+**Resultado esperado**
+
+- Paso 1: cuenta los campos en claro y dice que se cifran con `--confirm`. No escribe nada.
+- Paso 2: la primera corrida actualiza esas consultas; la segunda informa 0 campos en claro. Ninguna imprime un mensaje ni una nota.
+- Paso 3: la confirmación con la referencia, como siempre.
+- Paso 4: `message` empieza con `enc:v1:k1:` y no contiene "PRUEBA" ni ningún texto legible. `internal_notes` está vacío (`NULL`).
+- Paso 5: el detalle muestra el mensaje legible, y la nota se guarda.
+- Paso 6: `internal_notes` también empieza con `enc:v1:k1:`. La consulta vieja se ve bien en el panel.
+- Paso 7: el panel muestra su error genérico y no el texto: un valor cifrado solo se descifra en su propia fila. En los logs de Vercel aparece `inquiry.detail_failed` con `errorCode: decrypt_failed`, sin contenido.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
 
 ### MT-29 — Configuración de seguridad de los servicios
 

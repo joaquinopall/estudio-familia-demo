@@ -2,18 +2,19 @@
 
 Implementaciones concretas de los puertos de [`src/lib/ports`](../ports/README.md).
 
-| Archivo                   | Implementa        | Proveedor                                                                    |
-| ------------------------- | ----------------- | ---------------------------------------------------------------------------- |
-| `resend-email-sender.ts`  | `EmailSender`     | Resend (SDK `resend`)                                                        |
-| `turnstile-verifier.ts`   | `CaptchaVerifier` | Cloudflare Turnstile (`siteverify` por `fetch`, sin SDK)                     |
-| `upstash-rate-limiter.ts` | `RateLimiter`     | Upstash Redis (`@upstash/ratelimit`, ventana deslizante)                     |
-| `system-clock.ts`         | `Clock`           | Hora del sistema                                                             |
-| `index.ts`                | —                 | `getEmailSender()`, `getCaptchaVerifier()`, `getRateLimiter()`, `getClock()` |
+| Archivo                   | Implementa        | Proveedor                                                                                        |
+| ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| `resend-email-sender.ts`  | `EmailSender`     | Resend (SDK `resend`)                                                                            |
+| `turnstile-verifier.ts`   | `CaptchaVerifier` | Cloudflare Turnstile (`siteverify` por `fetch`, sin SDK)                                         |
+| `upstash-rate-limiter.ts` | `RateLimiter`     | Upstash Redis (`@upstash/ratelimit`, ventana deslizante)                                         |
+| `system-clock.ts`         | `Clock`           | Hora del sistema                                                                                 |
+| `aes-gcm-field-cipher.ts` | `FieldCipher`     | AES-256-GCM de `node:crypto` (ADR-0017)                                                          |
+| `index.ts`                | —                 | `getEmailSender()`, `getCaptchaVerifier()`, `getRateLimiter()`, `getClock()`, `getFieldCipher()` |
 
 Reglas:
 
 - Son el **único** lugar donde se importan los SDKs de Resend y Upstash, y donde se llama a Turnstile.
-- Importan `server-only`. Solo `index.ts` lee `src/lib/env.ts`; cada adapter recibe su configuración por parámetro, así se testea sin red.
+- Importan `server-only`, salvo `aes-gcm-field-cipher.ts`: no tiene secretos propios (recibe las claves) y los e2e lo usan para sembrar consultas cifradas. Solo `index.ts` lee `src/lib/env.ts`; cada adapter recibe su configuración por parámetro, así se testea sin red.
 - No contienen reglas de negocio: solo traducen entre el puerto y el proveedor.
 - Las Server Actions toman los ports de `index.ts` y se los pasan a los services. Los services nunca importan este directorio.
 

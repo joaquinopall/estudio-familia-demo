@@ -4,6 +4,10 @@
  * (server-only): it connects with `pg` and the same verified TLS as the app (db-tls.ts).
  *
  * It uses DATABASE_URL from .env.local: it must point to Supabase DEV.
+ *
+ * The message is stored encrypted (ADR-0017), so rows are found by their email: every e2e row
+ * has the lowercase marker in it (`delivered+e2e-<run>-…@resend.dev` from the form,
+ * `e2e-<run>-<n>@example.com` from the panel seeds), and its name starts with `E2E-`.
  */
 import { readFileSync } from "node:fs";
 
@@ -46,6 +50,8 @@ export async function withClient<T>(run: (client: Client) => Promise<T>): Promis
 
 export type StoredInquiry = {
   id: string;
+  /** The stored message has the encrypted format (`enc:v1:…`), never the text. */
+  messageIsEncrypted: boolean;
   area: string;
   status: string;
   preferredChannel: string;
@@ -55,11 +61,15 @@ export type StoredInquiry = {
   events: string[];
 };
 
-/** The inquiry whose message starts with the marker, with its event types; null if none. */
+/** `%e2e-<run>-<scenario>%`: matches the emails that carry the marker. */
+const emailLike = (marker: string) => `%${marker.toLowerCase()}%`;
+
+/** The inquiry whose email carries the marker, with its event types; null if none. */
 export function findInquiryByMarker(marker: string): Promise<StoredInquiry | null> {
   return withClient(async (client) => {
     const { rows } = await client.query<StoredInquiry>(
       `select i.id, i.area, i.status,
+              i.message like 'enc:v1:%' as "messageIsEncrypted",
               i.preferred_channel as "preferredChannel",
               i.safe_to_contact as "safeToContact",
               i.email_is_private as "emailIsPrivate",
@@ -67,9 +77,9 @@ export function findInquiryByMarker(marker: string): Promise<StoredInquiry | nul
               coalesce(array_agg(e.type::text) filter (where e.id is not null), '{}') as events
          from inquiries i
          left join inquiry_events e on e.inquiry_id = i.id
-        where i.message like $1
+        where i.email like $1
         group by i.id`,
-      [`${marker}%`],
+      [emailLike(marker)],
     );
     if (rows.length > 1) throw new Error(`Más de una consulta con el marcador ${marker}.`);
     return rows[0] ?? null;
@@ -79,8 +89,8 @@ export function findInquiryByMarker(marker: string): Promise<StoredInquiry | nul
 /** Deletes this run's rows (events go with them: ON DELETE CASCADE). Returns how many. */
 export function deleteInquiriesByMarker(marker: string): Promise<number> {
   return withClient(async (client) => {
-    const { rowCount } = await client.query("delete from inquiries where message like $1", [
-      `${marker}%`,
+    const { rowCount } = await client.query("delete from inquiries where email like $1", [
+      emailLike(marker),
     ]);
     return rowCount ?? 0;
   });
@@ -90,7 +100,11 @@ export function deleteInquiriesByMarker(marker: string): Promise<number> {
 export function deleteStaleE2eInquiries(): Promise<number> {
   return withClient(async (client) => {
     const { rowCount } = await client.query(
-      "delete from inquiries where message like 'E2E-%' and created_at < now() - interval '1 day'",
+      `delete from inquiries
+        where (full_name like 'E2E-%'
+               or email like 'delivered+e2e-%@resend.dev'
+               or email like 'e2e-%@example.com')
+          and created_at < now() - interval '1 day'`,
     );
     return rowCount ?? 0;
   });

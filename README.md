@@ -41,7 +41,7 @@ cp .env.example .env.local          # en Windows: copy .env.example .env.local
 npm run dev                         # http://localhost:3000
 ```
 
-`npm run dev` necesita en `.env.local` **todas las credenciales del formulario** (desde F3-05: base de datos, Resend, Turnstile, Upstash e `IP_HASH_SALT`; las claves de prueba de Turnstile ya vienen en `.env.example`) y **las dos de Supabase Auth** (desde F4-01). Sin ellas, el comando falla y nombra la que falta. Cómo conseguirlas: [Base de datos](#base-de-datos-supabase--prisma), [Servicios externos](#servicios-externos-mails-anti-bots-y-rate-limit) y [Panel admin](#panel-admin-supabase-auth).
+`npm run dev` necesita en `.env.local` **todas las credenciales del formulario** (desde F3-05: base de datos, Resend, Turnstile, Upstash e `IP_HASH_SALT`; las claves de prueba de Turnstile ya vienen en `.env.example`) **las dos de Supabase Auth** (desde F4-01) y **`FIELD_ENCRYPTION_KEYS`** (desde F5-02, ver [Cifrado del mensaje y de las notas](#cifrado-del-mensaje-y-de-las-notas)). Sin ellas, el comando falla y nombra la que falta. Cómo conseguirlas: [Base de datos](#base-de-datos-supabase--prisma), [Servicios externos](#servicios-externos-mails-anti-bots-y-rate-limit) y [Panel admin](#panel-admin-supabase-auth).
 
 Para los tests e2e, la primera vez instalá el navegador: `npx playwright install chromium`.
 
@@ -66,6 +66,7 @@ Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `de
 | `TURNSTILE_SECRET_KEY`                                |   no    | **F3-05**         | Verificación anti-bots                |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` |   no    | **F3-05**         | Rate limit                            |
 | `IP_HASH_SALT`                                        |   no    | **F3-05**         | HMAC de IPs y emails (32+ caracteres) |
+| `FIELD_ENCRYPTION_KEYS`                               |   no    | **F5-02**         | Cifrado del mensaje y de las notas    |
 
 Reglas:
 
@@ -77,25 +78,26 @@ Reglas:
 
 ## Scripts
 
-| Script                  | Qué hace                                                                                                                                                                                                                                               |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run dev`           | Servidor de desarrollo en `http://localhost:3000`                                                                                                                                                                                                      |
-| `npm run build`         | Build de producción                                                                                                                                                                                                                                    |
-| `npm run start`         | Sirve el build de producción                                                                                                                                                                                                                           |
-| `npm run lint`          | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                                                                                                                                                                                         |
-| `npm run typecheck`     | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                                                                                                                                                                                      |
-| `npm run format`        | Formatea con Prettier (incluye el orden de clases de Tailwind)                                                                                                                                                                                         |
-| `npm run format:check`  | Verifica el formato sin modificar archivos                                                                                                                                                                                                             |
-| `npm run test`          | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)                                                                                                                                                                             |
-| `npm run test:db`       | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI                                                                                                                                                                      |
-| `npm run email:dev`     | Preview de los mails en `http://localhost:3001`, con datos de ejemplo ficticios                                                                                                                                                                        |
-| `npm run test:watch`    | Vitest en modo watch                                                                                                                                                                                                                                   |
-| `npm run test:coverage` | Vitest con reporte de cobertura en `coverage/`                                                                                                                                                                                                         |
-| `npm run test:e2e`      | E2E con Playwright contra el build de producción. Cerrá `npm run dev` antes (usa el puerto 3000). Escribe en la base de **dev** y, para el panel, usa un usuario de prueba (`E2E_STAFF_*`): ver TESTING. El log del servidor queda en `e2e-server.log` |
-| `npm run db:generate`   | Genera el cliente de Prisma en `src/generated/prisma` (también corre en `npm ci`)                                                                                                                                                                      |
-| `npm run db:migrate`    | `prisma migrate dev`: crea y aplica migraciones. **Solo contra Supabase dev**                                                                                                                                                                          |
-| `npm run db:deploy`     | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano                                                                                                                                                                             |
-| `npm run staff:add`     | Da de alta (o reactiva) un usuario de Supabase Auth como staff: `npm run staff:add -- --email x --name "Nombre"`. Ver [Panel admin](#panel-admin-supabase-auth)                                                                                        |
+| Script                      | Qué hace                                                                                                                                                                                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`               | Servidor de desarrollo en `http://localhost:3000`                                                                                                                                                                                                      |
+| `npm run build`             | Build de producción                                                                                                                                                                                                                                    |
+| `npm run start`             | Sirve el build de producción                                                                                                                                                                                                                           |
+| `npm run lint`              | ESLint (reglas de Next + TypeScript, compatibles con Prettier)                                                                                                                                                                                         |
+| `npm run typecheck`         | Genera los tipos de rutas (`next typegen`) y corre `tsc --noEmit`                                                                                                                                                                                      |
+| `npm run format`            | Formatea con Prettier (incluye el orden de clases de Tailwind)                                                                                                                                                                                         |
+| `npm run format:check`      | Verifica el formato sin modificar archivos                                                                                                                                                                                                             |
+| `npm run test`              | Tests unitarios y de componentes con Vitest (una corrida, sin red ni base)                                                                                                                                                                             |
+| `npm run test:db`           | Tests de integración contra la base de **dev** (`.env.local`); no corren en la CI                                                                                                                                                                      |
+| `npm run email:dev`         | Preview de los mails en `http://localhost:3001`, con datos de ejemplo ficticios                                                                                                                                                                        |
+| `npm run test:watch`        | Vitest en modo watch                                                                                                                                                                                                                                   |
+| `npm run test:coverage`     | Vitest con reporte de cobertura en `coverage/`                                                                                                                                                                                                         |
+| `npm run test:e2e`          | E2E con Playwright contra el build de producción. Cerrá `npm run dev` antes (usa el puerto 3000). Escribe en la base de **dev** y, para el panel, usa un usuario de prueba (`E2E_STAFF_*`): ver TESTING. El log del servidor queda en `e2e-server.log` |
+| `npm run db:generate`       | Genera el cliente de Prisma en `src/generated/prisma` (también corre en `npm ci`)                                                                                                                                                                      |
+| `npm run db:migrate`        | `prisma migrate dev`: crea y aplica migraciones. **Solo contra Supabase dev**                                                                                                                                                                          |
+| `npm run db:deploy`         | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano                                                                                                                                                                             |
+| `npm run inquiries:encrypt` | Cifra los mensajes y notas que estén en claro y recifra con la clave actual los de una clave vieja. Sin `-- --confirm` solo cuenta. Ver [Cifrado del mensaje y de las notas](#cifrado-del-mensaje-y-de-las-notas)                                      |
+| `npm run staff:add`         | Da de alta (o reactiva) un usuario de Supabase Auth como staff: `npm run staff:add -- --email x --name "Nombre"`. Ver [Panel admin](#panel-admin-supabase-auth)                                                                                        |
 
 Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`](docs/TESTING.md).
 
@@ -220,7 +222,26 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 4. **Jurisdicción y teléfonos de ayuda:** cambiar `jurisdiction` no alcanza. La OVD (Lavalle 1250) es de CABA y el 137 no cubre todo el país. Verificá en las fuentes oficiales y editalos en [`src/content/urgent-help.ts`](src/content/urgent-help.ts), el único lugar donde están: de ahí salen la franja de ayuda y la pregunta sobre violencia de "Cuidado personal". Si cambian, actualizá también SPEC §11.5 y `src/content/__tests__/urgent-help.test.ts`, que fija los números verificados.
 5. **Contenido legal:** que el estudio revise áreas, preguntas frecuentes, aviso de plazos, política de privacidad (con su versión y fecha) y las normas de publicidad de su colegio (SPEC §11.4).
 6. **Ícono:** poné la inicial del estudio en `monogram`. La pestaña y el ícono de inicio del celular se generan con ella y los colores de la marca.
-7. **Verificá:** corré los tests y los e2e, y hacé MT-01, MT-13, MT-14 y MT-22. En el deploy, abrí también `/opengraph-image` y `/icon`.
+7. **Clave de cifrado propia:** cada estudio tiene su `FIELD_ENCRYPTION_KEYS`, generada para él y guardada por él (ver [Cifrado del mensaje y de las notas](#cifrado-del-mensaje-y-de-las-notas)). Nunca reuses la de la demo ni la de otro estudio.
+8. **Verificá:** corré los tests y los e2e, y hacé MT-01, MT-13, MT-14, MT-22 y MT-30. En el deploy, abrí también `/opengraph-image` y `/icon`.
+
+## Cifrado del mensaje y de las notas
+
+El mensaje de cada consulta y las notas internas del estudio se guardan **cifrados** en la base (AES-256-GCM, [ADR 0017](docs/adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)). En el Table Editor de Supabase se ven como `enc:v1:k1:…`; en el panel, como texto. Nombre, email y teléfono quedan en claro. **No es cifrado extremo a extremo:** protege de quien accede a la base sin la clave, no de un servidor comprometido.
+
+1. **Generá una clave por entorno** (una para dev, otra para prod; nunca la misma):
+
+   ```bash
+   node -e "console.log('k1:' + require('crypto').randomBytes(32).toString('base64'))"
+   ```
+
+2. **Guardala en tu gestor de contraseñas.** Si se pierde, los mensajes y las notas cifrados con ella **no se pueden recuperar**: no hay copia en la base ni en el repo.
+3. **Cargala:** la de dev en `.env.local` y en Vercel → Preview; la de prod en Vercel → Production. Sin la variable, `dev`, `build` y `start` fallan nombrándola.
+4. **Filas que ya existían en claro** (por ejemplo, las de dev antes de F5-02): `npm run inquiries:encrypt` cuenta cuántas hay, y `npm run inquiries:encrypt -- --confirm` las cifra. Es idempotente: la segunda vez dice 0. Conserva la fecha de modificación y nunca imprime contenido.
+
+**Rotar la clave:** poné la nueva **adelante** (`FIELD_ENCRYPTION_KEYS=k2:<nueva>,k1:<vieja>`), desplegá, corré `npm run inquiries:encrypt -- --confirm` contra esa base y recién después sacá `k1`. La primera clave cifra; todas descifran. Para prod, pasá `DATABASE_URL` y `FIELD_ENCRYPTION_KEYS` de prod en el shell, que gana sobre `.env.local`.
+
+**Si el detalle de una consulta da error** y el log dice `errorCode: decrypt_failed`, falta la clave con la que se cifró ese valor (o el dato se alteró). Agregala a la lista; nunca se muestra el valor guardado.
 
 ## Seguridad
 
@@ -229,6 +250,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 - **Base de datos:** RLS sin políticas en todas las tablas y sin service role key ([ADR 0002](docs/adr/0002-supabase-con-prisma-y-rls.md)); conexiones con TLS verificado ([ADR 0012](docs/adr/0012-prisma-7-con-adapter-pg-y-prisma-config.md)).
 - **Logs** estructurados en JSON, sin datos personales (`src/lib/logger.ts`).
 - **Panel:** registro público deshabilitado en Supabase, login con rate limit y mensaje genérico, cookies httpOnly y proxy como primera barrera ([ADR 0014](docs/adr/0014-auth-supabase-ssr-solo-servidor.md)). `requireStaff()` en cada página y action, con el usuario verificado contra Supabase y una lista de staff activo ([ADR 0015](docs/adr/0015-autorizacion-del-panel-y-alta-de-staff.md)).
+- **Mensaje y notas cifrados** en la base con una clave fuera de ella (F5-02); ver [Cifrado del mensaje y de las notas](#cifrado-del-mensaje-y-de-las-notas).
 - **Guardas automáticas** (F5-02): ESLint rechaza SQL crudo inseguro, `dangerouslySetInnerHTML` (salvo el JSON-LD) y `process.env` fuera de `src/lib/env*.ts`; un test exige `requireStaff()` en cada página del panel y clasifica cada Server Action; un e2e prueba que Next rechaza una action desde otro origen (CSRF).
 - Detalle completo de requisitos y amenazas en SPEC §10. La revisión punto por punto, con la evidencia de cada mitigación, los hallazgos y los riesgos aceptados, está en [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md).
 

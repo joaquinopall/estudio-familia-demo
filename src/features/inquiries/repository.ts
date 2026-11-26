@@ -4,12 +4,20 @@
  *
  * Errors: any Prisma failure becomes InquiryStoreError, so callers never depend on Prisma and
  * no Prisma message (which may contain values) reaches a log or a user.
+ *
+ * Encryption (F5-02, ADR-0017): the message and the internal notes are stored encrypted with
+ * the FieldCipher, bound to their row and column. Encrypting is a storage detail: the service,
+ * the actions and the UI only ever see the text. The list never reads either field.
  */
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type FieldCipher, FieldDecryptionError } from "@/lib/ports/field-cipher";
 
 import { InquiryStoreError } from "./errors";
+import type { ReencryptionStore } from "./reencryption";
 import type {
   InquiryDetailRow,
   InquiryListQuery,
@@ -96,21 +104,42 @@ async function guard<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    throw new InquiryStoreError({ cause: error });
+    if (error instanceof InquiryStoreError) throw error;
+    const code = error instanceof FieldDecryptionError ? "decrypt_failed" : "store_failed";
+    throw new InquiryStoreError({ cause: error, code });
   }
 }
 
-export function createPrismaInquiryRepository(db: PrismaClient): InquiryRepository {
+/** Where each encrypted value lives: its additional authenticated data (ADR-0017). */
+const messageAt = (rowId: string) => ({ table: "inquiries", column: "message", rowId });
+const notesAt = (rowId: string) => ({ table: "inquiries", column: "internal_notes", rowId });
+
+export function createPrismaInquiryRepository(
+  db: PrismaClient,
+  cipher: FieldCipher,
+): InquiryRepository {
+  const encryptNotes = (id: string, notes: string | null) =>
+    notes === null ? null : cipher.encrypt(notes, notesAt(id));
+  const decryptNotes = (id: string, stored: string | null) =>
+    stored === null ? null : cipher.decrypt(stored, notesAt(id));
+
   return {
     createWithCreatedEvent: (record: NewInquiryRecord) =>
       // Nested write: Prisma runs it as one transaction, so the inquiry never exists without
-      // its CREATED event (FR-07). The CREATED event has no actor.
-      guard(() =>
-        db.inquiry.create({
-          data: { ...record, events: { create: { type: "CREATED" } } },
+      // its CREATED event (FR-07). The CREATED event has no actor. The id is generated here,
+      // before the insert, because the encrypted message is bound to it.
+      guard(() => {
+        const id = randomUUID();
+        return db.inquiry.create({
+          data: {
+            ...record,
+            id,
+            message: cipher.encrypt(record.message, messageAt(id)),
+            events: { create: { type: "CREATED" } },
+          },
           select: { id: true },
-        }),
-      ),
+        });
+      }),
 
     list: (query: InquiryListQuery) =>
       guard(async () => {
@@ -150,6 +179,8 @@ export function createPrismaInquiryRepository(db: PrismaClient): InquiryReposito
 
         return {
           ...inquiry,
+          message: cipher.decrypt(inquiry.message, messageAt(inquiry.id)),
+          internalNotes: decryptNotes(inquiry.id, inquiry.internalNotes),
           events: inquiry.events.map((event) => ({
             ...event,
             actorName: event.actorId ? (names.get(event.actorId) ?? null) : null,
@@ -191,17 +222,37 @@ export function createPrismaInquiryRepository(db: PrismaClient): InquiryReposito
             select: { internalNotes: true, updatedAt: true },
           });
           if (!current) return { result: "not_found" };
-          if (current.internalNotes === notes) {
+          // Compared as text: the same notes encrypt differently every time (random IV).
+          if (decryptNotes(id, current.internalNotes) === notes) {
             return { result: "unchanged", updatedAt: current.updatedAt };
           }
           // The event records who and when; the notes themselves are only in the inquiry.
           const updated = await tx.inquiry.update({
             where: { id },
-            data: { internalNotes: notes, events: { create: { type: "NOTES_UPDATED", actorId } } },
+            data: {
+              internalNotes: encryptNotes(id, notes),
+              events: { create: { type: "NOTES_UPDATED", actorId } },
+            },
             select: { updatedAt: true },
           });
           return { result: "changed", updatedAt: updated.updatedAt };
         }),
       ),
+  };
+}
+
+/** Storage of `npm run inquiries:encrypt` (reencryption.ts): reads and writes raw values. */
+export function createPrismaReencryptionStore(db: PrismaClient): ReencryptionStore {
+  return {
+    page: (afterId, take) =>
+      db.inquiry.findMany({
+        where: afterId ? { id: { gt: afterId } } : {},
+        select: { id: true, message: true, internalNotes: true, updatedAt: true },
+        orderBy: { id: "asc" },
+        take,
+      }),
+    update: async ({ id, ...fields }) => {
+      await db.inquiry.update({ where: { id }, data: fields });
+    },
   };
 }

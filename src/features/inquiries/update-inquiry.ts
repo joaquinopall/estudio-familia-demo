@@ -10,6 +10,7 @@
 import { type ActionResult, fail, ok, validationFailure } from "@/lib/action-result";
 import type { Logger } from "@/lib/logger";
 
+import { storeErrorCode } from "./errors";
 import { updateNotesSchema, updateStatusSchema } from "./schema";
 import type { InquiryService } from "./service";
 import type { InquiryStatus } from "./types";
@@ -55,7 +56,11 @@ export function createUpdateInquiryHandlers(deps: UpdateInquiryDeps) {
     try {
       outcome = await deps.inquiryService.changeStatus(id, status, auth.data.id);
     } catch (error) {
-      logger.error("inquiry.status_change_failed", { ...context, error });
+      logger.error("inquiry.status_change_failed", {
+        ...context,
+        error,
+        errorCode: storeErrorCode(error),
+      });
       return fail("INTERNAL");
     }
 
@@ -88,7 +93,11 @@ export function createUpdateInquiryHandlers(deps: UpdateInquiryDeps) {
       outcome = await deps.inquiryService.updateNotes(id, notes, auth.data.id);
     } catch (error) {
       // Never the notes in the log: only IDs and the error name (NFR-SEC-06).
-      logger.error("inquiry.notes_update_failed", { ...context, error });
+      logger.error("inquiry.notes_update_failed", {
+        ...context,
+        error,
+        errorCode: storeErrorCode(error),
+      });
       return fail("INTERNAL");
     }
 
