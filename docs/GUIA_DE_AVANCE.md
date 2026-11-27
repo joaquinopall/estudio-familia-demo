@@ -24,7 +24,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 3 / 8 | 🟨 |
-| F5 — Calidad, seguridad y lanzamiento | 80–100% | 2 / 9 | 🟨 |
+| F5 — Calidad, seguridad y lanzamiento | 80–100% | 3 / 9 | 🟨 |
 
 Estados: ⬜ sin empezar · 🟨 en curso · ✅ cerrada.
 
@@ -223,8 +223,8 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 - [X] **F5-02 · Auditoría de seguridad** (IA + Vos) · SPEC §10
   - [X] Revisión punto por punto de la tabla de amenazas, con evidencia (test, config o captura) para cada mitigación. Resultado en `docs/SECURITY_REVIEW.md`.
 
-- [ ] **F5-03 · Rendimiento y accesibilidad** (IA)
-  - [ ] Lighthouse mobile ≥ 90 en las 4 categorías y en todas las páginas públicas. axe sin errores.
+- [X] **F5-03 · Rendimiento y accesibilidad** (IA)
+  - [X] Lighthouse mobile ≥ 90 en las 4 categorías y en todas las páginas públicas. axe sin errores.
 
 - [ ] **F5-04 · Observabilidad** (IA)
   - [ ] Revisión de logs (sin PII). Sentry opcional según lo que decidas (SPEC §15).
