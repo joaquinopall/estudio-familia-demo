@@ -4,6 +4,23 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-03 · Rendimiento y accesibilidad
+
+- **Mejorado:** `/contacto` daba 81–90 en Performance mobile. Turnstile ahora se carga recién cuando la persona llega al paso 2 del formulario, no con la página (sin JavaScript no podía funcionar de todos modos). Total Blocking Time de 420–820 ms a 140 ms; Performance 99.
+- **Corregido:** con la letra del navegador al 150 %, nueve páginas tenían scroll horizontal en celulares (320–375 px). Ahora:
+  - debajo de 18 rem de ancho el botón "Menú" queda solo con el ícono (su nombre sigue siendo "Menú") y el header achica su margen;
+  - una palabra que no entra en su línea se corta en vez de ensanchar la página (`overflow-wrap: anywhere` en `body`);
+  - los botones del formulario pueden partir su texto en dos líneas;
+  - el índice de "Preguntas frecuentes" pasa a una columna debajo de 22,5 rem.
+
+  Con la letra normal, 47 de 48 capturas (12 páginas en 320, 360, 768 y 1440 px) quedaron idénticas pixel a pixel. La que cambia es el índice de `/preguntas-frecuentes` en 320 px, donde "Confidencialidad" no entraba en su columna.
+
+- **Corregido:** la barra "Sesión de …" del panel no estaba dentro de ninguna región (axe `region`). Ahora es la región "Tu sesión".
+- **Agregado:** `npm run lighthouse` (`scripts/lighthouse.ts`, sin dependencias nuevas). Corre las 11 páginas públicas, 3 veces cada una, con la mediana, y falla debajo de 90. Resultado al 27/11/2026: todas las páginas ≥ 99 con el modo demo, y SEO 100 sin él.
+- **Agregado:** e2e para la letra al 150 % (todos los anchos) y al 200 % (desde 768 px); axe con cualquier impacto en los estados del formulario (errores del paso 1, paso 2 y errores del paso 2) y en el panel (antes, solo errores graves); verificación de que no se pide nada a Cloudflare hasta el paso 2.
+- **Corregido (tests):** las consultas que siembra el e2e del panel tenían fecha fija (26/11/2026). Desde el día siguiente pasaban a ser filas `E2E-` "de más de un día", y la limpieza de otro e2e en paralelo las borraba en medio del test (fallaba solo en la suite completa). Ahora se siembran con fechas relativas a la hora actual, igual que en `list.db.test.ts`. Además, axe espera el `<h1>` antes de analizar, porque el 404 de un área desconocida se dibuja en el cliente.
+- **Documentado:** MT-12 pasa a todas las páginas públicas con `npm run lighthouse`, con sus resultados. MT-01 pasa a probar el 150 %. README y SPEC v1.37.
+
 ### F5-02 · Security Advisor de Supabase
 
 - **Corregido:** `public.rls_auto_enable()`, la función `SECURITY DEFINER` que crea Supabase para activar RLS en tablas nuevas, la podían ejecutar `anon` y `authenticated` por la API (lints 0028 y 0029). La migración `20261127120000_revoke_rls_auto_enable` les quita el `EXECUTE`, y también a `PUBLIC`; el trigger sigue activo. Aplicada en dev y verificada con `has_function_privilege`.
