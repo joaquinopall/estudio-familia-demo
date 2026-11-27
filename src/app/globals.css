@@ -110,6 +110,13 @@
   }
   body {
     @apply bg-background leading-relaxed text-foreground antialiased;
+    /*
+     * A word longer than its line breaks instead of widening the page (F5-03). With the
+     * browser font at 150% on a phone, words like "documentación" in a heading did not fit,
+     * and a grid column is never narrower than its longest word. Nothing changes while the
+     * words fit: at the default font they always do.
+     */
+    overflow-wrap: anywhere;
   }
   h1,
   h2,
