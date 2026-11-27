@@ -128,6 +128,9 @@ for (const width of [360, 1440]) {
     for (const path of PAGES) {
       test(`${path} has no axe violations of any impact`, async ({ page }) => {
         await page.goto(path);
+        // The 404 of an unknown area is rendered on the client: analyze the page, not
+        // Next's empty placeholder (#__next_error__) that comes before it.
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
         const { violations } = await new AxeBuilder({ page }).analyze();
         expect(
@@ -349,27 +352,40 @@ for (const path of PAGES) {
   });
 }
 
-// The browser's default font at 125% (20px). Media queries in rem follow it, page zoom is another case.
-for (const width of [320, 360, 375, 390, 412, 768, 1024, 1280, 1440]) {
-  test(`nothing overflows at ${width}px with the browser font at 125%`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 800 });
-    const session = await page.context().newCDPSession(page);
-    await session.send("Page.enable");
-    await session.send("Page.setFontSizes", { fontSizes: { standard: 20 } });
+// The browser's default font at 125% (20px) and 150% (24px, F5-03): a phone's "large text".
+// Media queries in rem follow it; page zoom is another case. 200% is checked from 768px only:
+// on a phone, WCAG 1.4.4 is met with the browser zoom, covered by the 320px reflow test.
+const LARGE_FONTS = [
+  { percent: 125, standard: 20, widths: [320, 360, 375, 390, 412, 768, 1024, 1280, 1440] },
+  { percent: 150, standard: 24, widths: [320, 360, 375, 390, 412, 768, 1024, 1280, 1440] },
+  { percent: 200, standard: 32, widths: [768, 1024, 1280, 1440] },
+] as const;
 
-    const overflowing: string[] = [];
-    for (const path of PAGES) {
-      await page.goto(path);
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      const { root, overflow } = await page.evaluate(() => ({
-        root: getComputedStyle(document.documentElement).fontSize,
-        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      }));
-      expect(root, "the 125% font was not applied").toBe("21.25px");
-      if (overflow > 0) overflowing.push(`${path} (${overflow}px)`);
-    }
-    expect(overflowing).toEqual([]);
-  });
+for (const { percent, standard, widths } of LARGE_FONTS) {
+  for (const width of widths) {
+    test(`nothing overflows at ${width}px with the browser font at ${percent}%`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      const session = await page.context().newCDPSession(page);
+      await session.send("Page.enable");
+      await session.send("Page.setFontSizes", { fontSizes: { standard } });
+
+      const overflowing: string[] = [];
+      for (const path of PAGES) {
+        await page.goto(path);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        const { root, overflow } = await page.evaluate(() => ({
+          root: getComputedStyle(document.documentElement).fontSize,
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        }));
+        // html is 106.25% of the browser font (globals.css).
+        expect(root, `the ${percent}% font was not applied`).toBe(`${standard * 1.0625}px`);
+        if (overflow > 0) overflowing.push(`${path} (${overflow}px)`);
+      }
+      expect(overflowing).toEqual([]);
+    });
+  }
 }
 
 // A sticky index taller than the window cuts its last links, and scrolling the page cannot reveal them.

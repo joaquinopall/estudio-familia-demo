@@ -36,7 +36,8 @@ describe("Prisma inquiry repository: list (Supabase dev)", () => {
     await db.inquiry.createMany({
       data: SEED.map((fields, index) => ({
         ...fields,
-        createdAt: new Date(Date.UTC(2026, 10, 25, 12, index)),
+        // Relative to now: the e2e delete E2E- rows older than a day (see support/admin.ts).
+        createdAt: new Date(Date.now() - 60 * 60 * 1000 + index * 60 * 1000),
         fullName: `${MARKER} ${index}`,
         email: `e2e-${RUN}-${index}@example.com`,
         // The list never reads the message, so it is seeded without encrypting it.

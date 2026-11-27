@@ -102,11 +102,15 @@ export function seedInquiries(
   inquiries: readonly SeedInquiry[],
 ): Promise<string[]> {
   const cipher = seedCipher();
+  // Relative to now, never a fixed date: the other e2e delete E2E- rows older than a day
+  // (deleteStaleE2eInquiries), and a fixed date turned these rows "stale" a day later, so a
+  // parallel spec deleted them mid-test. An hour ago plus the minute keeps the order.
+  const base = Date.now() - 60 * 60 * 1000;
   return withClient(async (client) => {
     const ids: string[] = [];
     for (const [index, inquiry] of inquiries.entries()) {
       const id = randomUUID();
-      const createdAt = new Date(Date.UTC(2026, 10, 26, 12, inquiry.minute));
+      const createdAt = new Date(base + inquiry.minute * 60 * 1000);
       await client.query(
         `insert into inquiries (id, created_at, updated_at, full_name, email, phone, area, urgency,
                                 message, preferred_channel, safe_to_contact, email_is_private,
