@@ -97,6 +97,16 @@ describe("InquiryForm (US-03)", () => {
       expect(contact()).not.toBeVisible();
     });
 
+    it("loads Turnstile only on step 2, not with the page (F5-03)", () => {
+      render(<InquiryForm {...props} />);
+      expect(mocks.turnstileProps).toEqual([]);
+
+      fillDetails();
+      next();
+
+      expect(mocks.turnstileProps.length).toBeGreaterThan(0);
+    });
+
     it("does not advance with empty fields and shows every error of step 1 (CA2)", async () => {
       render(<InquiryForm {...props} />);
       next();
@@ -356,6 +366,14 @@ describe("InquiryForm (US-03)", () => {
       expect(html).toContain(copy.buttons.submit);
       expect(html).toContain(copy.fields.safeToContact.legend);
       expect(html).toContain("<noscript>");
+    });
+
+    it("does not render Turnstile: it needs JavaScript, and its script would load with the page (F5-03)", () => {
+      mocks.turnstileProps.length = 0;
+      const html = renderToStaticMarkup(<InquiryForm {...props} />);
+
+      expect(html).not.toContain("cf-turnstile-response");
+      expect(mocks.turnstileProps).toEqual([]);
     });
   });
 });

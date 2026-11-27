@@ -69,7 +69,7 @@ Detalles de los e2e:
 | Login (UI)  | Vitest + Testing Library     | `src/features/auth/components/__tests__/`    | `LoginForm`: labels y `autocomplete`, funciona sin JavaScript, error general en `role="alert"` con foco, errores de campo con `aria-describedby`, email conservado y contraseña no, botón pendiente. `LoginSessionCheck`: redirect del staff a `/admin`, aviso de `?error=forbidden` sin detalles |
 | Autorización | Vitest + fakes              | `src/features/auth/__tests__/access.test.ts`, `dal.test.ts`, `staff-service.test.ts`, `staff-add-args.test.ts` | `requireStaff()`: sin sesión, sesión sin staff, staff inactivo, staff OK, Supabase y base caídos (falla cerrado), redirects de páginas y `ActionResult` de actions, logs sin datos personales. `staff:add`: usuario inexistente, alta, reactivación idempotente y argumentos |
 | Integración | Vitest (proyecto `db`)       | `src/**/__tests__/*.db.test.ts`              | Repositories contra Supabase dev: consulta + evento `CREATED`, nulls y error de la base; detalle (`detail.db.test.ts`: estado y notas con su evento en una transacción, `fromStatus` real, nada si no cambia, actor que ya no existe); listado (`list.db.test.ts`: orden, cada filtro, búsqueda sin distinguir mayúsculas en nombre y email, `%` como texto, paginación y campos del `select`); staff (alta, búsqueda, reactivación, error de unicidad) y lectura de `auth.users` |
-| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev, y el panel con sesión: login, filtros, estado, notas, historial, link del mail y acceso denegado (F4-07) |
+| E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Letra del navegador al 125 %, 150 % y 200 % (F5-03), axe con cualquier impacto en las páginas, en los estados del formulario y en el panel, Turnstile cargado recién en el paso 2, smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev, y el panel con sesión: login, filtros, estado, notas, historial, link del mail y acceso denegado (F4-07) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
 Próxima fase (F5): e2e en la CI (F5-06), Lighthouse y accesibilidad (F5-03) y la guía de tests manuales completa (F5-07).
@@ -90,7 +90,7 @@ Próxima fase (F5): e2e en la CI (F5-06), Lighthouse y accesibilidad (F5-03) y l
 - **`design-tokens.test.ts`:** un par de colores de `globals.css` no llega al contraste WCAG AA (texto 4.5:1; foco y bordes de campos 3:1). Ajustá el color, no el umbral.
 - **"without CSP violations"** (`security-headers.spec.ts`, y el chequeo de CSP de `inquiry-submit`, `admin-login` y `admin-panel`): la CSP **aplicada** bloqueó algo, así que en producción eso tampoco anda. El mensaje dice la directiva y la URL bloqueada (`event: script-src blocked https://…`). Decidí si el origen se agrega a la política en `src/lib/security/headers.ts`, con su test en `security-headers.test.ts` y una línea en la [ADR 0016](adr/0016-csp-aplicada-con-unsafe-inline.md), o se quita el recurso. Nunca saques la página del recorrido para que pase.
 - **`layout.spec.ts` → axe:** el mensaje lista la regla (por ejemplo `color-contrast`, `label`); la ayuda de cada regla está en <https://dequeuniversity.com/rules/axe/>.
-- **`quality.spec.ts`:** cubre lo que axe no ve. Si falla el foco, el anillo no llega a 3:1 sobre su fondo (típico: fondo primario, redefiní `--ring`). Si falla "uncovered", algo tapa el texto o el botón (típico: el botón de WhatsApp) o ya no entra en la primera pantalla. Al agregar una página, sumala a `PAGES`. Si falla "sticky index", un índice fijo quedó más alto que la ventana y no scrollea. Si falla "125%", algo no achica ni parte línea con la letra del navegador agrandada (típico: `whitespace-nowrap` en el header). Si falla "305px", algo no entra en un celular chico o con scrollbar clásico. Si falla "does not move the page", alguien puso `scroll-padding` en `html`: usá `scroll-margin`.
+- **`quality.spec.ts`:** cubre lo que axe no ve. Si falla el foco, el anillo no llega a 3:1 sobre su fondo (típico: fondo primario, redefiní `--ring`). Si falla "uncovered", algo tapa el texto o el botón (típico: el botón de WhatsApp) o ya no entra en la primera pantalla. Al agregar una página, sumala a `PAGES`. Si falla "sticky index", un índice fijo quedó más alto que la ventana y no scrollea. Si falla "125%", "150%" o "200%", algo no achica ni parte línea con la letra del navegador agrandada (típicos: un botón o un link con `whitespace-nowrap`, un `<fieldset>` o una columna de grilla que no baja de su palabra más larga). El 200 % se prueba desde 768 px: en un celular, WCAG 1.4.4 se cumple con el zoom del navegador. Si falla "305px", algo no entra en un celular chico o con scrollbar clásico. Si falla "does not move the page", alguien puso `scroll-padding` en `html`: usá `scroll-margin`.
 - **`env.example.test.ts`:** agregaste o sacaste una variable del schema y no actualizaste `.env.example` (o al revés).
 - **`eslint-security.test.ts`:** una regla de seguridad de `eslint.config.mjs` dejó de disparar o bloquea algo permitido. Si `npm run lint` te marca `no-restricted-syntax` o `no-restricted-properties`, no la desactives con un comentario: usá `$queryRaw` con template, `<JsonLd>` o `env` de `src/lib/env.ts`. Ver [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md).
 - **`panel-authorization.test.ts`:** agregaste una página en `app/admin/(protected)` sin `await requireStaff()`, una página de `/admin` fuera de `(protected)`, o una Server Action nueva. Si es una action, clasificala en `PUBLIC_ACTIONS` o `PANEL_ACTIONS`; las del panel empiezan con `requireStaffForAction()` (ADR-0015).
@@ -182,7 +182,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-09 | Usuario autenticado que no es staff                     | F4-02         | **Detallado** · se ejecuta en F4-03 y F4-08 |
 | MT-10 | Cambio de estado, notas e historial                     | F4-05         | **Detallado** · se ejecuta en F4-05 y F4-08 |
 | MT-11 | Navegación completa solo con teclado                    | F1-08         | **Detallado** |
-| MT-12 | Lighthouse mobile en 3 páginas                          | F2-07         | **Detallado** |
+| MT-12 | Lighthouse mobile en todas las páginas públicas         | F2-07, F5-03  | **Detallado** · `npm run lighthouse` |
 | MT-13 | Banner de modo demo                                     | F1-08         | **Detallado** |
 | MT-14 | Botón de WhatsApp                                       | F1-08         | **Detallado** |
 | MT-15 | Error de mail simulado (la consulta se guarda igual)    | F3-05         | **Detallado** · se ejecuta en F3-09 |
@@ -217,7 +217,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 5. En Contacto, tocá el teléfono, el email y el mapa. Volvé atrás sin llamar ni enviar.
 6. Abrí una dirección inventada, por ejemplo `/no-existe`.
 7. Girá el celular y repetí el inicio, el menú y Contacto.
-8. Agrandá el texto del navegador al 125% (Chrome en Android: Configuración → Accesibilidad; Safari en iPhone: botón "aA") y repetí el inicio. Al terminar, volvelo a como estaba.
+8. Agrandá el texto del navegador al 150 % (Chrome en Android: Configuración → Accesibilidad; Safari en iPhone: botón "aA") y repetí el inicio, un área y Contacto. Al terminar, volvelo a como estaba.
 
 **Resultado esperado**
 
@@ -226,7 +226,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 5: se abren el marcador, el correo y el mapa, y al volver el sitio sigue igual.
 - Paso 6: se ve la 404 en español, con salidas a inicio y contacto.
 - Paso 7: nada se corta y el menú entero se alcanza, scrolleando si hace falta.
-- Paso 8: no aparece scroll horizontal; el nombre del estudio puede partir en dos líneas.
+- Paso 8: no aparece scroll horizontal; el nombre del estudio puede partir en dos líneas, y en celulares chicos el botón "Menú" queda solo con el ícono.
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
@@ -444,29 +444,31 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | ----- | ------- | --------- | ----- |
 |       |         |           |       |
 
-### MT-12 — Lighthouse mobile en 3 páginas
+### MT-12 — Lighthouse mobile en todas las páginas públicas
 
-- **Objetivo:** sostener ≥ 90 en las 4 categorías (SPEC §1).
+- **Objetivo:** sostener ≥ 90 en las 4 categorías en todas las páginas públicas (SPEC §1).
 - **Requisitos:** SPEC §1, NFR-PERF-01, NFR-A11Y-01, NFR-SEO-01, ADR-0010.
-- **Precondiciones:** build de producción local, nada más corriendo en el puerto y Chrome instalado, o `CHROME_PATH` apuntando al Chromium de Playwright. Lighthouse no es dependencia del proyecto: se corre con `npx` y versión fija.
+- **Precondiciones:** **nada más corriendo** (frená `npm run dev`: comparte la CPU y Lighthouse da números peores) y el Chromium de Playwright instalado (`npx playwright install chromium`). Lighthouse no es dependencia del proyecto: `npm run lighthouse` lo corre con `npx` y versión fija (13.6.0).
 
 **Pasos**
 
-1. Con el modo demo prendido, corré en PowerShell `npm run build` y después `npm run start`.
-2. En otra terminal: `$env:CHROME_PATH = node -p "require('@playwright/test').chromium.executablePath()"`.
-3. Corré `npx lighthouse@13.6.0 http://localhost:3000/ --view --no-enable-error-reporting` y repetí con `/areas/sucesiones` y `/contacto`.
-4. Frená el servidor. Corré `$env:NEXT_PUBLIC_DEMO_MODE = "false"`, volvé a hacer build y start, y repetí el paso 3 para leer SEO.
-5. Al terminar, corré `Remove-Item Env:NEXT_PUBLIC_DEMO_MODE` y volvé a hacer build. **No deployes el build del paso 4:** sería el estudio ficticio indexable.
+1. Con el modo demo prendido: `npm run build` y `npm run start`.
+2. En otra terminal: `npm run lighthouse`. Corre las 11 páginas, 3 veces cada una, y muestra la mediana. Tarda unos 5 minutos.
+3. Frená el servidor. Construí sin modo demo y medí SEO. En cmd: `set NEXT_PUBLIC_DEMO_MODE=false&& npm run build`, después `npm run start` y, en otra terminal, `npm run lighthouse -- --seo`. En PowerShell: `$env:NEXT_PUBLIC_DEMO_MODE = "false"; npm run build`.
+4. Al terminar, cerrá esa terminal (o `Remove-Item Env:NEXT_PUBLIC_DEMO_MODE`) y volvé a hacer `npm run build`. **No deployes el build del paso 3:** sería el estudio ficticio indexable.
 
 **Resultado esperado**
 
-- Paso 3: Performance, Accessibility y Best Practices ≥ 90. SEO da menos, solo por "Page is blocked from indexing": es lo esperado en la demo.
-- Paso 4: SEO ≥ 90.
+- Paso 2: Performance, Accessibility y Best Practices ≥ 90 en todas las filas y "Todas las páginas ≥ 90". SEO da 66, solo por "Page is blocked from indexing" (el script verifica que sea la única falla): es lo esperado en la demo.
+- Paso 3: las 4 categorías ≥ 90, SEO incluido.
+- Una página aislada entre 85 y 90 en Performance suele ser ruido: repetí con `npm run lighthouse -- --runs 5`.
 
 | Fecha      | Entorno                                                  | Resultado | Notas                                                                                     |
 | ---------- | -------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------- |
 | 22/11/2026 | Local, Lighthouse 13.6.0, Chromium de Playwright (la IA) | ✅ pasa   | 11 páginas: 99 / 100 / 100 / 100 (SEO sin modo demo; 66 con demo). LCP ≤ 0,9 s, CLS 0. Una corrida por página, antes de la pasada visual. |
 | 22/11/2026 | Local, Lighthouse 13.6.0, Chromium de Playwright (la IA) | ✅ pasa   | Después de la pasada visual, 11 páginas: 99–100 / 100 / 100 / 100 (SEO sin modo demo; 66 con demo). LCP ≤ 0,9 s, CLS 0. Una corrida por página. |
+| 27/11/2026 | Local, `npm run lighthouse` (13.6.0, mediana de 3), Chromium de Playwright, nada más corriendo (la IA) | ✅ pasa | F5-03, con el modo demo: 11 páginas, Performance 99–100, Accessibility 100, Best Practices 100 (SEO 66 por `noindex`). `/contacto` pasó de 81–90 a 99 al cargar Turnstile recién en el paso 2 (TBT 420–820 ms → 140 ms). LCP ≤ 0,9 s, CLS 0. |
+| 27/11/2026 | Ídem, build con `NEXT_PUBLIC_DEMO_MODE=false` y `--seo` (la IA) | ✅ pasa | 11 páginas: SEO 100, Accessibility 100, Best Practices 100, Performance 92–100. |
 
 ### MT-21 — Páginas 404 y de error
 

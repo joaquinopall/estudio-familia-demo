@@ -62,7 +62,9 @@ export function MobileMenu({ items, cta }: MobileMenuProps) {
         ) : (
           <MenuIcon aria-hidden="true" className="size-5" />
         )}
-        Menú
+        {/* Under 18rem of width (a phone with the browser font at 150%), only the icon shows:
+            the word does not fit next to the name and WhatsApp. It stays the button's name. */}
+        <span className="max-[18rem]:sr-only">Menú</span>
       </button>
 
       <div

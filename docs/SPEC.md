@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.36 (27/11/2026) |
+| Versión | 1.37 (27/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -259,6 +259,7 @@ src/
   proxy.ts                       # Next 16: en src/, al lado de app/ (en la raíz no corre). Solo /admin/:path*
 prisma.config.ts                 # config de la CLI de Prisma 7: carga .env* y usa DIRECT_URL (ADR-0012)
 scripts/staff-add.ts             # npm run staff:add (tsx --conditions=react-server, ADR-0015)
+scripts/lighthouse.ts            # npm run lighthouse (F5-03): Lighthouse mobile en las páginas públicas, mediana de 3 corridas
 scripts/encrypt-inquiries.ts     # npm run inquiries:encrypt (ADR-0017): sin --confirm solo cuenta
 prisma/
   schema.prisma
@@ -582,7 +583,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | MT-09 | Usuario autenticado que no es staff |
 | MT-10 | Cambio de estado, notas e historial |
 | MT-11 | Navegación completa solo con teclado |
-| MT-12 | Lighthouse mobile en 3 páginas |
+| MT-12 | Lighthouse mobile en todas las páginas públicas (`npm run lighthouse`) |
 | MT-13 | Banner de modo demo |
 | MT-14 | Botón de WhatsApp |
 | MT-15 | Error de mail simulado (la consulta se guarda igual) |
@@ -674,3 +675,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 26/11/2026 | 1.34 | F5-02, cifrado (ADR-0017). §7: `message` e `internalNotes` cifrados con AES-256-GCM a nivel de aplicación, como `text`; el id de la consulta lo genera la app. §9: `FIELD_ENCRYPTION_KEYS` (obligatoria). §10.2: amenaza nueva, el acceso directo a la base. §13: las filas `E2E-` se marcan por el nombre o el email. §15: la pregunta del cifrado queda resuelta. §6.2: `FieldCipher`, `AesGcmFieldCipher`, `security/field-keys.ts`, `reencryption.ts` y `scripts/encrypt-inquiries.ts`. | [tu nombre] |
 | 26/11/2026 | 1.35 | Corrección del panel. §6.2: `loading.tsx` en `app/admin/(protected)/` y en `consultas/[id]/`, con `PanelLoading`. En `next dev`, la validación de navegación instantánea de Next 16.4 avisaba que ir del listado al detalle (y volver) esperaba a la base sin mostrar nada. No cambia ningún requisito: cada página sigue llamando a `requireStaff()` antes de leer datos. | [tu nombre] |
 | 27/11/2026 | 1.36 | F5-02 (Security Advisor de Supabase). §7: los roles de la Data API no ejecutan funciones `SECURITY DEFINER`; se revoca `EXECUTE` sobre `rls_auto_enable()`, que crea Supabase. "Leaked password protection" queda como riesgo aceptado (plan gratuito). | [tu nombre] |
+| 27/11/2026 | 1.37 | F5-03. §6.2: `scripts/lighthouse.ts` (`npm run lighthouse`, sin dependencias nuevas). §13: MT-12 cubre todas las páginas públicas. El widget de Turnstile se carga recién en el paso 2 del formulario. La letra del navegador al 150 % no desborda en ningún ancho; el 200 % se exige desde 768 px (en celulares, WCAG 1.4.4 se cumple con el zoom). | [tu nombre] |

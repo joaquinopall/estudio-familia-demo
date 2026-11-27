@@ -32,11 +32,10 @@ test.describe("admin login page", () => {
       "content",
       /noindex.*nofollow/,
     );
-    const results = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-      .analyze();
+    // Every impact, like the public pages (F5-03, NFR-A11Y-01).
+    const axe = await new AxeBuilder({ page }).analyze();
     expect(
-      results.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
+      axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
     ).toEqual([]);
     expect(violations).toEqual([]);
   });

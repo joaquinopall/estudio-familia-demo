@@ -44,6 +44,13 @@ export type InquiryFormProps = {
   noscriptContacts: React.ReactNode;
 };
 
+/**
+ * The form's buttons. The base button never wraps (whitespace-nowrap, h-8): with the browser
+ * font at 150% on a 320px phone, "Enviar consulta" was wider than the screen (F5-03). Here
+ * the label may wrap and the button grows in height instead.
+ */
+const STEP_BUTTON = "h-auto min-h-11 px-6 py-2 text-base whitespace-normal";
+
 const subscribe = () => () => {};
 /** true once React runs in the browser: steps and conditional questions need JavaScript. */
 const useEnhanced = () =>
@@ -196,7 +203,7 @@ export function InquiryForm({
           <Button
             type="button"
             onClick={goToContact}
-            className={`min-h-11 px-6 text-base sm:justify-self-start ${focusOutlineClass}`}
+            className={`${STEP_BUTTON} sm:justify-self-start ${focusOutlineClass}`}
           >
             {copy.buttons.next}
           </Button>
@@ -225,7 +232,10 @@ export function InquiryForm({
           channel={channel}
           onChannelChange={setChosenChannel}
         />
-        {!enhanced || step === "contact" ? (
+        {/* Only with JavaScript and on step 2 (F5-03): Turnstile cannot work without JavaScript
+            (see the <noscript> note), and loading Cloudflare's script with the page made
+            /contacto the slowest page in Lighthouse. The token is only needed to send. */}
+        {enhanced && step === "contact" ? (
           <TurnstileWidget siteKey={turnstileSiteKey} resetKey={turnstileReset} />
         ) : null}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
@@ -234,7 +244,7 @@ export function InquiryForm({
               type="button"
               variant="outline"
               onClick={goBack}
-              className={`min-h-11 px-6 text-base ${focusOutlineClass}`}
+              className={`${STEP_BUTTON} ${focusOutlineClass}`}
             >
               {copy.buttons.back}
             </Button>
@@ -242,7 +252,7 @@ export function InquiryForm({
           <Button
             type="submit"
             disabled={pending}
-            className={`min-h-11 px-6 text-base ${focusOutlineClass}`}
+            className={`${STEP_BUTTON} ${focusOutlineClass}`}
           >
             {pending ? copy.buttons.submitting : copy.buttons.submit}
           </Button>

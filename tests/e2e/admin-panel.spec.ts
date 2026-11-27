@@ -74,12 +74,11 @@ let ids: string[] = [];
 const detailPath = (index: number) => `/admin/consultas/${ids[index]}`;
 const listPath = `/admin?q=${encodeURIComponent(MARKER)}`;
 
-async function expectNoSeriousAxeViolations(page: Page) {
-  const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-    .analyze();
+/** axe with every impact, like the public pages (F5-03, NFR-A11Y-01). */
+async function expectNoAxeViolations(page: Page) {
+  const { violations } = await new AxeBuilder({ page }).analyze();
   expect(
-    results.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
+    violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
   ).toEqual([]);
 }
 
@@ -139,7 +138,7 @@ test.describe("admin panel with a session (F4-07)", () => {
     await expect(rows.nth(3)).toContainText(`${MARKER} Carla`);
     await expect(rows.nth(1)).toContainText(copy.list.table.doNotContact);
     await expect(rows.nth(3)).not.toContainText(copy.list.table.doNotContact);
-    await expectNoSeriousAxeViolations(page);
+    await expectNoAxeViolations(page);
 
     await page.getByLabel(copy.list.filters.area).selectOption("DIVORCE");
     await page.getByRole("button", { name: copy.list.filters.submit }).click();
@@ -173,7 +172,7 @@ test.describe("admin panel with a session (F4-07)", () => {
     );
     // Stored encrypted (ADR-0017), shown as text.
     await expect(page.getByRole("main")).toContainText(`${MARKER} ${SEED_MESSAGE}`);
-    await expectNoSeriousAxeViolations(page);
+    await expectNoAxeViolations(page);
 
     // Status.
     await page.getByLabel(copy.detail.status.label).selectOption("IN_REVIEW");
