@@ -86,6 +86,46 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
 - **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
 
+### Observabilidad (F5-04)
+
+- **Logger** (`src/lib/logger.ts`): una línea JSON por evento, con `level`, `event`, `timestamp` y solo los campos de su lista blanca: ids, `errorCode`, `errorName` (nunca el mensaje), `digest`, `route` (patrón, nunca la URL real), `routeType` y `durationMs`. Nada de nombres, emails, teléfonos, mensajes ni IPs (NFR-SEC-06).
+- **Catálogo** (`src/lib/log-events.ts`): el logger solo acepta estos eventos, así que un nombre mal escrito no compila. Un test verifica que cada evento se use con su nivel y que esta tabla esté al día.
+- **Errores que nadie captura** (`src/instrumentation.ts`, `onRequestError`): se loguean como `request.error`. Las páginas de error muestran el `digest`, así que un reporte se encuentra en el log por ese código. Next imprime además su propia línea con el mensaje: nuestro código solo tira errores genéricos (los de la base se envuelven).
+- **Avisos** ([ADR 0018](adr/0018-observabilidad-con-sentry-sin-sdk.md)): con `SENTRY_DSN`, todo evento `error` (y `request.error`) se manda además a Sentry, con los mismos campos del logger y sin SDK: un `fetch` por error, en segundo plano (`after()`), que nunca falla hacia afuera. Sin `SENTRY_DSN`, solo quedan los logs de Vercel, que en el plan gratuito duran **1 hora**.
+
+| Evento | Nivel | Cuándo |
+| --- | --- | --- |
+| `inquiry.created` | info | Se guardó una consulta nueva. |
+| `inquiry.honeypot` | info | El honeypot vino lleno: éxito falso, no se guarda nada. |
+| `inquiry.rate_limited` | info | Demasiadas consultas de la misma IP o el mismo email. |
+| `inquiry.store_failed` | error | No se pudo guardar la consulta (base de datos). |
+| `inquiry.emails_failed` | error | El envío de los mails de una consulta nueva tiró una excepción. |
+| `inquiry.firm_email_failed` | error | **No se avisó al estudio** de una consulta nueva. Está en el panel. |
+| `inquiry.receipt_email_failed` | error | No se mandó el acuse a la persona. |
+| `captcha.invalid` | warn | Turnstile rechazó el token. |
+| `captcha.unavailable` | error | Turnstile no respondió: la consulta se rechaza. |
+| `rate_limit.unavailable` | warn | Upstash no respondió: el pedido pasa igual (ADR-0013). |
+| `rate_limit.no_client_ip` | warn | Sin IP del cliente: se saltea la regla por IP. |
+| `inquiry.list_failed` | error | No se pudo cargar el listado del panel. |
+| `inquiry.detail_failed` | error | No se pudo leer una consulta (incluye `decrypt_failed`). |
+| `inquiry.status_changed` | info | El staff cambió el estado de una consulta. |
+| `inquiry.status_change_failed` | error | No se pudo guardar un cambio de estado. |
+| `inquiry.notes_updated` | info | El staff guardó las notas internas. |
+| `inquiry.notes_update_failed` | error | No se pudieron guardar las notas. |
+| `auth.signed_in` | info | Un staff inició sesión. |
+| `auth.signed_out` | info | Un staff cerró sesión. |
+| `auth.sign_in_rejected` | info | Credenciales incorrectas (solo el código del proveedor). |
+| `auth.sign_in_rate_limited` | info | Demasiados intentos de login desde la misma IP. |
+| `auth.sign_in_rate_limited_by_provider` | warn | Límite de login propio de Supabase. |
+| `auth.sign_in_unavailable` | error | Supabase Auth no respondió el login. |
+| `auth.sign_out_failed` | error | Supabase Auth falló al cerrar sesión. |
+| `auth.forbidden` | warn | Una sesión sin staff activo intentó entrar al panel. |
+| `auth.session_check_failed` | warn | El proxy no pudo verificar una sesión. |
+| `auth.user_check_unavailable` | error | Supabase Auth no verificó una sesión. |
+| `auth.staff_lookup_failed` | error | No se pudo leer el staff. |
+| `db.pool_error` | error | Falló una conexión inactiva de la base. |
+| `request.error` | error | Un error que nadie capturó (`instrumentation.ts`), con su `digest` y la ruta como patrón. |
+
 ### Cifrado del mensaje y de las notas (F5-02)
 
 - **Qué:** `message` e `internalNotes` se guardan cifrados con AES-256-GCM (`enc:v1:<id de clave>:<iv>:<cifrado>`), atados a su fila y columna ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)). Nombre, email y teléfono quedan en claro.
@@ -330,5 +370,6 @@ sequenceDiagram
 | [0015](adr/0015-autorizacion-del-panel-y-alta-de-staff.md) | `requireStaff()` con `getUser()` en cada página y action; `staff:add` con `tsx` y `auth.users` por SQL | Aceptada |
 | [0016](adr/0016-csp-aplicada-con-unsafe-inline.md) | CSP aplicada con `'unsafe-inline'`; barra de Vercel solo en Preview; sin Supabase | Aceptada |
 | [0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md) | Mensaje y notas cifrados con AES-256-GCM en el repository; clave en `FIELD_ENCRYPTION_KEYS`, con rotación | Aceptada |
+| [0018](adr/0018-observabilidad-con-sentry-sin-sdk.md) | Catálogo de eventos, `request.error` con `digest` y avisos a Sentry sin SDK, solo con campos del logger | Aceptada |
 
 Otras decisiones de diseño (paleta, tipografías, tema único claro) están en SPEC §11.1 y su registro de cambios (§17).

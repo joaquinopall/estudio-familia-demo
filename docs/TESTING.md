@@ -60,7 +60,7 @@ Detalles de los e2e:
 
 | Nivel       | Herramienta                  | Dónde                                        | Qué cubre hoy                                                                                     |
 | ----------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas, regla de medio seguro, referencia y service con un repository falso (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter, reglas de seguridad de ESLint y autorización estructural del panel (F5-02) |
+| Unit        | Vitest                       | `src/**/__tests__/*.test.ts`, `prisma/__tests__/` | Schemas de env, `.env.example`, `ActionResult`, logger sin PII, headers y CSP, WhatsApp, `site.config`, contraste de tokens, contenido y reglas éticas, SEO (JSON-LD, metadata, sitemap, robots), cliente Prisma (`db.ts`) y RLS en las migraciones, schemas de consultas, regla de medio seguro, referencia y service con un repository falso (`src/features/inquiries`), adapters de Resend, Turnstile y Upstash (sin red), fakes y contrato del rate limiter, reglas de seguridad de ESLint y autorización estructural del panel (F5-02), catálogo de eventos de log (nivel y tabla de ARCHITECTURE), sink de errores, adapter de Sentry (envelope, solo campos permitidos, 429, nunca tira) e `instrumentation.ts` (`request.error` sin mensaje ni URL) (F5-04) |
 | Componentes | Vitest + Testing Library     | `src/**/__tests__/*.test.tsx`                | Páginas públicas y bloques de marketing, header y menú mobile (teclado, `aria-expanded`), footer, banner, skip link, WhatsApp      |
 | Action      | Vitest + fakes               | `src/features/inquiries/__tests__/submit-inquiry.test.ts` | `submitInquiry`: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot, base y mail caídos, orden de FR-06 y logs sin datos personales |
 | Auth        | Vitest + fakes               | `src/features/auth/__tests__/`, `src/lib/supabase/__tests__/` | `signIn`: OK, VALIDATION, mismo UNAUTHORIZED para email inexistente y contraseña incorrecta, rate limit propio (5 en 15 min) y de Supabase, Upstash caído, Supabase caído, logs sin email ni contraseña. `signOut` aunque Supabase falle. Traducción de errores de Supabase. Proxy: redirect sin sesión, sin loop en el login, cookies y headers de no-caché, cookies httpOnly/Secure/Lax |
@@ -141,6 +141,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-25 | El caso en **prod** | En **F5-08**, después de `db:deploy`. | En F4-02 se da de alta el staff de dev; el de prod, antes del lanzamiento. |
 | MT-07 y MT-09 | El caso completo en **dev** | En **F4-03** (y de nuevo en el cierre, F4-08). Antes, MT-25 con tu usuario. | Necesitaban la página de login, que llega en F4-03. |
 | MT-30 | El caso en **prod** | En **F5-08**, después de `db:deploy` y con la clave de prod cargada. | En F5-02 se verifica dev; prod se verifica en el lanzamiento. |
+| MT-31 | El caso en **producción** | En **F5-08**, con `SENTRY_DSN` de Production. | En F5-04 se verifica el preview. |
 | MT-29 | El caso en **prod** | En **F5-08**. | En F5-02 se revisa dev y el proyecto de Vercel; prod se revisa en el lanzamiento. |
 | MT-28 | El paso 6 en **producción** (el header sin `vercel.live`) | En **F5-08**, con el dominio de la demo. | En F5-01 se probó el preview; producción se verifica en el lanzamiento. |
 
@@ -201,6 +202,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-28 | CSP aplicada en el preview                               | F5-01         | **Detallado** · se ejecuta en F5-01 (preview) y F5-08 (producción) |
 | MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
 | MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev ✅ 26/11/2026, prod en F5-08 |
+| MT-31 | Errores en el log y en Sentry                            | F5-04         | **Detallado** · preview en F5-04, producción en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -741,6 +743,30 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
 | 26/11/2026 | Supabase **dev**, `npm run dev` local en Windows 11, clave de dev en `.env.local` y en Vercel → Preview | ✅ pasa | Los 7 pasos. Script: antes había 6 consultas con 9 campos en claro (conteo sin `--confirm` del 26/11); después de la corrida con `--confirm`, 0 campos en claro (comprobado por la IA con la clave de `.env.local`). Base: `message` e `internal_notes` como `enc:v1:k1:…`; panel: mensaje y nota legibles. Paso 7: el `message` copiado a otra consulta dio el error genérico, sin mostrar el texto. |
+
+### MT-31 — Errores en el log y en Sentry
+
+- **Objetivo:** que un error del servidor se pueda encontrar por el código que ve la persona, que avise por mail (Sentry) y que en ningún lado aparezcan datos personales.
+- **Requisitos:** NFR-OBS-01, NFR-SEC-06, [ADR 0018](adr/0018-observabilidad-con-sentry-sin-sdk.md).
+- **Precondiciones:** el proyecto de Sentry creado y `SENTRY_DSN` cargada en Vercel → Preview (README, "Logs y errores"). El preview desplegado **después** de cargarla. Tu usuario es staff (MT-25).
+
+**Pasos**
+
+1. En Supabase dev → Table Editor → `inquiries`, elegí una consulta de prueba y cambiá su `message` por `roto` (ya no descifra).
+2. Abrí esa consulta en el panel del preview.
+3. En Vercel → Logs del preview, buscá `inquiry.detail_failed`.
+4. En Sentry → Issues, abrí el evento nuevo: mirá sus tags, su extra y si te llegó el mail de aviso.
+5. Al terminar, borrá esa consulta de prueba.
+
+**Resultado esperado**
+
+- Paso 2: la página de error del panel, sin ningún detalle interno, con "Código del error: …".
+- Paso 3: una línea `inquiry.detail_failed` con el `inquiryId`, `errorCode: decrypt_failed` y `errorName`, y una `request.error` con `route: /admin/consultas/[id]` y el mismo `digest` que mostró la página. Ningún mensaje de error, email, nombre, teléfono ni IP.
+- Paso 4: dos issues, `inquiry.detail_failed` y `request.error`, con `environment: preview`, los tags `event`, `errorCode` (o `route`) y `errorName`, y en extra solo el `inquiryId` o el `digest`. Llega un mail de Sentry. Nada de lo escrito en la consulta.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
 
 ### MT-29 — Configuración de seguridad de los servicios
 

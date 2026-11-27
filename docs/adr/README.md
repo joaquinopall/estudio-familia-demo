@@ -29,6 +29,7 @@ Reglas:
 | [0015](0015-autorizacion-del-panel-y-alta-de-staff.md) | Autorización del panel con `requireStaff()` y alta de staff por script | Aceptada |
 | [0016](0016-csp-aplicada-con-unsafe-inline.md) | CSP aplicada, con `'unsafe-inline'` y la barra de Vercel solo en Preview | Aceptada |
 | [0017](0017-cifrado-de-campos-a-nivel-de-aplicacion.md) | Cifrado del mensaje y de las notas a nivel de aplicación | Aceptada |
+| [0018](0018-observabilidad-con-sentry-sin-sdk.md) | Observabilidad: catálogo de eventos, errores no capturados y avisos con Sentry sin SDK | Aceptada |
 
 ## Plantilla
 

@@ -67,6 +67,7 @@ Se definen en `.env.local` (no se commitea) y se validan con Zod al arrancar `de
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` |   no    | **F3-05**         | Rate limit                            |
 | `IP_HASH_SALT`                                        |   no    | **F3-05**         | HMAC de IPs y emails (32+ caracteres) |
 | `FIELD_ENCRYPTION_KEYS`                               |   no    | **F5-02**         | Cifrado del mensaje y de las notas    |
+| `SENTRY_DSN`                                          |   no    | opcional (F5-04)  | Avisos de errores a Sentry            |
 
 Reglas:
 
@@ -243,6 +244,18 @@ El mensaje de cada consulta y las notas internas del estudio se guardan **cifrad
 **Rotar la clave:** poné la nueva **adelante** (`FIELD_ENCRYPTION_KEYS=k2:<nueva>,k1:<vieja>`), desplegá, corré `npm run inquiries:encrypt -- --confirm` contra esa base y recién después sacá `k1`. La primera clave cifra; todas descifran. Para prod, pasá `DATABASE_URL` y `FIELD_ENCRYPTION_KEYS` de prod en el shell, que gana sobre `.env.local`.
 
 **Si el detalle de una consulta da error** y el log dice `errorCode: decrypt_failed`, falta la clave con la que se cifró ese valor (o el dato se alteró). Agregala a la lista; nunca se muestra el valor guardado.
+
+## Logs y errores
+
+Cada evento es una línea JSON sin datos personales: `level`, `event` y solo ids, códigos y nombres de error. La lista completa de eventos, con su nivel y cuándo ocurren, está en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#observabilidad-f5-04).
+
+- **Dónde verlos:** Vercel → el proyecto → **Logs**. Para buscar un evento, filtrá por su nombre, por ejemplo `inquiry.firm_email_failed` (el estudio no recibió el aviso de una consulta). **En el plan gratuito, los logs duran 1 hora** (Pro, 1 día).
+- **Errores que nadie capturó:** aparecen como `request.error`, con un `digest`. La página de error muestra ese mismo código ("mencioná este código"), así que un reporte se encuentra en el log buscando el número.
+- **Avisos por mail con Sentry (opcional):** con `SENTRY_DSN`, cada evento `error` llega también a Sentry, que avisa por mail y guarda el historial. Se mandan solo los campos del logger: nunca mensajes, nombres, emails ni IPs ([ADR 0018](docs/adr/0018-observabilidad-con-sentry-sin-sdk.md)). Para activarlo:
+  1. Creá una cuenta en [sentry.io](https://sentry.io) (el plan gratuito alcanza) y un proyecto de plataforma **Node.js**. No hace falta instalar su SDK.
+  2. Copiá el DSN: Settings → Projects → el proyecto → **Client Keys (DSN)**.
+  3. Cargalo como `SENTRY_DSN` en Vercel, en Production y, si querés, en Preview (cada evento lleva el entorno). Redeployá.
+  4. En Sentry → Alerts, dejá la alerta por defecto de "issues nuevos" para que te llegue el mail.
 
 ## Seguridad
 
