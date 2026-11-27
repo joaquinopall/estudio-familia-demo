@@ -26,6 +26,8 @@ export type LogContext = {
   route?: string;
   /** "render", "action", "route" or "proxy" (Next's routeType). */
   routeType?: string;
+  /** Whether a feature is on (error_reporting.started). */
+  enabled?: boolean;
   durationMs?: number;
   error?: unknown;
 };
@@ -41,6 +43,7 @@ export type LogEntry = {
   digest?: string;
   route?: string;
   routeType?: string;
+  enabled?: boolean;
   durationMs?: number;
   errorName?: string;
 };
@@ -87,6 +90,7 @@ export function buildEntry(
     if (typeof value === "string") entry[field] = value;
   }
   if (typeof context.durationMs === "number") entry.durationMs = context.durationMs;
+  if (typeof context.enabled === "boolean") entry.enabled = context.enabled;
   if (context.error !== undefined) entry.errorName = errorName(context.error);
 
   return entry;
