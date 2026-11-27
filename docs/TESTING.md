@@ -38,6 +38,7 @@ Detalles de los e2e:
     - listado de la más nueva a la más vieja, filtros en la URL, recarga y "No iniciar contacto";
     - detalle con cambio de estado, notas guardadas después de recargar e historial con el actor y sin el texto de las notas;
     - del link del mail al detalle, pasando por el login (F4-06);
+    - al abrir una consulta, "Cargando la consulta…" aparece enseguida y después el detalle (demora a propósito la respuesta del servidor);
     - acceso denegado, con el staff desactivado un momento y reactivado siempre;
     - axe en el listado y en el detalle;
     - ninguna violación de la CSP en el login, el listado, el detalle y sus acciones (F5-01).

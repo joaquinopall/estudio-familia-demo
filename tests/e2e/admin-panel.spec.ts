@@ -218,6 +218,28 @@ test.describe("admin panel with a session (F4-07)", () => {
     ).toBeVisible();
   });
 
+  test("navigating to an inquiry shows its loading state at once, then the inquiry", async ({
+    page,
+  }) => {
+    await signInTo(page, 6, listPath);
+    // A slow server answer, so the loading state has time to show (loading.tsx, Next 16
+    // instant navigation). Without it the navigation would wait with nothing on screen.
+    await page.route("**/admin/consultas/**", async (route) => {
+      if (route.request().headers()["rsc"]) await new Promise((r) => setTimeout(r, 1500));
+      await route.continue();
+    });
+
+    await page
+      .getByRole("row", { name: new RegExp(`${MARKER} Ana`) })
+      .getByRole("link")
+      .click();
+
+    await expect(page.getByRole("status").filter({ hasText: copy.detail.loading })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${detailPath(0)}$`));
+    await expect(page.getByRole("main")).toContainText(`${MARKER} ${SEED_MESSAGE}`);
+    await expect(page.getByRole("status").filter({ hasText: copy.detail.loading })).toHaveCount(0);
+  });
+
   test("access denied: a session that is not active staff sees nothing of the panel", async ({
     page,
   }) => {

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.34 (26/11/2026) |
+| Versión | 1.35 (26/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -159,6 +159,7 @@ src/
       (protected)/layout.tsx     # llama a requireStaff()
       (protected)/page.tsx       # listado
       (protected)/error.tsx      # error del panel (mensaje genérico y reintento)
+      (protected)/loading.tsx    # "Cargando…" al navegar (también en consultas/[id]/): la navegación no espera a la base
       (protected)/consultas/[id]/page.tsx       # detalle (+ not-found.tsx del panel)
     sitemap.ts
     robots.ts
@@ -192,7 +193,7 @@ src/
       form-values.ts             # valores del formulario que la action devuelve al fallar
       server.ts                  # getInquiryService(): el service con Prisma, para páginas y actions
       list-href.ts               # buildListHref: URLs del listado con los filtros
-      components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, InquiryFilters, InquiryPagination, badges (F4-04); InquiryDetail, ContactPlanBox, StatusForm, NotesForm, InquiryHistory (F4-05)
+      components/                # InquiryFormSection, InquiryForm (client) y sus partes; InquiryTable, InquiryFilters, InquiryPagination, badges (F4-04); InquiryDetail, ContactPlanBox, StatusForm, NotesForm, InquiryHistory (F4-05); PanelLoading
       __tests__/
     auth/
       dal.ts                     # requireStaff() (páginas), requireStaffForAction() (actions), getCurrentStaff()
@@ -670,3 +671,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 26/11/2026 | 1.32 | F5-01 (ADR-0016, reemplaza a ADR-0007). NFR-SEC-05: la CSP pasa a aplicada; permite self y Turnstile, y la barra de Vercel solo en Preview. Supabase no se agrega porque no hay cliente de navegador (ADR-0014). Se mantiene `'unsafe-inline'` en `script-src`: los nonces harían dinámicas todas las páginas y el SRI de Next no hashea los scripts inline (probado). §6.2: comentario de `security/headers.ts`. `env.schema.ts` valida `VERCEL_ENV`, la variable de sistema de Vercel, que no va en `.env.example`. | [tu nombre] |
 | 26/11/2026 | 1.33 | F5-02 (auditoría). §6.2: `docs/SECURITY_REVIEW.md`. §15: el cifrado del mensaje y de las notas queda decidido, para un segundo PR de F5-02. Sin cambios de requisitos: las reglas de ESLint y el test de autorización del panel hacen cumplir los que ya estaban (CLAUDE.md §4 y §5, NFR-SEC-02). | [tu nombre] |
 | 26/11/2026 | 1.34 | F5-02, cifrado (ADR-0017). §7: `message` e `internalNotes` cifrados con AES-256-GCM a nivel de aplicación, como `text`; el id de la consulta lo genera la app. §9: `FIELD_ENCRYPTION_KEYS` (obligatoria). §10.2: amenaza nueva, el acceso directo a la base. §13: las filas `E2E-` se marcan por el nombre o el email. §15: la pregunta del cifrado queda resuelta. §6.2: `FieldCipher`, `AesGcmFieldCipher`, `security/field-keys.ts`, `reencryption.ts` y `scripts/encrypt-inquiries.ts`. | [tu nombre] |
+| 26/11/2026 | 1.35 | Corrección del panel. §6.2: `loading.tsx` en `app/admin/(protected)/` y en `consultas/[id]/`, con `PanelLoading`. En `next dev`, la validación de navegación instantánea de Next 16.4 avisaba que ir del listado al detalle (y volver) esperaba a la base sin mostrar nada. No cambia ningún requisito: cada página sigue llamando a `requireStaff()` antes de leer datos. | [tu nombre] |

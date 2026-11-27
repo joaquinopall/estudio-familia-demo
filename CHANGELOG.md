@@ -4,6 +4,13 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### Corrección F5 · Navegación del panel sin bloqueos
+
+- **Corregido:** en `next dev`, Next 16.4 avisaba "uncached data during prerendering or a navigation" en `/admin` y `/admin/consultas/[id]`. Al ir del listado al detalle (o volver) la página esperaba a la base sin mostrar nada. No afectaba a producción ni a los datos.
+- **Agregado:** `loading.tsx` en el listado y en el detalle, con `PanelLoading` ("Cargando consultas…" / "Cargando la consulta…", `role="status"`). Cada página sigue llamando a `requireStaff()` antes de leer datos.
+- **Comprobado:** con `next dev` y una sesión real, dos vueltas listado → detalle → listado sin avisos. Control: sin el `loading.tsx` del listado, los avisos de `/admin` vuelven.
+- **Agregado:** e2e en `admin-panel.spec.ts`: con la respuesta del servidor demorada, el "Cargando la consulta…" aparece enseguida y después el detalle. SPEC v1.35.
+
 ### F5-02 · Cifrado del mensaje y de las notas (PR 2 de 2)
 
 - **Agregado:** el mensaje de cada consulta y las notas internas se guardan cifrados con AES-256-GCM a nivel de aplicación ([ADR 0017](docs/adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)). Resuelve el hallazgo H1 de `SECURITY_REVIEW.md`. **No es cifrado extremo a extremo.**
