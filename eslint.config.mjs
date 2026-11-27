@@ -55,6 +55,8 @@ const securityRules = [
       "src/lib/env.ts",
       "src/lib/env.public.ts",
       "src/lib/env.schema.ts",
+      // NEXT_RUNTIME is Next's own variable, read to pick the runtime (F5-04).
+      "src/instrumentation.ts",
       "src/**/__tests__/**",
     ],
     rules: { "no-restricted-properties": "off" },

@@ -5,19 +5,24 @@ import { useEffect, useRef } from "react";
 
 import { errorContent, errorPagesLinks } from "@/content/error-pages";
 
-type ErrorViewProps = { retry: () => void };
+type ErrorViewProps = {
+  retry: () => void;
+  /** Next's digest of the error (F5-04), to find it in the logs. Never the message. */
+  digest?: string;
+};
 
 const linkClass =
   "inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-4";
 
 /**
  * Friendly error page (FR-16). It deliberately does not receive the error: nothing internal is
- * shown or logged in the browser (CLAUDE.md §4 and §5). Focus moves to the title so screen
+ * shown or logged in the browser (CLAUDE.md §4 and §5). Only Next's digest, a hash that the
+ * server log also has (`request.error`), so a report can be matched with it (F5-04). Focus moves to the title so screen
  * reader and keyboard users notice that the content was replaced.
  */
-export function ErrorView({ retry }: ErrorViewProps) {
+export function ErrorView({ retry, digest }: ErrorViewProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const { title, lead, retryLabel } = errorContent;
+  const { title, lead, retryLabel, codeLabel } = errorContent;
   const { home, contact } = errorPagesLinks;
 
   useEffect(() => {
@@ -50,6 +55,11 @@ export function ErrorView({ retry }: ErrorViewProps) {
           {contact.label}
         </Link>
       </div>
+      {digest ? (
+        <p className="mt-8 text-sm text-muted-foreground">
+          {codeLabel} <code className="font-mono text-foreground">{digest}</code>
+        </p>
+      ) : null}
     </section>
   );
 }

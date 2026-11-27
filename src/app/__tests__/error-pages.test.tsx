@@ -56,6 +56,22 @@ describe.each([
     expect(container).not.toHaveTextContent(error.message);
   });
 
+  it("shows Next's digest, to find the error in the log (F5-04), and nothing else", () => {
+    const withDigest = Object.assign(new Error("connection to 10.0.0.5 refused"), {
+      digest: "3802741954",
+    });
+    const { container } = render(<ErrorPage error={withDigest} retry={vi.fn()} />);
+
+    expect(container).toHaveTextContent(`${errorContent.codeLabel} 3802741954`);
+    expect(container).not.toHaveTextContent("10.0.0.5");
+  });
+
+  it("shows no code line when the error has no digest", () => {
+    render(<ErrorPage error={error} retry={vi.fn()} />);
+
+    expect(screen.queryByText(errorContent.codeLabel)).toBeNull();
+  });
+
   it("moves focus to the title, so the change is announced", () => {
     render(<ErrorPage error={error} retry={vi.fn()} />);
 
