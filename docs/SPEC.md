@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.37 (27/11/2026) |
+| Versión | 1.38 (27/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -222,13 +222,16 @@ src/
     admin-paths.ts               # rutas del panel (/admin, /admin/login)
     ports/                       # EmailSender, CaptchaVerifier, RateLimiter, Clock, AuthGateway (sin excepciones, ADR-0013); FieldCipher (ADR-0017)
     ports/fakes/                 # fakes en memoria, solo para tests
-    adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter, systemClock, AesGcmFieldCipher
-    adapters/index.ts            # raíz de composición: getEmailSender(), getCaptchaVerifier(), getRateLimiter(), getClock()
+    adapters/                    # ResendEmailSender, TurnstileVerifier, UpstashRateLimiter, systemClock, AesGcmFieldCipher, SentryErrorReporter
+    adapters/index.ts            # raíz de composición: getEmailSender(), getCaptchaVerifier(), getRateLimiter(), getClock(), getFieldCipher(), getErrorReporter()
     action-result.ts             # tipo ActionResult + helpers
     utils.ts                     # cn() (lo genera shadcn)
     whatsapp.ts                  # buildWhatsAppUrl (FR-13)
     format-date.ts               # formatLongDate (fechas en es-AR, sin depender de la zona horaria)
-    logger.ts                    # logger estructurado sin PII
+    logger.ts                    # logger estructurado sin PII; manda los errores al sink de error-reporting.ts
+    log-events.ts                # catálogo de eventos de log (nombre y nivel); la tabla de ARCHITECTURE lo replica
+    error-reporting.ts           # conecta el logger con el ErrorReporter (Sentry), en segundo plano con after()
+    error-digest.ts              # digest de Next de un error, para la página de error
     security/ip.ts               # obtener IP de headers y hashearla (HMAC-SHA256 con IP_HASH_SALT)
     security/field-keys.ts       # parsea FIELD_ENCRYPTION_KEYS (puro: lo usa env.schema.ts)
     security/headers.ts          # headers de seguridad y CSP aplicada (NFR-SEC-04/05, ADR-0016); lo usa next.config.ts
@@ -257,6 +260,7 @@ src/
     legal/privacy.ts             # texto de la política + versión
   generated/prisma/              # cliente de Prisma generado (prisma generate); fuera de git
   proxy.ts                       # Next 16: en src/, al lado de app/ (en la raíz no corre). Solo /admin/:path*
+  instrumentation.ts             # register(): conecta Sentry; onRequestError(): `request.error` con digest y ruta (ADR-0018)
 prisma.config.ts                 # config de la CLI de Prisma 7: carga .env* y usa DIRECT_URL (ADR-0012)
 scripts/staff-add.ts             # npm run staff:add (tsx --conditions=react-server, ADR-0015)
 scripts/lighthouse.ts            # npm run lighthouse (F5-03): Lighthouse mobile en las páginas públicas, mediana de 3 corridas
@@ -458,6 +462,7 @@ Etiquetas de interfaz:
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | no | rate limit |
 | `IP_HASH_SALT` | no | HMAC de IPs (32+ caracteres aleatorios) |
 | `FIELD_ENCRYPTION_KEYS` | no | cifrado del mensaje y de las notas (ADR-0017): `id:base64` de 32 bytes, varias separadas por comas (la primera cifra). Distinta en dev y prod; si se pierde, esos campos son irrecuperables |
+| `SENTRY_DSN` | no | opcional: avisos de errores del servidor a Sentry, sin datos personales (ADR-0018). Sin ella, solo los logs de Vercel |
 
 - **No se usa la service role key de Supabase** (mínimo privilegio): la DB va por Prisma y Auth por la clave pública.
 - **Conexiones a la DB cifradas y verificadas:** TLS contra la CA de Supabase (`prisma/certs/supabase-ca.crt`), configurado en el código (`lib/db-tls.ts`). `DATABASE_URL` y `DIRECT_URL` no llevan parámetros `ssl*`. Cada proyecto de Supabase tiene activado "Enforce SSL on incoming connections" (ADR-0012).
@@ -549,7 +554,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | NFR-MANT-02 | Mantenibilidad | Lint, typecheck, tests y build en CI obligatorios para mergear a `main`. |
 | NFR-ESC-01 | Escalabilidad | Índices de §7; listado paginado en el servidor; conexión por pooler; sin estado en memoria entre requests. |
 | NFR-ESC-02 | Escalabilidad | Ports y adapters para cambiar de proveedor (mail, captcha, rate limit) sin tocar services. |
-| NFR-OBS-01 | Observabilidad | Logger estructurado (JSON) con `level`, `event`, `inquiryId` y `errorCode`. Errores de mail y captcha logueados. Sentry opcional en Fase 5. |
+| NFR-OBS-01 | Observabilidad | Logger estructurado (JSON) con `level`, `event`, `inquiryId` y `errorCode`, con eventos de un catálogo tipado (`lib/log-events.ts`). Errores de mail y captcha logueados. Los errores no capturados se loguean como `request.error` (`instrumentation.ts`) y la página de error muestra su `digest`. Con `SENTRY_DSN`, los errores se reportan además a Sentry, sin SDK y solo con los campos del logger (ADR-0018). |
 | NFR-PRIV-01 | Privacidad | Minimización de datos, retención de 24 meses y política de privacidad versionada. |
 
 ---
@@ -610,7 +615,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 **Preguntas abiertas** (no bloquean la Fase 1):
 - Dominio de la demo (¿subdominio de la SAS?) y dominio verificado en Resend.
 - Nombre ficticio del estudio y textos finales (se definen en la Fase 2).
-- ¿Sentry o solo los logs de Vercel en la Fase 5?
+- ~~¿Sentry o solo los logs de Vercel en la Fase 5?~~ **Resuelto en F5-04 (27/11/2026):** Sentry opcional, sin SDK y sin datos personales ([ADR-0018](adr/0018-observabilidad-con-sentry-sin-sdk.md)).
 - **Para F5-02: cifrado a nivel de aplicación del mensaje y de las notas internas** (`Inquiry.message` e `internalNotes`). **Resuelto en F5-02 (26/11/2026), [ADR-0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md):** ver §7, §9 y §10.2. Lo que sigue es el análisis original.
   - **Qué sería:** AES-256-GCM en el servidor, con una clave en las variables de Vercel y no en la base. Se cifra antes de guardar y se descifra solo para el detalle. Hoy hay TLS en tránsito y cifrado de disco del proveedor en reposo, pero quien ve la base (dashboard, Table Editor, un backup o export) ve esos textos en claro.
   - **Protege** contra quien accede a la base sin la clave. **No protege** de un servidor comprometido ni de una sesión de staff robada.
@@ -676,3 +681,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 26/11/2026 | 1.35 | Corrección del panel. §6.2: `loading.tsx` en `app/admin/(protected)/` y en `consultas/[id]/`, con `PanelLoading`. En `next dev`, la validación de navegación instantánea de Next 16.4 avisaba que ir del listado al detalle (y volver) esperaba a la base sin mostrar nada. No cambia ningún requisito: cada página sigue llamando a `requireStaff()` antes de leer datos. | [tu nombre] |
 | 27/11/2026 | 1.36 | F5-02 (Security Advisor de Supabase). §7: los roles de la Data API no ejecutan funciones `SECURITY DEFINER`; se revoca `EXECUTE` sobre `rls_auto_enable()`, que crea Supabase. "Leaked password protection" queda como riesgo aceptado (plan gratuito). | [tu nombre] |
 | 27/11/2026 | 1.37 | F5-03. §6.2: `scripts/lighthouse.ts` (`npm run lighthouse`, sin dependencias nuevas). §13: MT-12 cubre todas las páginas públicas. El widget de Turnstile se carga recién en el paso 2 del formulario. La letra del navegador al 150 % no desborda en ningún ancho; el 200 % se exige desde 768 px (en celulares, WCAG 1.4.4 se cumple con el zoom). | [tu nombre] |
+| 27/11/2026 | 1.38 | F5-04 (ADR-0018). NFR-OBS-01: catálogo tipado de eventos, `request.error` para los errores no capturados, `digest` en las páginas de error y avisos opcionales a Sentry sin SDK. §9: `SENTRY_DSN` (opcional). §15: la pregunta de Sentry queda resuelta. §6.2: `instrumentation.ts`, `log-events.ts`, `error-reporting.ts`, `error-digest.ts`, `ErrorReporter` y `SentryErrorReporter`. | [tu nombre] |

@@ -59,6 +59,8 @@ export const adminPanelContent = {
       title: "No pudimos cargar las consultas",
       body: "Puede ser un problema momentáneo. Probá de nuevo en unos segundos.",
       retry: "Probar de nuevo",
+      /** Next's digest of the error (F5-04), to find it in the logs as `request.error`. */
+      code: "Código del error:",
     },
   },
   detail: {

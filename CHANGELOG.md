@@ -4,6 +4,14 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-04 · Observabilidad
+
+- **Agregado:** catálogo tipado de eventos de log (`src/lib/log-events.ts`, 30 eventos). El logger solo acepta eventos de esa lista, y un test verifica que cada uno se use con su nivel y que la tabla de `docs/ARCHITECTURE.md` coincida. Encontró dos eventos que solo existían en los tests del logger.
+- **Agregado:** `src/instrumentation.ts`. Todo error del servidor que nadie captura se loguea como `request.error`, con el nombre del error, el `digest` de Next, la ruta como patrón y el tipo; nunca el mensaje, la URL ni los headers. Comprobado en los e2e: el rechazo de CSRF queda como `request.error` en `/admin/login`.
+- **Agregado:** las páginas de error (públicas y del panel) muestran el `digest` como "código", para encontrar un reporte en el log.
+- **Agregado:** avisos opcionales a Sentry, sin SDK ([ADR 0018](docs/adr/0018-observabilidad-con-sentry-sin-sdk.md)): port `ErrorReporter`, adapter `sentry-error-reporter.ts` (un `fetch` al endpoint de envelopes) y `error-reporting.ts`, que reporta cada evento `error` en segundo plano con `after()`. Solo los campos del logger, nunca datos personales. Respeta el 429 de Sentry y nunca tira. Variable opcional `SENTRY_DSN`; sin ella, todo queda en los logs de Vercel (1 hora en el plan gratuito).
+- **Documentado:** README ("Logs y errores", con cómo activar Sentry), ARCHITECTURE (tabla de eventos), TESTING (caso manual **MT-31**), `SECURITY_REVIEW.md` (NFR-SEC-06 y R10), SPEC v1.38, `.env.example`.
+
 ### F5-03 · Rendimiento y accesibilidad
 
 - **Mejorado:** `/contacto` daba 81–90 en Performance mobile. Turnstile ahora se carga recién cuando la persona llega al paso 2 del formulario, no con la página (sin JavaScript no podía funcionar de todos modos). Total Blocking Time de 420–820 ms a 140 ms; Performance 99.

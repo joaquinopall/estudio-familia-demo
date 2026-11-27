@@ -6,6 +6,7 @@ import {
   parsePublicEnv,
   parseServerEnv,
   parseVercelEnv,
+  parseVercelSystemEnv,
   publicEnvSchema,
   serverEnvSchema,
   validateEnv,
@@ -234,5 +235,41 @@ describe("public/server split", () => {
     const keys = Object.keys(serverEnvSchema.shape);
 
     expect(keys.some((key) => key.startsWith("NEXT_PUBLIC_"))).toBe(false);
+  });
+});
+
+describe("SENTRY_DSN (F5-04, ADR-0018)", () => {
+  it("is optional: without it errors stay in the logs", () => {
+    expect(parseServerEnv(validServer).SENTRY_DSN).toBeUndefined();
+  });
+
+  it("accepts a Sentry DSN", () => {
+    const dsn = "https://abc123@o4507.ingest.us.sentry.io/4508";
+    expect(parseServerEnv({ ...validServer, SENTRY_DSN: dsn }).SENTRY_DSN).toBe(dsn);
+  });
+
+  it.each(["http://abc@sentry.io/1", "https://sentry.io/1", "https://abc@sentry.io/proyecto"])(
+    "rejects %s, naming the variable",
+    (dsn) => {
+      expect(() => parseServerEnv({ ...validServer, SENTRY_DSN: dsn })).toThrow(/SENTRY_DSN/);
+    },
+  );
+});
+
+describe("parseVercelSystemEnv (F5-04)", () => {
+  it("is empty outside Vercel", () => {
+    expect(parseVercelSystemEnv({})).toEqual({});
+  });
+
+  it("reads the environment and the commit", () => {
+    expect(
+      parseVercelSystemEnv({ VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_SHA: "1bff3e5" }),
+    ).toEqual({ VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_SHA: "1bff3e5" });
+  });
+
+  it("rejects a commit that is not a git SHA", () => {
+    expect(() => parseVercelSystemEnv({ VERCEL_GIT_COMMIT_SHA: "main" })).toThrow(
+      /VERCEL_GIT_COMMIT_SHA/,
+    );
   });
 });

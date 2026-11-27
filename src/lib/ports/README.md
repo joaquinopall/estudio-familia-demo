@@ -9,6 +9,7 @@ Interfaces (puertos) de los servicios externos que usan los services (SPEC §6.1
 | `RateLimiter`     | `rate-limiter.ts`     | Limitar intentos por clave               | `UpstashRateLimiter`              |
 | `Clock`           | `clock.ts`            | Obtener la hora actual (testeable)       | `systemClock`                     |
 | `FieldCipher`     | `field-cipher.ts`     | Cifrar el mensaje y las notas en la base | `AesGcmFieldCipher` (ADR-0017)    |
+| `ErrorReporter`   | `error-reporter.ts`   | Avisar errores del servidor (opcional)   | `SentryErrorReporter` (ADR-0018)  |
 
 ## Contrato ([ADR-0013](../../../docs/adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md))
 

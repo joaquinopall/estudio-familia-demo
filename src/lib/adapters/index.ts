@@ -7,16 +7,18 @@
  */
 import "server-only";
 
-import { env } from "@/lib/env";
+import { env, vercelSystem } from "@/lib/env";
 import type { CaptchaVerifier } from "@/lib/ports/captcha-verifier";
 import type { Clock } from "@/lib/ports/clock";
 import type { EmailSender } from "@/lib/ports/email-sender";
+import type { ErrorReporter } from "@/lib/ports/error-reporter";
 import type { FieldCipher } from "@/lib/ports/field-cipher";
 import type { RateLimiter } from "@/lib/ports/rate-limiter";
 import { parseFieldEncryptionKeys } from "@/lib/security/field-keys";
 
 import { createAesGcmFieldCipher } from "./aes-gcm-field-cipher";
 import { createResendEmailSender } from "./resend-email-sender";
+import { createSentryErrorReporter } from "./sentry-error-reporter";
 import { systemClock } from "./system-clock";
 import { createTurnstileVerifier } from "./turnstile-verifier";
 import { createUpstashRateLimiter } from "./upstash-rate-limiter";
@@ -60,4 +62,17 @@ export function getFieldCipher(): FieldCipher {
     fieldCipher = createAesGcmFieldCipher(parsed.keys);
   }
   return fieldCipher;
+}
+
+/**
+ * Sentry, only with SENTRY_DSN (ADR-0018); null without it: errors stay in Vercel's logs.
+ * Created once per server instance by error-reporting.ts.
+ */
+export function getErrorReporter(): ErrorReporter | null {
+  if (!env.SENTRY_DSN) return null;
+  return createSentryErrorReporter({
+    dsn: env.SENTRY_DSN,
+    environment: vercelSystem.VERCEL_ENV ?? "development",
+    release: vercelSystem.VERCEL_GIT_COMMIT_SHA,
+  });
 }

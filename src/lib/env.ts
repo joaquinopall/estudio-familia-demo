@@ -4,7 +4,7 @@
  */
 import "server-only";
 
-import { parseServerEnv } from "./env.schema";
+import { parseServerEnv, parseVercelSystemEnv } from "./env.schema";
 import { publicEnv } from "./env.public";
 
 export const env = {
@@ -13,3 +13,6 @@ export const env = {
 } as const;
 
 export type Env = typeof env;
+
+/** Vercel's system variables (VERCEL_ENV, VERCEL_GIT_COMMIT_SHA); empty outside Vercel. */
+export const vercelSystem = parseVercelSystemEnv(process.env);

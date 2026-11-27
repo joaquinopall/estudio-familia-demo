@@ -19,4 +19,6 @@ export const errorContent = {
   title: "Algo salió mal",
   lead: "Tuvimos un problema al mostrar esta página. Podés probar de nuevo, volver al inicio o contactarnos por otro medio.",
   retryLabel: "Probar de nuevo",
+  /** Next's digest of the error (F5-04): correlates a report with the log, says nothing else. */
+  codeLabel: "Si nos avisás de este problema, mencioná este código:",
 } as const;

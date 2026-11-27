@@ -2,14 +2,15 @@
 
 Implementaciones concretas de los puertos de [`src/lib/ports`](../ports/README.md).
 
-| Archivo                   | Implementa        | Proveedor                                                                                        |
-| ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
-| `resend-email-sender.ts`  | `EmailSender`     | Resend (SDK `resend`)                                                                            |
-| `turnstile-verifier.ts`   | `CaptchaVerifier` | Cloudflare Turnstile (`siteverify` por `fetch`, sin SDK)                                         |
-| `upstash-rate-limiter.ts` | `RateLimiter`     | Upstash Redis (`@upstash/ratelimit`, ventana deslizante)                                         |
-| `system-clock.ts`         | `Clock`           | Hora del sistema                                                                                 |
-| `aes-gcm-field-cipher.ts` | `FieldCipher`     | AES-256-GCM de `node:crypto` (ADR-0017)                                                          |
-| `index.ts`                | —                 | `getEmailSender()`, `getCaptchaVerifier()`, `getRateLimiter()`, `getClock()`, `getFieldCipher()` |
+| Archivo                    | Implementa        | Proveedor                                                                                                                                      |
+| -------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resend-email-sender.ts`   | `EmailSender`     | Resend (SDK `resend`)                                                                                                                          |
+| `turnstile-verifier.ts`    | `CaptchaVerifier` | Cloudflare Turnstile (`siteverify` por `fetch`, sin SDK)                                                                                       |
+| `upstash-rate-limiter.ts`  | `RateLimiter`     | Upstash Redis (`@upstash/ratelimit`, ventana deslizante)                                                                                       |
+| `system-clock.ts`          | `Clock`           | Hora del sistema                                                                                                                               |
+| `aes-gcm-field-cipher.ts`  | `FieldCipher`     | AES-256-GCM de `node:crypto` (ADR-0017)                                                                                                        |
+| `sentry-error-reporter.ts` | `ErrorReporter`   | Sentry por `fetch` a su endpoint de envelopes, sin SDK (ADR-0018)                                                                              |
+| `index.ts`                 | —                 | `getEmailSender()`, `getCaptchaVerifier()`, `getRateLimiter()`, `getClock()`, `getFieldCipher()`, `getErrorReporter()` (null sin `SENTRY_DSN`) |
 
 Reglas:
 
