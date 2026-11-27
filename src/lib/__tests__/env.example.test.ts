@@ -57,6 +57,7 @@ describe(".env.example", () => {
       "UPSTASH_REDIS_REST_TOKEN",
       "IP_HASH_SALT",
       "FIELD_ENCRYPTION_KEYS",
+      "SENTRY_DSN",
     ]) {
       expect(example[key]).toBe("");
     }

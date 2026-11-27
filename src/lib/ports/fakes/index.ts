@@ -17,6 +17,8 @@ import type {
 } from "@/lib/ports/auth-gateway";
 import type { Clock } from "@/lib/ports/clock";
 import type { EmailMessage, EmailSendResult, EmailSender } from "@/lib/ports/email-sender";
+import type { ErrorReportResult, ErrorReporter } from "@/lib/ports/error-reporter";
+import type { LogEntry } from "@/lib/logger";
 import {
   type RateLimitResult,
   type RateLimitRule,
@@ -163,5 +165,20 @@ export class FakeRateLimiter implements RateLimiter {
     }
     this.hits.set(id, [...recent, now]);
     return { status: "allowed" };
+  }
+}
+
+/** Keeps every reported entry; can simulate a provider that is down. */
+export class FakeErrorReporter implements ErrorReporter {
+  readonly reported: LogEntry[] = [];
+  private result: ErrorReportResult = { status: "sent" };
+
+  failWith(reason: string): void {
+    this.result = { status: "unavailable", reason };
+  }
+
+  async report(entry: LogEntry): Promise<ErrorReportResult> {
+    this.reported.push(entry);
+    return this.result;
   }
 }

@@ -67,6 +67,17 @@ export const serverEnvSchema = z.object({
       if (!parsed.ok) ctx.addIssue({ code: "custom", message: parsed.error });
     }),
   ),
+  // Optional (F5-04, ADR-0018): without it nothing is sent to Sentry. A Sentry DSN:
+  // https://<public key>@<host>/<project id>.
+  SENTRY_DSN: optional(
+    z.url({ protocol: /^https$/, error: "debe ser el DSN https de Sentry" }).refine(
+      (value) => {
+        const url = new URL(value);
+        return url.username !== "" && /^\/\d+$/.test(url.pathname);
+      },
+      { error: "debe tener la forma https://<clave>@<host>/<número de proyecto>" },
+    ),
+  ),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -132,6 +143,21 @@ export type VercelEnv = z.infer<typeof vercelEnvSchema>["VERCEL_ENV"];
 
 export const parseVercelEnv = (source: EnvSource): VercelEnv =>
   parseWith(vercelEnvSchema, source).VERCEL_ENV;
+
+/**
+ * Vercel's system variables the error reporter tags events with (F5-04): the environment and
+ * the commit as the release. Missing locally and in CI.
+ */
+const vercelSystemSchema = vercelEnvSchema.extend({
+  VERCEL_GIT_COMMIT_SHA: optional(
+    z.string().regex(/^[0-9a-f]{7,40}$/, { error: "debe ser un SHA de git" }),
+  ),
+});
+
+export type VercelSystemEnv = z.infer<typeof vercelSystemSchema>;
+
+export const parseVercelSystemEnv = (source: EnvSource): VercelSystemEnv =>
+  parseWith(vercelSystemSchema, source);
 
 /** Validates public and server variables together and reports every problem at once. */
 export function validateEnv(source: EnvSource): void {
