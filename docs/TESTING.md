@@ -202,7 +202,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-28 | CSP aplicada en el preview                               | F5-01         | **Detallado** · se ejecuta en F5-01 (preview) y F5-08 (producción) |
 | MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
 | MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev ✅ 26/11/2026, prod en F5-08 |
-| MT-31 | Errores en el log y en Sentry                            | F5-04         | **Detallado** · preview en F5-04, producción en F5-08 |
+| MT-31 | Errores en el log y en Sentry                            | F5-04         | **Detallado** · preview ✅ 27/11/2026, producción en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -766,7 +766,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 27/11/2026 | Preview de Vercel con `SENTRY_DSN` (entorno Preview), Supabase dev | ✅ pasa | Informado por el dueño. La página de error del panel mostró el código, los logs de Vercel tuvieron los eventos y llegó el mail de Sentry. Un primer intento no llegó a Sentry: el preview no tenía la variable cargada a tiempo; por eso se agregaron `error_reporting.started` y `error_report.failed` (corrección de F5-04). |
 
 ### MT-29 — Configuración de seguridad de los servicios
 
