@@ -194,12 +194,12 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
 | MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
-| MT-24 | Configuración de Supabase Auth (registro y contraseñas) | F4-01         | **Detallado** · dev en F4-01, prod en F5-08 |
+| MT-24 | Configuración de Supabase Auth (registro y contraseñas) | F4-01         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
 | MT-25 | Alta de staff con `npm run staff:add`                   | F4-02         | **Detallado** · dev en F4-02, prod en F5-08 |
 | MT-26 | Listado de consultas: orden, filtros, búsqueda y páginas | F4-04        | **Detallado** · se ejecuta en F4-04 y F4-08 |
 | MT-27 | Del mail al detalle, pasando por el login                | F4-06         | **Detallado** · se ejecuta en F4-06 y F4-08 |
 | MT-28 | CSP aplicada en el preview                               | F5-01         | **Detallado** · se ejecuta en F5-01 (preview) y F5-08 (producción) |
-| MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev en F5-02, prod en F5-08 |
+| MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
 | MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev ✅ 26/11/2026, prod en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
@@ -620,7 +620,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 27/11/2026 | Supabase **dev** (dashboard) | ✅ pasa | Los 5 pasos, informados por el dueño: registro deshabilitado, contraseña mínima de 12 o más, su usuario confirmado, alta pública rechazada y ninguna cuenta nueva. |
 
 ### MT-07 — Login y logout del admin
 
@@ -772,7 +772,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 27/11/2026 | Supabase **dev**, proyecto de Vercel y repo de GitHub (dashboards) | ✅ pasa | Los 9 pasos, informados por el dueño; capturas guardadas fuera del repo. Security Advisor como en MT-23: sin "RLS Disabled" y sin avisos de `rls_auto_enable` después de H4; "Leaked Password Protection Disabled" aceptado (R9). Los límites de Auth (paso 2) no se anotaron. |
 
 ### MT-10 — Cambio de estado, notas e historial
 
