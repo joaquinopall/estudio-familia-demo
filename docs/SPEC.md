@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.35 (26/11/2026) |
+| Versión | 1.36 (27/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -396,6 +396,7 @@ model StaffMember {
 **Reglas:**
 - Migraciones solo con `prisma migrate` versionadas en git. Nunca `db push` contra producción.
 - **RLS habilitado en todas las tablas del esquema `public`** (`inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`, que crea Prisma), **sin políticas** para `anon` ni `authenticated`: la Data API de Supabase no puede leerlas. Prisma accede con la conexión de Postgres. Se hace en una migración SQL, y un test verifica que toda tabla nueva lo tenga.
+- **Funciones en `public`:** los roles de la Data API (`anon`, `authenticated`) no pueden ejecutar funciones `SECURITY DEFINER`. La de Supabase `rls_auto_enable()` (activa RLS en tablas nuevas) se conserva, sin `EXECUTE` para esos roles (migración `20261127120000_revoke_rls_auto_enable`, verificado en `rls.test.ts`).
 - Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase). Busca al usuario en `auth.users` por email con la conexión de Prisma (sin service role key) y guarda el email de Auth. Es idempotente: si ya era staff, lo reactiva y actualiza el nombre. Si el usuario de Auth se borró y se volvió a crear con el mismo email, vincula el staff existente al usuario nuevo y conserva su `id`; si el usuario viejo sigue existiendo, no cambia nada. La baja es `active = false` (ADR-0015).
 - **Cifrado** (F5-02, ADR-0017): `message` e `internalNotes` se guardan cifrados con AES-256-GCM a nivel de aplicación (`enc:v1:<id de clave>:<iv>:<cifrado>`), atados a su fila y columna. Por eso son `text` y el id de la consulta lo genera la app. Nombre, email y teléfono quedan en claro (búsqueda y aviso al estudio). No es cifrado extremo a extremo.
 - Retención: las consultas en `CLOSED` o `DISCARDED` con más de 24 meses se eliminan (script manual en v1; cron en v2). Documentado en la política de privacidad.
@@ -672,3 +673,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 26/11/2026 | 1.33 | F5-02 (auditoría). §6.2: `docs/SECURITY_REVIEW.md`. §15: el cifrado del mensaje y de las notas queda decidido, para un segundo PR de F5-02. Sin cambios de requisitos: las reglas de ESLint y el test de autorización del panel hacen cumplir los que ya estaban (CLAUDE.md §4 y §5, NFR-SEC-02). | [tu nombre] |
 | 26/11/2026 | 1.34 | F5-02, cifrado (ADR-0017). §7: `message` e `internalNotes` cifrados con AES-256-GCM a nivel de aplicación, como `text`; el id de la consulta lo genera la app. §9: `FIELD_ENCRYPTION_KEYS` (obligatoria). §10.2: amenaza nueva, el acceso directo a la base. §13: las filas `E2E-` se marcan por el nombre o el email. §15: la pregunta del cifrado queda resuelta. §6.2: `FieldCipher`, `AesGcmFieldCipher`, `security/field-keys.ts`, `reencryption.ts` y `scripts/encrypt-inquiries.ts`. | [tu nombre] |
 | 26/11/2026 | 1.35 | Corrección del panel. §6.2: `loading.tsx` en `app/admin/(protected)/` y en `consultas/[id]/`, con `PanelLoading`. En `next dev`, la validación de navegación instantánea de Next 16.4 avisaba que ir del listado al detalle (y volver) esperaba a la base sin mostrar nada. No cambia ningún requisito: cada página sigue llamando a `requireStaff()` antes de leer datos. | [tu nombre] |
+| 27/11/2026 | 1.36 | F5-02 (Security Advisor de Supabase). §7: los roles de la Data API no ejecutan funciones `SECURITY DEFINER`; se revoca `EXECUTE` sobre `rls_auto_enable()`, que crea Supabase. "Leaked password protection" queda como riesgo aceptado (plan gratuito). | [tu nombre] |

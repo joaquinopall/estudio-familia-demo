@@ -58,4 +58,17 @@ describe("Row Level Security in migrations (NFR-SEC-03)", () => {
   it("never disables RLS", () => {
     expect(sql).not.toMatch(/DISABLE ROW LEVEL SECURITY/i);
   });
+
+  // Supabase's own SECURITY DEFINER function in public (Security Advisor lints 0028/0029,
+  // SECURITY_REVIEW.md H4): the Data API roles must not be able to execute it.
+  it.each(["PUBLIC", "anon", "authenticated"])(
+    "revokes EXECUTE on public.rls_auto_enable() from %s",
+    (role) => {
+      expect(sql).toContain(`REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM ${role};`);
+    },
+  );
+
+  it("never grants EXECUTE on a function to the Data API roles", () => {
+    expect(sql).not.toMatch(/GRANT\s+EXECUTE[\s\S]*?TO\s+(PUBLIC|anon|authenticated)\b/i);
+  });
 });
