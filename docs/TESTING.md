@@ -200,7 +200,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-27 | Del mail al detalle, pasando por el login                | F4-06         | **Detallado** · se ejecuta en F4-06 y F4-08 |
 | MT-28 | CSP aplicada en el preview                               | F5-01         | **Detallado** · se ejecuta en F5-01 (preview) y F5-08 (producción) |
 | MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev en F5-02, prod en F5-08 |
-| MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev en F5-02, prod en F5-08 |
+| MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev ✅ 26/11/2026, prod en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -738,7 +738,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 26/11/2026 | Supabase **dev**, `npm run dev` local en Windows 11, clave de dev en `.env.local` y en Vercel → Preview | ✅ pasa | Los 7 pasos. Script: antes había 6 consultas con 9 campos en claro (conteo sin `--confirm` del 26/11); después de la corrida con `--confirm`, 0 campos en claro (comprobado por la IA con la clave de `.env.local`). Base: `message` e `internal_notes` como `enc:v1:k1:…`; panel: mensaje y nota legibles. Paso 7: el `message` copiado a otra consulta dio el error genérico, sin mostrar el texto. |
 
 ### MT-29 — Configuración de seguridad de los servicios
 
