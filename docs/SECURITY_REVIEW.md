@@ -58,7 +58,7 @@ Revisión punto por punto de SPEC §10 (requisitos NFR-SEC y tabla de amenazas),
 | Fuerza bruta en el login | Rate limit + mensajes genéricos + protección de Supabase | `sign-in.test.ts`: 5 intentos por IP cada 15 min, también los malformados; email desconocido igual que contraseña incorrecta; rate limit propio de Supabase mapeado. Contraseña ≥ 12: MT-24. | ✅ (ver residual R4) |
 | Fuga de datos por mail | Aviso al estudio sin el mensaje; link al panel | "never includes the message" en `emails.test.tsx` ([ADR 0005](adr/0005-mails-despues-de-responder.md)). Manual: MT-06. | ✅ |
 | Acuse leído por otra persona | Sin acuse si el email no es privado; textos neutros | `notifications.test.ts`, `emails.test.tsx` (sin área ni especialidad en ninguna de las áreas). Riesgo residual del nombre y el dominio del estudio, ya aceptado en SPEC §10.2. | ✅ ⚠️ |
-| Acceso directo a la base (dashboard, backup, export, credencial filtrada) | Mensaje y notas cifrados con una clave que no está en la base ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)) | [`aes-gcm-field-cipher.test.ts`](../src/lib/adapters/__tests__/aes-gcm-field-cipher.test.ts) (ida y vuelta, IV aleatorio, otra fila o columna, alteración, rotación), [`repository.db.test.ts`](../src/features/inquiries/__tests__/repository.db.test.ts) (en la base queda `enc:v1:…`; un valor en claro, de otra fila o de otra clave da `decrypt_failed`), [`detail.db.test.ts`](../src/features/inquiries/__tests__/detail.db.test.ts) (notas), e2e `inquiry-submit.spec.ts` (`messageIsEncrypted`) y `admin-panel.spec.ts` (el detalle muestra el texto). Manual: MT-30. | ✅ (MT-30 ⏳) ⚠️ R8 |
+| Acceso directo a la base (dashboard, backup, export, credencial filtrada) | Mensaje y notas cifrados con una clave que no está en la base ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)) | [`aes-gcm-field-cipher.test.ts`](../src/lib/adapters/__tests__/aes-gcm-field-cipher.test.ts) (ida y vuelta, IV aleatorio, otra fila o columna, alteración, rotación), [`repository.db.test.ts`](../src/features/inquiries/__tests__/repository.db.test.ts) (en la base queda `enc:v1:…`; un valor en claro, de otra fila o de otra clave da `decrypt_failed`), [`detail.db.test.ts`](../src/features/inquiries/__tests__/detail.db.test.ts) (notas), e2e `inquiry-submit.spec.ts` (`messageIsEncrypted`) y `admin-panel.spec.ts` (el detalle muestra el texto). Manual: MT-30. | ✅ (MT-30 dev 26/11/2026; prod ⏳) ⚠️ R8 |
 | Clickjacking | `frame-ancestors 'none'` + `X-Frame-Options: DENY` | Ahora aplicado (F5-01): `security-headers.test.ts` y `security-headers.spec.ts`. | ✅ |
 | Secretos filtrados | `server-only`, env público/privado, revisión en PR | Ver NFR-SEC-09. | ✅ |
 
@@ -104,6 +104,6 @@ La guía de seguridad de datos de Next ("Auditing") pide revisar estos puntos:
 2. **MT-24** en dev: registro deshabilitado y contraseña mínima en Supabase Auth.
 3. **MT-29** (nuevo): configuración de Supabase, Vercel y GitHub.
 4. MT-04, MT-05, MT-08, MT-09 y MT-27 (cierre de F3 y F4), que también son evidencia de esta revisión.
-5. **MT-30** en dev: el mensaje y las notas cifrados en la base (segundo PR de F5-02).
+5. ~~**MT-30** en dev~~: hecho el 26/11/2026.
 
 En producción, MT-23, MT-24, MT-25, MT-28 (paso 6) y MT-29 se repiten en F5-08.
