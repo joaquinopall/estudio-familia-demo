@@ -24,7 +24,7 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 | F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
 | F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
 | F4 — Panel admin | 60–80% | 3 / 8 | 🟨 |
-| F5 — Calidad, seguridad y lanzamiento | 80–100% | 3 / 9 | 🟨 |
+| F5 — Calidad, seguridad y lanzamiento | 80–100% | 4 / 9 | 🟨 |
 
 Estados: ⬜ sin empezar · 🟨 en curso · ✅ cerrada.
 
@@ -226,8 +226,8 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 - [X] **F5-03 · Rendimiento y accesibilidad** (IA)
   - [X] Lighthouse mobile ≥ 90 en las 4 categorías y en todas las páginas públicas. axe sin errores.
 
-- [ ] **F5-04 · Observabilidad** (IA)
-  - [ ] Revisión de logs (sin PII). Sentry opcional según lo que decidas (SPEC §15).
+- [X] **F5-04 · Observabilidad** (IA)
+  - [X] Revisión de logs (sin PII). Sentry opcional según lo que decidas (SPEC §15).
 
 - [ ] **F5-05 · Retención de datos** (IA)
   - [ ] Script de purga de consultas de más de 24 meses, con test y documentado.
