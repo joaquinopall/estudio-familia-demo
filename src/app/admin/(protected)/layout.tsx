@@ -17,14 +17,14 @@ async function StaffGate({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff();
   return (
     <>
-      <div className="border-b border-border bg-secondary">
+      <section aria-label={copy.sessionRegion} className="border-b border-border bg-secondary">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-2">
           <p className="text-sm text-muted-foreground">
             {copy.signedInAs} <span className="font-medium text-foreground">{staff.fullName}</span>
           </p>
           <SignOutButton label={copy.signOut} />
         </div>
-      </div>
+      </section>
       {children}
     </>
   );

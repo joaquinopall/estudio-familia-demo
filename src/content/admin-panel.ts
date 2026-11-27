@@ -9,6 +9,8 @@ export const adminPanelContent = {
   metaTitle: "Panel de consultas",
   checkingSession: "Verificando tu sesión…",
   signedInAs: "Sesión de",
+  /** Name of the session bar's region, so it is inside a landmark (F5-03, axe "region"). */
+  sessionRegion: "Tu sesión",
   signOut: "Cerrar sesión",
   list: {
     title: "Consultas",
