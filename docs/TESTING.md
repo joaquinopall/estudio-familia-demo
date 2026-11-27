@@ -136,7 +136,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Caso  | Qué falta correr                                     | Cuándo                                                                                                             | Por qué quedó pendiente                                         |
 | ----- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| MT-23 | Pasos 1 a 5 y 7 en **dev**; el caso completo en **prod** | Dev: en **F4-01**, apenas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` estén en `.env.local`. Prod: en **F5-08**, después de `db:deploy`. | En F3-01 no estaban cargadas la URL de la API ni la clave pública (son de F4). |
+| MT-23 | El caso completo en **prod** | En **F5-08**, después de `db:deploy`. | Dev se ejecutó el 27/11/2026 (pasos 2 a 6); prod se verifica en el lanzamiento. |
 | MT-24 | El caso en **prod** | En **F5-08**. | En F4-01 se configura y verifica dev; prod se verifica antes del lanzamiento. |
 | MT-25 | El caso en **prod** | En **F5-08**, después de `db:deploy`. | En F4-02 se da de alta el staff de dev; el de prod, antes del lanzamiento. |
 | MT-07 y MT-09 | El caso completo en **dev** | En **F4-03** (y de nuevo en el cierre, F4-08). Antes, MT-25 con tu usuario. | Necesitaban la página de login, que llega en F4-03. |
@@ -193,7 +193,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-20 | SEO técnico y datos estructurados                       | F2-06         | **Detallado** |
 | MT-21 | Páginas 404 y de error                                  | F2-07         | **Detallado** |
 | MT-22 | Ayuda ante peligro y plazos                             | F2-07         | **Detallado** |
-| MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** · sin ejecutar (pendiente: F4-01 y F5-08) |
+| MT-23 | Base de datos: tablas y RLS en Supabase                 | F3-01         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
 | MT-24 | Configuración de Supabase Auth (registro y contraseñas) | F4-01         | **Detallado** · dev en F4-01, prod en F5-08 |
 | MT-25 | Alta de staff con `npm run staff:add`                   | F4-02         | **Detallado** · dev en F4-02, prod en F5-08 |
 | MT-26 | Listado de consultas: orden, filtros, búsqueda y páginas | F4-04        | **Detallado** · se ejecuta en F4-04 y F4-08 |
@@ -523,14 +523,13 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - **Requisitos:** NFR-SEC-03, ADR-0002, SPEC §7.
 - **Precondiciones:** proyecto de Supabase (dev, o prod después de `db:deploy`) con las migraciones aplicadas. Su URL (`https://<project-ref>.supabase.co`) y su clave pública (publishable o anon), de Settings → API. **Nunca uses la service role key**: esa saltea RLS.
 
-> **Pendiente de ejecutar** (ver [Ejecuciones pendientes](#ejecuciones-pendientes)).
+> **Dev ejecutado el 27/11/2026** (ver la tabla al final). **Prod:** el caso completo en **F5-08**, después de `db:deploy`.
 >
-> - **Dev:** correr los pasos 1 a 5 y 7 en **F4-01**, apenas `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` estén en `.env.local`. Es la única prueba de que la API pública de Supabase, la que usa el navegador, no puede leer ni escribir las consultas. Conviene hacerla antes de que el panel use Supabase Auth.
-> - **Prod:** el caso completo en **F5-08**, después de `db:deploy`.
-> - **Ya verificado en F3-01 (24/11/2026, dev),** sin la API pública, por eso no cuenta como ejecución del caso:
+> - **Ya verificado en F3-01 (24/11/2026, dev),** sin la API pública:
 >   - el paso 6: migraciones aplicadas y en sync;
 >   - en el catálogo de Postgres: RLS activado con 0 políticas en las 4 tablas;
 >   - Enforce SSL: una conexión sin cifrar es rechazada (`ESSLREQUIRED`).
+> - **En Windows:** usá `curl.exe`, no `curl`, porque en PowerShell `curl` es otro comando. En cmd, el cuerpo del paso 5 va entre comillas dobles (`-d "{}"`); en PowerShell, entre simples (`-d '{}'`).
 
 **Pasos**
 
@@ -563,7 +562,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 27/11/2026 | Supabase **dev** (`spwsafgqwuqphydypeci`), `curl.exe` desde cmd en Windows 11, con la publishable key | ✅ pasa | Pasos 3 y 4: `[]` en `inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`. Paso 5: `42501 new row violates row-level security policy for table "inquiries"`, sin fila creada. Paso 6: 4 migraciones, "Database schema is up to date". Paso 2: sin "RLS Disabled in Public"; marcó `rls_auto_enable` (`SECURITY DEFINER` ejecutable por `anon` y `authenticated`), corregido con la migración `20261127120000_revoke_rls_auto_enable` (H4), y "Leaked Password Protection Disabled", aceptado (R9). Paso 7: cubierto por la prueba de F3-01 (`ESSLREQUIRED`). Paso 1: no informado; lo cubre el paso 2. |
 
 ### MT-08 — Entrar a `/admin` sin sesión
 
