@@ -555,7 +555,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 **Resultado esperado**
 
 - Paso 1: están `inquiries`, `inquiry_events`, `staff_members` y `_prisma_migrations`, y ninguna dice "RLS disabled" (o "Unrestricted").
-- Paso 2: ningún aviso de "RLS Disabled in Public" para esas tablas. Puede aparecer "RLS Enabled No Policy" como información: es lo buscado (ADR-0002).
+- Paso 2: ningún aviso de "RLS Disabled in Public" para esas tablas. Puede aparecer "RLS Enabled No Policy" como información: es lo buscado (ADR-0002). Desde la migración `20261127120000_revoke_rls_auto_enable` tampoco aparecen "Public Can Execute SECURITY DEFINER Function" ni "Signed-In Users Can Execute SECURITY DEFINER Function" para `rls_auto_enable` (H4). "Leaked Password Protection Disabled" es esperable en el plan gratuito (R9).
 - Pasos 3 y 4: la respuesta es `[]` o un error, **nunca filas**, aunque la tabla tenga datos.
 - Paso 5: un error (por ejemplo `new row violates row-level security policy`). No se crea ninguna fila.
 - Paso 6: "Database schema is up to date!".
@@ -764,7 +764,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 - Paso 1: registro deshabilitado; contraseña mínima de 12 o más (NFR-SEC-10).
 - Paso 2: los límites por defecto o más estrictos; anotalos en la fila.
 - Paso 3: Enforce SSL activado.
-- Paso 4: sin "RLS Disabled in Public". "RLS Enabled No Policy" es lo buscado (ADR-0002).
+- Paso 4: sin "RLS Disabled in Public" ni avisos de `SECURITY DEFINER` sobre `rls_auto_enable`. "RLS Enabled No Policy" es lo buscado (ADR-0002). "Leaked Password Protection Disabled" solo se acepta en el plan gratuito ([`SECURITY_REVIEW.md`](SECURITY_REVIEW.md), R9).
 - Paso 5: ninguna variable con la service role key en ningún lado.
 - Paso 6: solo empiezan con `NEXT_PUBLIC_` las 5 públicas de SPEC §9 (`SITE_URL`, `DEMO_MODE`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `TURNSTILE_SITE_KEY`). Ningún secreto con ese prefijo. Production usa las claves reales de Turnstile y el Supabase de prod; Preview, las de prueba y dev (§8.2, §9). No hay `E2E_STAFF_*` en Vercel.
 - Paso 7: los previews piden login de Vercel (Vercel Authentication) o una protección equivalente.

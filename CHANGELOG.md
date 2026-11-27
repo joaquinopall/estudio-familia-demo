@@ -4,6 +4,13 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-02 · Security Advisor de Supabase
+
+- **Corregido:** `public.rls_auto_enable()`, la función `SECURITY DEFINER` que crea Supabase para activar RLS en tablas nuevas, la podían ejecutar `anon` y `authenticated` por la API (lints 0028 y 0029). La migración `20261127120000_revoke_rls_auto_enable` les quita el `EXECUTE`, y también a `PUBLIC`; el trigger sigue activo. Aplicada en dev y verificada con `has_function_privilege`.
+- **Agregado:** `rls.test.ts` verifica la revocación y que ninguna migración le dé `EXECUTE` a los roles de la API.
+- **Aceptado:** "Leaked password protection" de Supabase Auth requiere el plan Pro (R9 en `SECURITY_REVIEW.md`).
+- **Documentado:** `SECURITY_REVIEW.md` (H4, H5, R9), TESTING (resultados esperados de MT-23 y MT-29) y SPEC v1.36.
+
 ### Corrección F5 · Navegación del panel sin bloqueos
 
 - **Corregido:** en `next dev`, Next 16.4 avisaba "uncached data during prerendering or a navigation" en `/admin` y `/admin/consultas/[id]`. Al ir del listado al detalle (o volver) la página esperaba a la base sin mostrar nada. No afectaba a producción ni a los datos.
