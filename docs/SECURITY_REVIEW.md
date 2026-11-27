@@ -14,7 +14,7 @@ Revisión punto por punto de SPEC §10 (requisitos NFR-SEC y tabla de amenazas),
 ## Resumen
 
 - **Código:** todas las mitigaciones de §10.2 tienen al menos un test automático. F5-02 agrega guardas que impiden que se rompan sin aviso: reglas de ESLint, un test estructural de autorización del panel y un e2e de CSRF.
-- **Configuración de servicios:** depende de pruebas manuales que todavía no se registraron (MT-23, MT-24 y MT-29 en dev). Hasta entonces, esas filas quedan en ⏳ y la revisión no está cerrada.
+- **Configuración de servicios:** comprobada en dev con MT-23, MT-24, MT-29 y MT-30 (26 y 27/11/2026). En producción se repiten en F5-08.
 - **Hallazgo principal (H1), resuelto:** el mensaje de la consulta y las notas internas se guardaban en claro, y quien accediera a la base (dashboard, backup, export) los leía. Desde el segundo PR de F5-02 van cifrados con AES-256-GCM a nivel de aplicación ([ADR 0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md)).
 
 ## Guardas automáticas agregadas en F5-02
@@ -40,8 +40,8 @@ Revisión punto por punto de SPEC §10 (requisitos NFR-SEC y tabla de amenazas),
 | NFR-SEC-06 | Sin PII en logs; IP solo como HMAC | [`logger.test.ts`](../src/lib/__tests__/logger.test.ts) (allowlist de claves, solo el nombre del error), [`ip.test.ts`](../src/lib/__tests__/ip.test.ts) (HMAC con sal), "never logs personal data in any branch" en [`submit-inquiry.test.ts`](../src/features/inquiries/__tests__/submit-inquiry.test.ts), "never writes the email, the password or the IP to the logs" en [`sign-in.test.ts`](../src/features/auth/__tests__/sign-in.test.ts), notas en [`update-inquiry.test.ts`](../src/features/inquiries/__tests__/update-inquiry.test.ts). Las claves del rate limit también son hashes (§8.2). | ✅ |
 | NFR-SEC-07 | Cookies httpOnly, Secure y SameSite=Lax | [`cookie-options.test.ts`](../src/lib/supabase/__tests__/cookie-options.test.ts), [`session.test.ts`](../src/lib/supabase/__tests__/session.test.ts). Sin cliente de Supabase en el navegador ([ADR 0014](adr/0014-auth-supabase-ssr-solo-servidor.md)). | ✅ |
 | NFR-SEC-08 | Dependabot y `npm audit` en CI | [`dependabot.yml`](../.github/dependabot.yml) (npm y Actions, semanal), CI con `npm audit --omit=dev --audit-level=high` bloqueante ([ADR 0008](adr/0008-politica-de-npm-audit-en-ci.md)). Al 26/11/2026: `npm audit --omit=dev` da 0; la alerta moderada de `minimatch` (vía la CLI de `shadcn`, solo desarrollo) se corrige en este PR subiendo `shadcn` a 4.23.1, y `npm audit` completo da 0. | ✅ |
-| NFR-SEC-09 | Secretos solo en Vercel y `.env.local` | `.gitignore` excluye `.env*` salvo `.env.example`; [`env.example.test.ts`](../src/lib/__tests__/env.example.test.ts); `server-only` en `env.ts` y en todo módulo con secretos o DB (12 módulos); regla de ESLint contra `process.env` suelto. Que ningún secreto tenga `NEXT_PUBLIC_` en Vercel: MT-29. | ✅ (MT-29 ⏳) |
-| NFR-SEC-10 | Registro público deshabilitado; contraseña ≥ 12 | Configuración de Supabase Auth: MT-24 (dev ⏳, prod en F5-08). | ⏳ |
+| NFR-SEC-09 | Secretos solo en Vercel y `.env.local` | `.gitignore` excluye `.env*` salvo `.env.example`; [`env.example.test.ts`](../src/lib/__tests__/env.example.test.ts); `server-only` en `env.ts` y en todo módulo con secretos o DB (12 módulos); regla de ESLint contra `process.env` suelto. Que ningún secreto tenga `NEXT_PUBLIC_` en Vercel: MT-29, 27/11/2026. | ✅ (prod ⏳) |
+| NFR-SEC-10 | Registro público deshabilitado; contraseña ≥ 12 | Configuración de Supabase Auth: MT-24 en dev, 27/11/2026. Prod en F5-08. | ✅ (prod ⏳) |
 
 ## Amenazas y mitigaciones (SPEC §10.2)
 
@@ -101,8 +101,8 @@ La guía de seguridad de datos de Next ("Auditing") pide revisar estos puntos:
 ## Pendiente para cerrar la revisión
 
 1. ~~**MT-23** en dev~~: hecho el 27/11/2026.
-2. **MT-24** en dev: registro deshabilitado y contraseña mínima en Supabase Auth.
-3. **MT-29** (nuevo): configuración de Supabase, Vercel y GitHub.
+2. ~~**MT-24** en dev~~: hecho el 27/11/2026.
+3. ~~**MT-29** en dev~~: hecho el 27/11/2026.
 4. MT-04, MT-05, MT-08, MT-09 y MT-27 (cierre de F3 y F4), que también son evidencia de esta revisión.
 5. ~~**MT-30** en dev~~: hecho el 26/11/2026.
 
