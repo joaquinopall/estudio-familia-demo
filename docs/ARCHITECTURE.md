@@ -91,7 +91,7 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Logger** (`src/lib/logger.ts`): una línea JSON por evento, con `level`, `event`, `timestamp` y solo los campos de su lista blanca: ids, `errorCode`, `errorName` (nunca el mensaje), `digest`, `route` (patrón, nunca la URL real), `routeType` y `durationMs`. Nada de nombres, emails, teléfonos, mensajes ni IPs (NFR-SEC-06).
 - **Catálogo** (`src/lib/log-events.ts`): el logger solo acepta estos eventos, así que un nombre mal escrito no compila. Un test verifica que cada evento se use con su nivel y que esta tabla esté al día.
 - **Errores que nadie captura** (`src/instrumentation.ts`, `onRequestError`): se loguean como `request.error`. Las páginas de error muestran el `digest`, así que un reporte se encuentra en el log por ese código. Next imprime además su propia línea con el mensaje: nuestro código solo tira errores genéricos (los de la base se envuelven).
-- **Avisos** ([ADR 0018](adr/0018-observabilidad-con-sentry-sin-sdk.md)): con `SENTRY_DSN`, todo evento `error` (y `request.error`) se manda además a Sentry, con los mismos campos del logger y sin SDK: un `fetch` por error, en segundo plano (`after()`), que nunca falla hacia afuera. Sin `SENTRY_DSN`, solo quedan los logs de Vercel, que en el plan gratuito duran **1 hora**.
+- **Avisos** ([ADR 0018](adr/0018-observabilidad-con-sentry-sin-sdk.md)): con `SENTRY_DSN`, todo evento `error` (y `request.error`) se manda además a Sentry, con los mismos campos del logger y sin SDK: un `fetch` por error, en segundo plano (`after()`), que nunca falla hacia afuera. Sus propias fallas también se ven: `error_reporting.started` (con `enabled`) al arrancar y `error_report.failed` con el motivo. Sin `SENTRY_DSN`, solo quedan los logs de Vercel, que en el plan gratuito duran **1 hora**.
 
 | Evento | Nivel | Cuándo |
 | --- | --- | --- |
@@ -124,6 +124,8 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 | `auth.user_check_unavailable` | error | Supabase Auth no verificó una sesión. |
 | `auth.staff_lookup_failed` | error | No se pudo leer el staff. |
 | `db.pool_error` | error | Falló una conexión inactiva de la base. |
+| `error_reporting.started` | info | Arrancó una instancia del servidor; `enabled` dice si los errores van a Sentry (nunca el DSN). |
+| `error_report.failed` | warn | Sentry rechazó o no recibió un reporte; `errorCode` dice por qué (`http_403`, `timeout`, `network`, `rate_limited`). |
 | `request.error` | error | Un error que nadie capturó (`instrumentation.ts`), con su `digest` y la ruta como patrón. |
 
 ### Cifrado del mensaje y de las notas (F5-02)

@@ -256,6 +256,7 @@ Cada evento es una línea JSON sin datos personales: `level`, `event` y solo ids
   2. Copiá el DSN: Settings → Projects → el proyecto → **Client Keys (DSN)**.
   3. Cargalo como `SENTRY_DSN` en Vercel, en Production y, si querés, en Preview (cada evento lleva el entorno). Redeployá.
   4. En Sentry → Alerts, dejá la alerta por defecto de "issues nuevos" para que te llegue el mail.
+  5. Para comprobarlo, en los logs de Vercel cada instancia del servidor escribe al arrancar `error_reporting.started` con `enabled: true` (con `false`, ese deploy no tiene la variable: hacé Redeploy). Si Sentry rechaza o no recibe un error, aparece `error_report.failed` con el motivo en `errorCode`.
 
 ## Seguridad
 

@@ -4,6 +4,14 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### Corrección F5-04 · Reportes a Sentry visibles
+
+- **Corregido:** si Sentry rechazaba o no recibía un reporte, no quedaba ningún rastro, y en MT-31 no se pudo saber por qué no llegaba nada. Ahora:
+  - `error_reporting.started` (info) se escribe al arrancar cada instancia del servidor, con `enabled: true/false`: muestra si ese deploy tiene `SENTRY_DSN`, sin mostrar el DSN;
+  - `error_report.failed` (warn, así no se reporta a sí mismo) lleva el motivo en `errorCode`: `http_<status>`, `timeout`, `network` o `rate_limited`.
+- **Comprobado:** con un build local apuntando a un Sentry falso, el reporte llega completo; con un Sentry que no responde, aparecen `enabled: true` y `error_report.failed` con `network`.
+- **Documentado:** los dos eventos en la tabla de ARCHITECTURE, y cómo comprobar Sentry en el README y en MT-31.
+
 ### F5-04 · Observabilidad
 
 - **Agregado:** catálogo tipado de eventos de log (`src/lib/log-events.ts`, 30 eventos). El logger solo acepta eventos de esa lista, y un test verifica que cada uno se use con su nivel y que la tabla de `docs/ARCHITECTURE.md` coincida. Encontró dos eventos que solo existían en los tests del logger.
