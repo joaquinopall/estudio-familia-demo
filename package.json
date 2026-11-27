@@ -24,7 +24,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "staff:add": "tsx --conditions=react-server scripts/staff-add.ts",
-    "inquiries:encrypt": "tsx --conditions=react-server scripts/encrypt-inquiries.ts"
+    "inquiries:encrypt": "tsx --conditions=react-server scripts/encrypt-inquiries.ts",
+    "lighthouse": "tsx scripts/lighthouse.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
