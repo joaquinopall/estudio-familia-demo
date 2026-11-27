@@ -65,6 +65,14 @@ export const LOG_EVENTS = {
   "auth.staff_lookup_failed": { level: "error", when: "The staff member could not be read." },
 
   // Infrastructure.
+  "error_reporting.started": {
+    level: "info",
+    when: "A server instance started; enabled says whether errors go to Sentry.",
+  },
+  "error_report.failed": {
+    level: "warn",
+    when: "Sentry rejected or did not receive an error report (errorCode: the reason).",
+  },
   "db.pool_error": { level: "error", when: "An idle database connection failed." },
   "request.error": { level: "error", when: "An error nobody caught (instrumentation.ts)." },
 } as const satisfies Record<string, { level: LogLevel; when: string }>;

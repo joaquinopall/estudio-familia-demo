@@ -754,14 +754,14 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 1. En Supabase dev → Table Editor → `inquiries`, elegí una consulta de prueba y cambiá su `message` por `roto` (ya no descifra).
 2. Abrí esa consulta en el panel del preview.
-3. En Vercel → Logs del preview, buscá `inquiry.detail_failed`.
+3. En Vercel → Logs del preview, buscá `error_reporting.started`, `inquiry.detail_failed` y `error_report.failed`.
 4. En Sentry → Issues, abrí el evento nuevo: mirá sus tags, su extra y si te llegó el mail de aviso.
 5. Al terminar, borrá esa consulta de prueba.
 
 **Resultado esperado**
 
 - Paso 2: la página de error del panel, sin ningún detalle interno, con "Código del error: …".
-- Paso 3: una línea `inquiry.detail_failed` con el `inquiryId`, `errorCode: decrypt_failed` y `errorName`, y una `request.error` con `route: /admin/consultas/[id]` y el mismo `digest` que mostró la página. Ningún mensaje de error, email, nombre, teléfono ni IP.
+- Paso 3: `error_reporting.started` con `enabled: true` (si dice `false`, el deploy no tiene `SENTRY_DSN`: revisá que la variable esté en Preview y hacé Redeploy). Ninguna línea `error_report.failed` (si hay, su `errorCode` dice por qué Sentry no lo recibió: `http_401` o `http_403` es un DSN mal copiado o de otro proyecto). Una línea `inquiry.detail_failed` con el `inquiryId`, `errorCode: decrypt_failed` y `errorName`, y una `request.error` con `route: /admin/consultas/[id]` y el mismo `digest` que mostró la página. Ningún mensaje de error, email, nombre, teléfono ni IP.
 - Paso 4: dos issues, `inquiry.detail_failed` y `request.error`, con `environment: preview`, los tags `event`, `errorCode` (o `route`) y `errorName`, y en extra solo el `inquiryId` o el `digest`. Llega un mail de Sentry. Nada de lo escrito en la consulta.
 
 | Fecha | Entorno | Resultado | Notas |
