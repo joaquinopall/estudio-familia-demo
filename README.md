@@ -11,7 +11,7 @@ Sitio web profesional con sistema de consultas para un estudio jurídico de **fa
 - Aviso por mail al estudio y acuse de recibo neutro a quien consulta, solo si su email es privado.
 - Panel de administración para gestionar las consultas.
 
-**Estado actual:** Fase 1 (fundaciones) completa. Fases 2 (sitio público), 3 (formulario y backend de consultas) y 4 (panel admin: login, listado, detalle con estado, notas e historial, link del mail al detalle y sus e2e) implementadas, pendientes de sus tests manuales de cierre. Próxima: Fase 5 (calidad, seguridad y lanzamiento). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) y el [`CHANGELOG.md`](CHANGELOG.md).
+**Estado actual:** Fases 1 a 4 completas: fundaciones, sitio público, formulario y backend de consultas, y panel admin, con sus tests automáticos (unitarios, de base y e2e, también en la CI) y los 32 casos de la guía manual ejecutados el 28/11/2026. Fase 5 (calidad, seguridad y lanzamiento) en curso: CSP aplicada, revisión de seguridad con cifrado del mensaje y las notas, rendimiento y accesibilidad, observabilidad, retención y e2e en la CI, hechos; faltan el lanzamiento (F5-08) y el cierre (F5-09). Ver [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md), el [`CHANGELOG.md`](CHANGELOG.md) y el tablero de [`docs/TESTING.md`](docs/TESTING.md#tablero-de-resultados).
 
 ## Stack
 

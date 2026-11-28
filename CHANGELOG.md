@@ -4,6 +4,12 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-07 · Guía de tests manuales completa (parte 2: las ejecuciones)
+
+- **Ejecutados:** los 22 casos que faltaban, en 3 sesiones el 28/11/2026, todos ✅ (informados por el dueño): sitio público (MT-01, 11, 13, 14, 16 a 22), formulario y mails (MT-02 a 06, MT-15) y panel (MT-07 a 10, 26, 27). MT-25 se registró con su ejecución del 25/11/2026. **Los 32 casos tienen una ejecución ✅**; solo falta lo de producción, en F5-08.
+- **Cerrado:** los casos manuales de cierre de las Fases 2, 3 y 4. `SECURITY_REVIEW.md` ya no tiene filas esperando una prueba manual de dev.
+- **Actualizado:** el estado del README.
+
 ### F5-07 · Guía de tests manuales completa (parte 1: la guía)
 
 - **Cambiado:** `docs/TESTING.md`, la guía manual:

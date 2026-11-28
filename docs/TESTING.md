@@ -176,7 +176,7 @@ Lo que falta correr en otro entorno, hoy solo producción (F5-08). Cuando se eje
 
 ### Cómo correr la guía completa
 
-Los casos ya ejecutados no hace falta repetirlos hasta el lanzamiento. Los demás se corren en **3 sesiones**, según dónde se prueban; cada una se registra por separado, así que no hace falta hacer todo junto. Al terminar cada caso, anotá el resultado en su tabla (o pasáselo a la IA para que lo cargue) y actualizá su fila en el tablero.
+**Al 28/11/2026 los 32 casos tienen una ejecución ✅** (en dev, local o el preview). Lo único que falta es lo de producción, en F5-08 (ver "Ejecuciones pendientes"). Para una corrida nueva completa (por ejemplo, antes de entregarle el sitio a un estudio), seguí estas sesiones. Los casos ya ejecutados no hace falta repetirlos hasta el lanzamiento. Los demás se corren en **3 sesiones**, según dónde se prueban; cada una se registra por separado, así que no hace falta hacer todo junto. Al terminar cada caso, anotá el resultado en su tabla (o pasáselo a la IA para que lo cargue) y actualizá su fila en el tablero.
 
 **Sesión 1 · Sitio público** (60–75 min): MT-01, 11, 13, 14, 16, 17, 18, 19, 20, 21 y 22. **Hecha el 28/11/2026: todo ✅.**
 
@@ -188,7 +188,7 @@ Los casos ya ejecutados no hace falta repetirlos hasta el lanzamiento. Los demá
 - **Dónde:** el preview (MT-15, en local).
 - **Preparar:** la casilla de tu cuenta de Resend abierta. En Vercel → Preview, `FIRM_NOTIFICATION_EMAIL` tiene que ser esa casilla, y las consultas de prueba también la usan como email (sin dominio verificado, Resend solo le entrega a ella). MT-04 deja tu IP sin poder enviar por 10 minutos: por eso va al final. Las consultas que mandes acá sirven de datos para la sesión 3.
 
-**Sesión 3 · Panel** (35 min): MT-08, 07, 09, 26, 10 y 27, en ese orden.
+**Sesión 3 · Panel** (35 min): MT-08, 07, 09, 26, 10 y 27, en ese orden. **Hecha el 28/11/2026: todo ✅.**
 
 - **Dónde:** el preview, y una terminal local para `npm run staff:add` (MT-09).
 - **Preparar:** un segundo usuario de prueba en Supabase dev, sin staff (MT-09), que borrás al final; las consultas de la sesión 2 (MT-26 pide 4 con datos distintos) y un mail de aviso en tu casilla (MT-27).
@@ -207,10 +207,10 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 | [MT-04](#mt-04--exceder-el-rate-limit) | Exceder el rate limit | — | ✅ 28/11/2026 · preview | — |
 | [MT-05](#mt-05--honeypot-completado-no-guarda-nada) | Honeypot completado (no guarda nada) | — | ✅ 28/11/2026 · preview | — |
 | [MT-06](#mt-06--mails-recibidos-estudio-y-acuse) | Mails recibidos: estudio y acuse | — | ✅ 28/11/2026 · preview | — |
-| [MT-07](#mt-07--login-y-logout-del-admin) | Login y logout del admin | 3 | — | — |
-| [MT-08](#mt-08--entrar-a-admin-sin-sesión) | Entrar a `/admin` sin sesión | 3 | — | — |
-| [MT-09](#mt-09--usuario-autenticado-que-no-es-staff) | Usuario autenticado que no es staff | 3 | — | — |
-| [MT-10](#mt-10--cambio-de-estado-notas-e-historial) | Cambio de estado, notas e historial | 3 | — | — |
+| [MT-07](#mt-07--login-y-logout-del-admin) | Login y logout del admin | — | ✅ 28/11/2026 · preview | — |
+| [MT-08](#mt-08--entrar-a-admin-sin-sesión) | Entrar a `/admin` sin sesión | — | ✅ 28/11/2026 · preview | — |
+| [MT-09](#mt-09--usuario-autenticado-que-no-es-staff) | Usuario autenticado que no es staff | — | ✅ 28/11/2026 · preview | — |
+| [MT-10](#mt-10--cambio-de-estado-notas-e-historial) | Cambio de estado, notas e historial | — | ✅ 28/11/2026 · preview | — |
 | [MT-11](#mt-11--navegación-completa-solo-con-teclado) | Navegación completa solo con teclado | — | ✅ 28/11/2026 · preview | — |
 | [MT-12](#mt-12--lighthouse-mobile-en-todas-las-páginas-públicas) | Lighthouse mobile en todas las páginas públicas | — | ✅ 27/11/2026 · local | — |
 | [MT-13](#mt-13--banner-de-modo-demo) | Banner de modo demo | — | ✅ 28/11/2026 · local y preview | F5-08 (paso 5) |
@@ -226,8 +226,8 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 | [MT-23](#mt-23--base-de-datos-tablas-y-rls-en-supabase) | Base de datos: tablas y RLS en Supabase | — | ✅ 27/11/2026 · dev | F5-08 |
 | [MT-24](#mt-24--configuración-de-supabase-auth-registro-y-contraseñas) | Configuración de Supabase Auth (registro y contraseñas) | — | ✅ 27/11/2026 · dev | F5-08 |
 | [MT-25](#mt-25--alta-de-staff-con-npm-run-staffadd) | Alta de staff con `npm run staff:add` | — | ✅ 25/11/2026 · dev | F5-08 |
-| [MT-26](#mt-26--listado-de-consultas-orden-filtros-búsqueda-y-páginas) | Listado de consultas: orden, filtros, búsqueda y páginas | 3 | — | — |
-| [MT-27](#mt-27--del-mail-al-detalle-pasando-por-el-login) | Del mail al detalle, pasando por el login | 3 | — | — |
+| [MT-26](#mt-26--listado-de-consultas-orden-filtros-búsqueda-y-páginas) | Listado de consultas: orden, filtros, búsqueda y páginas | — | ✅ 28/11/2026 · preview | — |
+| [MT-27](#mt-27--del-mail-al-detalle-pasando-por-el-login) | Del mail al detalle, pasando por el login | — | ✅ 28/11/2026 · preview | — |
 | [MT-28](#mt-28--csp-aplicada-en-el-preview) | CSP aplicada en el preview | — | ✅ 26/11/2026 · preview | F5-08 (paso 6) |
 | [MT-29](#mt-29--configuración-de-seguridad-de-los-servicios) | Configuración de seguridad de los servicios | — | ✅ 27/11/2026 · dev | F5-08 |
 | [MT-30](#mt-30--mensaje-y-notas-cifrados-en-la-base) | Mensaje y notas cifrados en la base | — | ✅ 26/11/2026 · dev | F5-08 |
@@ -446,7 +446,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, ventana privada, con teclado y lector de pantalla | ✅ pasa | Todos los pasos, informados por el dueño (sesión 3 de F5-07). |
 
 ### MT-08 — Entrar a `/admin` sin sesión
 
@@ -473,7 +473,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, ventana privada, DevTools | ✅ pasa | Todos los pasos, informados por el dueño (sesión 3 de F5-07). |
 
 ### MT-09 — Usuario autenticado que no es staff
 
@@ -499,7 +499,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel y `npm run staff:add` local, con un segundo usuario de prueba de Supabase dev (borrado al final) | ✅ pasa | Todos los pasos, informados por el dueño (sesión 3 de F5-07). |
 
 ### MT-10 — Cambio de estado, notas e historial
 
@@ -543,7 +543,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, sesión de staff, con las consultas de la sesión 2 | ✅ pasa | Todos los pasos, informados por el dueño (sesión 3 de F5-07). |
 
 ### MT-11 — Navegación completa solo con teclado
 
@@ -998,7 +998,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, sesión de staff, con las consultas de la sesión 2 | ✅ pasa | Todos los pasos, informados por el dueño (sesión 3 de F5-07). |
 
 ### MT-27 — Del mail al detalle, pasando por el login
 
@@ -1026,7 +1026,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, ventana privada, con un mail de aviso de la sesión 2 | ✅ pasa | Todos los pasos, informados por el dueño (sesión 3 de F5-07). |
 
 ### MT-28 — CSP aplicada en el preview
 
