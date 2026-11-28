@@ -204,7 +204,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
 | MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev ✅ 26/11/2026, prod en F5-08 |
 | MT-31 | Errores en el log y en Sentry                            | F5-04         | **Detallado** · preview ✅ 27/11/2026, producción en F5-08 |
-| MT-32 | Retención: purga de consultas vencidas                 | F5-05         | **Detallado** · dev en F5-05, producción en F5-08 |
+| MT-32 | Retención: purga de consultas vencidas                 | F5-05         | **Detallado** · dev ✅ 27/11/2026, producción en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -803,7 +803,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 27/11/2026 | Supabase **dev**, `npm run inquiries:purge` local en Windows 11 | ✅ pasa | Los 7 pasos, informados por el dueño: 0 vencidas al principio y después de cerrar la consulta de prueba; con el cierre envejecido, 1 vencida sin borrar y después "Borradas, con su historial: 1"; la corrida final dio 0 y la consulta ya no estaba en el panel; `/privacidad` con la versión 1.2 y el texto nuevo. |
 
 ### MT-29 — Configuración de seguridad de los servicios
 
