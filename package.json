@@ -26,6 +26,7 @@
     "staff:add": "tsx --conditions=react-server scripts/staff-add.ts",
     "inquiries:encrypt": "tsx --conditions=react-server scripts/encrypt-inquiries.ts",
     "inquiries:purge": "tsx --conditions=react-server scripts/purge-inquiries.ts",
+    "demo:seed": "tsx --conditions=react-server scripts/demo-seed.ts",
     "lighthouse": "tsx scripts/lighthouse.ts"
   },
   "dependencies": {

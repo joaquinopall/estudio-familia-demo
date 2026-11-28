@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.40 (28/11/2026) |
+| Versión | 1.41 (28/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -126,7 +126,7 @@ Los estudios jurídicos chicos de la zona (1 a 5 profesionales) suelen no tener 
 | FR-12 | Cada cambio de estado o de notas crea un `InquiryEvent` con el actor. |
 | FR-13 | Botón de WhatsApp con link `https://wa.me/<número>?text=<mensaje genérico codificado>`. |
 | FR-14 | `sitemap.xml`, `robots.txt` (el panel y `/admin/*` excluidos e indicados `noindex`), metadata por página y JSON-LD (`LegalService` en el layout y `FAQPage` en preguntas frecuentes). |
-| FR-15 | Banner de modo demo controlado por `NEXT_PUBLIC_DEMO_MODE`: encendido salvo que valga `false` explícito (ADR-0011). En modo demo el sitio no se indexa (`noindex, nofollow`), sin bloquear el rastreo. En celulares el banner muestra solo "Sitio de demostración — estudio ficticio"; la aclaración sobre los datos aparece desde tablet. |
+| FR-15 | Banner de modo demo controlado por `NEXT_PUBLIC_DEMO_MODE`: encendido salvo que valga `false` explícito (ADR-0011). En modo demo el sitio no se indexa (`noindex, nofollow`), sin bloquear el rastreo. En celulares el banner muestra solo "Sitio de demostración — estudio ficticio"; la aclaración sobre los datos aparece desde tablet. En modo demo, el formulario de contacto muestra además un aviso: no escribir datos reales, porque el estudio no existe (F5-08). |
 | FR-16 | Página 404 y página de error amigables, con link al inicio y a contacto. |
 
 ---
@@ -186,6 +186,8 @@ src/
       reencryption.ts            # cifra lo que está en claro y recifra con la clave actual (npm run inquiries:encrypt, ADR-0017)
       retention.ts               # regla de retención (F5-05): vencidas desde el cierre, abiertas viejas solo se avisan
       retention-repository.ts    # Prisma de la retención: solo ids, estados y fechas
+      demo-seed.ts               # consultas de ejemplo de la demo (F5-08)
+      demo-seed-repository.ts    # Prisma de demo:seed: contar, borrar y el staff que actúa
       actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes ("use server", finas)
       submit-inquiry.ts          # lógica de submitInquiry con dependencias por parámetro (FR-06)
       update-inquiry.ts          # lógica de updateInquiryStatus y updateInquiryNotes (requireStaffForAction → Zod → service)
@@ -269,6 +271,7 @@ scripts/staff-add.ts             # npm run staff:add (tsx --conditions=react-ser
 scripts/lighthouse.ts            # npm run lighthouse (F5-03): Lighthouse mobile en las páginas públicas, mediana de 3 corridas
 scripts/encrypt-inquiries.ts     # npm run inquiries:encrypt (ADR-0017): sin --confirm solo cuenta
 scripts/purge-inquiries.ts       # npm run inquiries:purge (F5-05): sin --confirm solo cuenta
+scripts/demo-seed.ts             # npm run demo:seed (F5-08): 8 consultas "[Ejemplo]", solo con el modo demo
 prisma/
   schema.prisma
   migrations/
@@ -601,7 +604,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 
 ## 14. Operación
 - **Ramas:** `main` (producción) y `feat/<tarea>-<descripcion>` por tarea, creada desde `main`. PR obligatorio con CI en verde. Squash merge.
-- **Deploy:** Vercel (preview por PR y producción desde `main`). Las migraciones de producción se aplican manualmente (`prisma migrate deploy`), con aprobación, antes de mergear cambios de schema.
+- **Deploy:** Vercel (preview por PR y producción desde `main`). Las migraciones de producción se aplican manualmente (`prisma migrate deploy`), con aprobación, antes de mergear cambios de schema. El paso a paso del lanzamiento está en `docs/LANZAMIENTO.md` (F5-08).
 - **Backups:** los de Supabase (plan gratuito: verificar la política vigente) y un export manual antes de cada migración en producción.
 
 ---
@@ -617,7 +620,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 0005 | Mails después de responder (`after()`), sin el mensaje completo |
 
 **Preguntas abiertas** (no bloquean la Fase 1):
-- Dominio de la demo (¿subdominio de la SAS?) y dominio verificado en Resend.
+- Dominio de la demo (¿subdominio de la SAS?) y dominio verificado en Resend. **Pendiente del dueño (F5-08):** el runbook ya lo deja como `<dominio>`.
 - Nombre ficticio del estudio y textos finales (se definen en la Fase 2).
 - ~~¿Sentry o solo los logs de Vercel en la Fase 5?~~ **Resuelto en F5-04 (27/11/2026):** Sentry opcional, sin SDK y sin datos personales ([ADR-0018](adr/0018-observabilidad-con-sentry-sin-sdk.md)).
 - **Para F5-02: cifrado a nivel de aplicación del mensaje y de las notas internas** (`Inquiry.message` e `internalNotes`). **Resuelto en F5-02 (26/11/2026), [ADR-0017](adr/0017-cifrado-de-campos-a-nivel-de-aplicacion.md):** ver §7, §9 y §10.2. Lo que sigue es el análisis original.
@@ -688,3 +691,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 27/11/2026 | 1.38 | F5-04 (ADR-0018). NFR-OBS-01: catálogo tipado de eventos, `request.error` para los errores no capturados, `digest` en las páginas de error y avisos opcionales a Sentry sin SDK. §9: `SENTRY_DSN` (opcional). §15: la pregunta de Sentry queda resuelta. §6.2: `instrumentation.ts`, `log-events.ts`, `error-reporting.ts`, `error-digest.ts`, `ErrorReporter` y `SentryErrorReporter`. | [tu nombre] |
 | 27/11/2026 | 1.39 | F5-05. §7: los 24 meses de retención se cuentan desde el cierre o el descarte (decisión del dueño); las consultas abiertas viejas solo se avisan; script `npm run inquiries:purge`. Política de privacidad 1.2 (retención desde el cierre y copias de seguridad del proveedor). §6.2: `config/retention.ts`, `retention.ts`, `retention-repository.ts` y `scripts/purge-inquiries.ts`. | [tu nombre] |
 | 28/11/2026 | 1.40 | F5-06 (ADR-0019). §13: los e2e y `test:db` corren en la CI (job `e2e`) con secrets solo de dev y un usuario de prueba propio; los PRs de Dependabot no reciben secrets y saltean los specs de servicios. | [tu nombre] |
+| 28/11/2026 | 1.41 | F5-08. FR-15: en modo demo, el formulario avisa que no se escriban datos reales. §6.2: `scripts/demo-seed.ts` (8 consultas de ejemplo, solo con el modo demo), `demo-seed.ts` y `demo-seed-repository.ts`. §14: el lanzamiento se documenta en `docs/LANZAMIENTO.md`. §15: el dominio sigue a definir por el dueño. | [tu nombre] |

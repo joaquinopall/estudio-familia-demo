@@ -10,6 +10,14 @@ export const inquiryFormContent = {
   title: "Contanos tu caso",
   intro: "Son dos pasos cortos. Leemos cada consulta con atención y la tratamos con reserva.",
   requiredNote: "Todos los campos son obligatorios, salvo los que dicen “opcional”.",
+  /**
+   * Only in demo mode (FR-15, F5-08): the demo's form works, so someone who lands from a
+   * search could tell a real case. A real firm never shows it.
+   */
+  demoNotice: {
+    title: "Este es un sitio de demostración",
+    body: "No escribas datos reales: este estudio no existe y nadie va a responder tu consulta. Si necesitás ayuda, consultá con un estudio real o usá los teléfonos de la franja de ayuda.",
+  },
   steps: {
     details: { title: "Tu consulta", progress: "Paso 1 de 2" },
     contact: { title: "Tus datos", progress: "Paso 2 de 2" },

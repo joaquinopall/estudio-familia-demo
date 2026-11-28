@@ -44,7 +44,10 @@ function NoscriptContacts() {
   );
 }
 
-export function InquiryFormSection() {
+/** `demoMode` comes from NEXT_PUBLIC_DEMO_MODE; a parameter only so tests can set it. */
+export function InquiryFormSection({
+  demoMode = publicEnv.NEXT_PUBLIC_DEMO_MODE,
+}: { demoMode?: boolean } = {}) {
   return (
     <section
       id="formulario"
@@ -55,6 +58,12 @@ export function InquiryFormSection() {
         {copy.title}
       </h2>
       <p className="mt-3 mb-6 text-muted-foreground">{copy.intro}</p>
+      {demoMode ? (
+        <div role="note" className="mb-6 rounded-lg border-l-4 border-accent bg-secondary p-4">
+          <p className="font-semibold">{copy.demoNotice.title}</p>
+          <p className="mt-1">{copy.demoNotice.body}</p>
+        </div>
+      ) : null}
       <InquiryForm
         areaBySlug={areaBySlug}
         turnstileSiteKey={publicEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
