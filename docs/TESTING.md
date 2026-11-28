@@ -183,7 +183,7 @@ Los casos ya ejecutados no hace falta repetirlos hasta el lanzamiento. Los demá
 - **Dónde:** el preview de Vercel, con tu sesión de Vercel iniciada, en el celular (MT-01, 14, 22) y en la computadora con DevTools. MT-13 (pasos 1 a 4) y MT-21 (paso 4) se corren en local.
 - **Preparar:** el celular con WhatsApp; para MT-11 y las partes "solo con teclado", no usar el mouse; para MT-20, el preview tiene que ser público o usá la pestaña "Código" de los validadores.
 
-**Sesión 2 · Formulario y mails** (40–50 min): MT-02, 03, 05, 06, 15 y, al final, MT-04.
+**Sesión 2 · Formulario y mails** (40–50 min): MT-02, 03, 05, 06, 15 y, al final, MT-04. **Hecha el 28/11/2026: todo ✅.**
 
 - **Dónde:** el preview (MT-15, en local).
 - **Preparar:** la casilla de tu cuenta de Resend abierta. En Vercel → Preview, `FIRM_NOTIFICATION_EMAIL` tiene que ser esa casilla, y las consultas de prueba también la usan como email (sin dominio verificado, Resend solo le entrega a ella). MT-04 deja tu IP sin poder enviar por 10 minutos: por eso va al final. Las consultas que mandes acá sirven de datos para la sesión 3.
@@ -202,11 +202,11 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 | ID | Caso | Sesión | Última ejecución | Falta en producción |
 | --- | --- | --- | --- | --- |
 | [MT-01](#mt-01--navegar-todas-las-páginas-en-un-celular-real) | Navegar todas las páginas en un celular real | — | ✅ 28/11/2026 · preview | — |
-| [MT-02](#mt-02--enviar-una-consulta-completa) | Enviar una consulta completa | 2 | — | — |
-| [MT-03](#mt-03--errores-de-validación-de-cada-campo) | Errores de validación de cada campo | 2 | — | — |
-| [MT-04](#mt-04--exceder-el-rate-limit) | Exceder el rate limit | 2 | — | — |
-| [MT-05](#mt-05--honeypot-completado-no-guarda-nada) | Honeypot completado (no guarda nada) | 2 | — | — |
-| [MT-06](#mt-06--mails-recibidos-estudio-y-acuse) | Mails recibidos: estudio y acuse | 2 | — | — |
+| [MT-02](#mt-02--enviar-una-consulta-completa) | Enviar una consulta completa | — | ✅ 28/11/2026 · preview | — |
+| [MT-03](#mt-03--errores-de-validación-de-cada-campo) | Errores de validación de cada campo | — | ✅ 28/11/2026 · preview | — |
+| [MT-04](#mt-04--exceder-el-rate-limit) | Exceder el rate limit | — | ✅ 28/11/2026 · preview | — |
+| [MT-05](#mt-05--honeypot-completado-no-guarda-nada) | Honeypot completado (no guarda nada) | — | ✅ 28/11/2026 · preview | — |
+| [MT-06](#mt-06--mails-recibidos-estudio-y-acuse) | Mails recibidos: estudio y acuse | — | ✅ 28/11/2026 · preview | — |
 | [MT-07](#mt-07--login-y-logout-del-admin) | Login y logout del admin | 3 | — | — |
 | [MT-08](#mt-08--entrar-a-admin-sin-sesión) | Entrar a `/admin` sin sesión | 3 | — | — |
 | [MT-09](#mt-09--usuario-autenticado-que-no-es-staff) | Usuario autenticado que no es staff | 3 | — | — |
@@ -215,7 +215,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 | [MT-12](#mt-12--lighthouse-mobile-en-todas-las-páginas-públicas) | Lighthouse mobile en todas las páginas públicas | — | ✅ 27/11/2026 · local | — |
 | [MT-13](#mt-13--banner-de-modo-demo) | Banner de modo demo | — | ✅ 28/11/2026 · local y preview | F5-08 (paso 5) |
 | [MT-14](#mt-14--botón-de-whatsapp) | Botón de WhatsApp | — | ✅ 28/11/2026 · preview | — |
-| [MT-15](#mt-15--error-de-mail-simulado-la-consulta-se-guarda-igual) | Error de mail simulado (la consulta se guarda igual) | 2 | — | — |
+| [MT-15](#mt-15--error-de-mail-simulado-la-consulta-se-guarda-igual) | Error de mail simulado (la consulta se guarda igual) | — | ✅ 28/11/2026 · local | — |
 | [MT-16](#mt-16--inicio-responsive-360-a-1440-px) | Inicio responsive (360 a 1440 px) | — | ✅ 28/11/2026 · preview | — |
 | [MT-17](#mt-17--áreas-de-práctica-navegación-cta-y-404) | Áreas de práctica: navegación, CTA y 404 | — | ✅ 28/11/2026 · preview | — |
 | [MT-18](#mt-18--nosotros-preguntas-frecuentes-y-privacidad) | Nosotros, Preguntas frecuentes y Privacidad | — | ✅ 28/11/2026 · preview | — |
@@ -297,7 +297,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, celular real y computadora, servicios de dev | ✅ pasa | Todos los pasos, informados por el dueño (sesión 2 de F5-07). |
 
 ### MT-03 — Errores de validación de cada campo
 
@@ -332,7 +332,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, con lector de pantalla para el paso 9 | ✅ pasa | Todos los pasos, informados por el dueño (sesión 2 de F5-07). |
 
 ### MT-04 — Exceder el rate limit
 
@@ -359,7 +359,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, Upstash de dev, dos redes | ✅ pasa | Todos los pasos, informados por el dueño (sesión 2 de F5-07). |
 
 ### MT-05 — Honeypot completado (no guarda nada)
 
@@ -382,7 +382,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel | ✅ pasa | Todos los pasos, informados por el dueño (sesión 2 de F5-07). |
 
 ### MT-06 — Mails recibidos: estudio y acuse
 
@@ -412,7 +412,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, Resend sin dominio verificado (casilla de la cuenta), Gmail en celular y computadora | ✅ pasa | Todos los pasos, informados por el dueño (sesión 2 de F5-07). |
 
 ### MT-07 — Login y logout del admin
 
@@ -669,7 +669,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Local (`npm run dev`) con `RESEND_API_KEY` inválida, Supabase dev | ✅ pasa | Todos los pasos, informados por el dueño (sesión 2 de F5-07). |
 
 ### MT-16 — Inicio responsive (360 a 1440 px)
 
