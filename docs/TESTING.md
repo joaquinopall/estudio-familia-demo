@@ -188,12 +188,12 @@ Los casos ya ejecutados no hace falta repetirlos hasta el lanzamiento. Los demá
 - **Dónde:** el preview (MT-15, en local).
 - **Preparar:** la casilla de tu cuenta de Resend abierta. En Vercel → Preview, `FIRM_NOTIFICATION_EMAIL` tiene que ser esa casilla, y las consultas de prueba también la usan como email (sin dominio verificado, Resend solo le entrega a ella). MT-04 deja tu IP sin poder enviar por 10 minutos: por eso va al final. Las consultas que mandes acá sirven de datos para la sesión 3.
 
-**Sesión 3 · Panel** (40 min): MT-25, 08, 07, 09, 26, 10 y 27, en ese orden.
+**Sesión 3 · Panel** (35 min): MT-08, 07, 09, 26, 10 y 27, en ese orden.
 
-- **Dónde:** el preview, y una terminal local para `npm run staff:add` (MT-25, MT-09).
+- **Dónde:** el preview, y una terminal local para `npm run staff:add` (MT-09).
 - **Preparar:** un segundo usuario de prueba en Supabase dev, sin staff (MT-09), que borrás al final; las consultas de la sesión 2 (MT-26 pide 4 con datos distintos) y un mail de aviso en tu casilla (MT-27).
 
-**Ya ejecutados** (solo faltan en producción, en F5-08): MT-12, 23, 24, 28, 29, 30, 31 y 32.
+**Ya ejecutados** (solo faltan en producción, en F5-08): MT-12, 23, 24, 25, 28, 29, 30, 31 y 32.
 
 ### Tablero de resultados
 
@@ -225,7 +225,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 | [MT-22](#mt-22--ayuda-ante-peligro-y-plazos) | Ayuda ante peligro y plazos | 1 | — | — |
 | [MT-23](#mt-23--base-de-datos-tablas-y-rls-en-supabase) | Base de datos: tablas y RLS en Supabase | — | ✅ 27/11/2026 · dev | F5-08 |
 | [MT-24](#mt-24--configuración-de-supabase-auth-registro-y-contraseñas) | Configuración de Supabase Auth (registro y contraseñas) | — | ✅ 27/11/2026 · dev | F5-08 |
-| [MT-25](#mt-25--alta-de-staff-con-npm-run-staffadd) | Alta de staff con `npm run staff:add` | 3 | — | F5-08 |
+| [MT-25](#mt-25--alta-de-staff-con-npm-run-staffadd) | Alta de staff con `npm run staff:add` | — | ✅ 25/11/2026 · dev | F5-08 |
 | [MT-26](#mt-26--listado-de-consultas-orden-filtros-búsqueda-y-páginas) | Listado de consultas: orden, filtros, búsqueda y páginas | 3 | — | — |
 | [MT-27](#mt-27--del-mail-al-detalle-pasando-por-el-login) | Del mail al detalle, pasando por el login | 3 | — | — |
 | [MT-28](#mt-28--csp-aplicada-en-el-preview) | CSP aplicada en el preview | — | ✅ 26/11/2026 · preview | F5-08 (paso 6) |
@@ -960,7 +960,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 25/11/2026 | Supabase **dev**, `npm run staff:add` en la terminal local | ✅ pasa | Informado por el dueño, registrado el 28/11/2026 (F5-07): alta de su propio usuario como staff de dev. Esa misma tarde, una fila huérfana de un usuario de Auth recreado hizo fallar el script; se corrigió en `fix/F4-02-staff-add-recreated-user` (paso 7). |
 
 ### MT-26 — Listado de consultas: orden, filtros, búsqueda y páginas
 
