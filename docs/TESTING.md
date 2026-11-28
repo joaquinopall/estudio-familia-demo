@@ -142,6 +142,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-07 y MT-09 | El caso completo en **dev** | En **F4-03** (y de nuevo en el cierre, F4-08). Antes, MT-25 con tu usuario. | Necesitaban la página de login, que llega en F4-03. |
 | MT-30 | El caso en **prod** | En **F5-08**, después de `db:deploy` y con la clave de prod cargada. | En F5-02 se verifica dev; prod se verifica en el lanzamiento. |
 | MT-31 | El caso en **producción** | En **F5-08**, con `SENTRY_DSN` de Production. | En F5-04 se verifica el preview. |
+| MT-32 | El paso 1 en **producción** (solo contar) | En **F5-08**, con la base de prod migrada. | En F5-05 se verifica dev; en prod, la primera purga real se hace cuando haya consultas vencidas. |
 | MT-29 | El caso en **prod** | En **F5-08**. | En F5-02 se revisa dev y el proyecto de Vercel; prod se revisa en el lanzamiento. |
 | MT-28 | El paso 6 en **producción** (el header sin `vercel.live`) | En **F5-08**, con el dominio de la demo. | En F5-01 se probó el preview; producción se verifica en el lanzamiento. |
 
@@ -203,6 +204,7 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | MT-29 | Configuración de seguridad de los servicios              | F5-02         | **Detallado** · dev ✅ 27/11/2026, prod en F5-08 |
 | MT-30 | Mensaje y notas cifrados en la base                      | F5-02         | **Detallado** · dev ✅ 26/11/2026, prod en F5-08 |
 | MT-31 | Errores en el log y en Sentry                            | F5-04         | **Detallado** · preview ✅ 27/11/2026, producción en F5-08 |
+| MT-32 | Retención: purga de consultas vencidas                 | F5-05         | **Detallado** · dev en F5-05, producción en F5-08 |
 
 ### MT-01 — Navegar todas las páginas en un celular real
 
@@ -767,6 +769,41 @@ Casos que no se pudieron correr al cerrar su tarea porque faltaba algo. Cuando s
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
 | 27/11/2026 | Preview de Vercel con `SENTRY_DSN` (entorno Preview), Supabase dev | ✅ pasa | Informado por el dueño. La página de error del panel mostró el código, los logs de Vercel tuvieron los eventos y llegó el mail de Sentry. Un primer intento no llegó a Sentry: el preview no tenía la variable cargada a tiempo; por eso se agregaron `error_reporting.started` y `error_report.failed` (corrección de F5-04). |
+
+### MT-32 — Retención: purga de consultas vencidas
+
+- **Objetivo:** que una consulta cerrada hace más de 24 meses se borre con su historial, que una vieja cerrada hace poco no se borre, y que la política diga lo mismo.
+- **Requisitos:** NFR-PRIV-01, SPEC §7, US-07 CA1, política de privacidad 1.2.
+- **Precondiciones:** base de **dev** con migraciones al día y tu usuario staff (MT-25). En el panel, una consulta de prueba (enviada desde `/contacto`, con `PRUEBA MT-32` en el mensaje).
+
+**Pasos**
+
+1. Corré `npm run inquiries:purge` (sin `--confirm`).
+2. En el panel, abrí la consulta de prueba, anotá su id (la última parte de la URL) y cambiale el estado a **Cerrada**.
+3. Corré de nuevo `npm run inquiries:purge`.
+4. En Supabase dev → SQL Editor, "envejecé" el cierre de esa consulta, reemplazando `<id>`:
+
+   ```sql
+   update inquiry_events set created_at = now() - interval '25 months'
+    where inquiry_id = '<id>' and type = 'STATUS_CHANGED';
+   update inquiries set updated_at = now() - interval '25 months' where id = '<id>';
+   ```
+
+5. Corré `npm run inquiries:purge` y después `npm run inquiries:purge -- --confirm`.
+6. Corré `npm run inquiries:purge` otra vez y buscá la consulta en el panel.
+7. Abrí `/privacidad`, sección "Cuánto tiempo los guardamos".
+
+**Resultado esperado**
+
+- Paso 1: muestra el proyecto de dev, "Fecha de corte" (hoy menos 24 meses) y 0 consultas vencidas. Nunca un nombre, email ni id.
+- Paso 3: sigue en 0: cerrarla hoy no la vence.
+- Paso 5: la primera corrida cuenta 1 y no borra; la segunda dice "Borradas, con su historial: 1".
+- Paso 6: 0 vencidas, y la consulta ya no aparece en el panel.
+- Paso 7: dice que se eliminan "a los 24 meses" de cerrarlas o descartarlas, y menciona las copias de seguridad. Versión 1.2.
+
+| Fecha | Entorno | Resultado | Notas |
+| ----- | ------- | --------- | ----- |
+|       |         |           |       |
 
 ### MT-29 — Configuración de seguridad de los servicios
 

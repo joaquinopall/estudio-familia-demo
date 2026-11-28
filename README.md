@@ -99,6 +99,7 @@ Reglas:
 | `npm run db:deploy`         | `prisma migrate deploy`: aplica migraciones pendientes. Producción, a mano                                                                                                                                                                                                                                                                        |
 | `npm run lighthouse`        | Lighthouse mobile en las 11 páginas públicas contra un servidor levantado (`npm run build && npm run start`), 3 corridas por página y la mediana. Falla si alguna categoría baja de 90. `-- --seo` exige también SEO (build con `NEXT_PUBLIC_DEMO_MODE=false`). Medí con `npm run dev` frenado. Ver MT-12 en [`docs/TESTING.md`](docs/TESTING.md) |
 | `npm run inquiries:encrypt` | Cifra los mensajes y notas que estén en claro y recifra con la clave actual los de una clave vieja. Sin `-- --confirm` solo cuenta. Ver [Cifrado del mensaje y de las notas](#cifrado-del-mensaje-y-de-las-notas)                                                                                                                                 |
+| `npm run inquiries:purge`   | Borra las consultas cerradas o descartadas hace más de 24 meses, con su historial (política de privacidad). Sin `-- --confirm` solo cuenta. Ver [Retención de datos](#retención-de-datos)                                                                                                                                                         |
 | `npm run staff:add`         | Da de alta (o reactiva) un usuario de Supabase Auth como staff: `npm run staff:add -- --email x --name "Nombre"`. Ver [Panel admin](#panel-admin-supabase-auth)                                                                                                                                                                                   |
 
 Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`](docs/TESTING.md).
@@ -244,6 +245,18 @@ El mensaje de cada consulta y las notas internas del estudio se guardan **cifrad
 **Rotar la clave:** poné la nueva **adelante** (`FIELD_ENCRYPTION_KEYS=k2:<nueva>,k1:<vieja>`), desplegá, corré `npm run inquiries:encrypt -- --confirm` contra esa base y recién después sacá `k1`. La primera clave cifra; todas descifran. Para prod, pasá `DATABASE_URL` y `FIELD_ENCRYPTION_KEYS` de prod en el shell, que gana sobre `.env.local`.
 
 **Si el detalle de una consulta da error** y el log dice `errorCode: decrypt_failed`, falta la clave con la que se cifró ese valor (o el dato se alteró). Agregala a la lista; nunca se muestra el valor guardado.
+
+## Retención de datos
+
+La política de privacidad promete que una consulta cerrada o descartada se elimina **24 meses después de cerrarse** (`src/config/retention.ts`). Las abiertas nunca se borran solas.
+
+- **Una vez por mes**, contra la base de producción:
+  1. `npm run inquiries:purge` (solo cuenta): muestra el proyecto de Supabase, la fecha de corte, cuántas consultas vencieron y cuántas siguen abiertas desde antes de esa fecha.
+  2. Si el proyecto es el correcto: `npm run inquiries:purge -- --confirm`. **Borrar no se puede deshacer.**
+  3. Si avisa de consultas abiertas viejas, revisalas en el panel: si ya no están en curso, cerralas o descartalas, y se borrarán 24 meses después.
+- **Para prod**, pasá `DATABASE_URL` de producción en la terminal, que gana sobre `.env.local`. En cmd: `set DATABASE_URL=<url de prod>&& npm run inquiries:purge`.
+- **El plazo** solo se cambia junto con el texto de la política y su versión (un test los mantiene iguales).
+- **Copias de seguridad:** las de Supabase pueden conservar una consulta borrada unos días más, hasta que se renuevan. La política lo dice.
 
 ## Logs y errores
 
