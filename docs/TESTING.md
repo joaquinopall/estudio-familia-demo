@@ -17,7 +17,7 @@ Vitest tiene dos proyectos en `vitest.config.mts`:
 - **`unit`** (`npm run test`, la CI): todo `*.test.ts(x)` salvo `*.db.test.ts`. Sin red ni base.
 - **`db`** (`npm run test:db`): solo `*.db.test.ts`. Carga `.env.local` (`tests/setup/load-db-env.ts`), crea filas con el nombre empezando por `E2E-` y las borra al final. Cifra con una clave aleatoria propia de la corrida (`test-field-cipher.ts`), no con la de `.env.local`: solo lee lo que escribe. **Nunca corre el recifrado completo**: cifraría tus filas de dev con una clave descartable.
   - **Antes de correrlo, confirmá que `DATABASE_URL` de `.env.local` sea la de Supabase dev.** Se niega a correr con `VERCEL_ENV=production`, pero no puede saber a qué proyecto apunta la URL.
-  - No corre en la CI todavía (F5-06). Corrélo antes de abrir un PR que toque un repository.
+  - Corre en la CI (job `e2e`) cuando están los secrets de dev (F5-06).
   - `npx vitest run` sin `--project` corre los dos: preferí los scripts de npm.
 
 Antes del primer e2e: `npx playwright install chromium`.
@@ -72,7 +72,7 @@ Detalles de los e2e:
 | E2E         | Playwright + axe             | `tests/e2e/*.spec.ts`                        | Letra del navegador al 125 %, 150 % y 200 % (F5-03), axe con cualquier impacto en las páginas, en los estados del formulario y en el panel, Turnstile cargado recién en el paso 2, smoke del inicio, headers de seguridad, CSP sin violaciones, layout, teclado, menú mobile, accesibilidad (axe), navegación de las páginas públicas, 404, SEO, calidad (contraste del foco, primera pantalla, áreas táctiles), envío completo de una consulta contra los servicios de dev, y el panel con sesión: login, filtros, estado, notas, historial, link del mail y acceso denegado (F4-07) |
 | Manual      | Esta guía                    | Sección "Guía de tests manuales"             | Lo que conviene mirar con ojos humanos o en dispositivos reales                                   |
 
-Próxima fase (F5): e2e en la CI (F5-06), Lighthouse y accesibilidad (F5-03) y la guía de tests manuales completa (F5-07).
+Desde F5-06 los e2e y `test:db` corren también en la CI (job `e2e`). Falta la guía de tests manuales completa (F5-07).
 
 ### Convenciones
 
@@ -120,7 +120,13 @@ Próxima fase (F5): e2e en la CI (F5-06), Lighthouse y accesibilidad (F5-03) y l
 
 ## En la CI
 
-La CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) corre en cada PR y push a `main`: lint → typecheck → format:check → **test** → build → audit. Los **e2e no corren en la CI todavía** (tarea F5-06): corrélos en local antes de abrir un PR que toque la interfaz.
+La CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) corre en cada PR y push a `main`, con dos jobs en paralelo:
+
+- **`verify`**: lint → typecheck → format:check → **test** → build → audit.
+- **`e2e`** (F5-06, [ADR 0019](adr/0019-e2e-en-la-ci-con-servicios-de-dev.md)): `npm run test:db` y `npm run test:e2e`, contra un build local y los servicios de **dev** que dan los secrets `E2E_*` (README, "Calidad y CI"). Usa un usuario de prueba propio, distinto del tuyo, y una sola corrida a la vez. Resend y Upstash quedan ficticios.
+  - **Sin secrets** (los PRs de Dependabot nunca los reciben, a propósito): los specs que necesitan la base o Supabase se saltean con `hasDevServices()` (`tests/e2e/support/services.ts`) y el resto corre. Un spec nuevo que use la base o Supabase tiene que hacer lo mismo.
+  - **Si falla:** en la página del run, Artifacts → `e2e-report`: el reporte de Playwright (con trazas de los reintentos) y `e2e-server.log`.
+  - **Para simularlo en local sin secrets**, poné en la terminal las URLs ficticias del workflow (las que terminan en `.invalid`) y corré `npx playwright test`: tienen que saltearse 12 tests y pasar el resto.
 
 ## Guía de tests manuales
 
