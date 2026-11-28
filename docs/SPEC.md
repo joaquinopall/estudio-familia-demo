@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.38 (27/11/2026) |
+| Versión | 1.39 (27/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -184,6 +184,8 @@ src/
       reference.ts               # toReference: C-XXXXXXXX (FR-09)
       errors.ts                  # InquiryStoreError (store_failed | decrypt_failed), InvalidInquiryInputError
       reencryption.ts            # cifra lo que está en claro y recifra con la clave actual (npm run inquiries:encrypt, ADR-0017)
+      retention.ts               # regla de retención (F5-05): vencidas desde el cierre, abiertas viejas solo se avisan
+      retention-repository.ts    # Prisma de la retención: solo ids, estados y fechas
       actions.ts                 # submitInquiry, updateInquiryStatus, updateInquiryNotes ("use server", finas)
       submit-inquiry.ts          # lógica de submitInquiry con dependencias por parámetro (FR-06)
       update-inquiry.ts          # lógica de updateInquiryStatus y updateInquiryNotes (requireStaffForAction → Zod → service)
@@ -245,6 +247,7 @@ src/
   config/
     site.config.ts
     rate-limits.ts               # límites anti-abuso (§8.2)
+    retention.ts                 # RETENTION_MONTHS = 24: plazo de la política de privacidad (§7)
   content/
     home.ts                      # textos del inicio (hero, pasos, títulos de sección)
     area-pages.ts                # textos de /areas y rótulos de las páginas de área
@@ -265,6 +268,7 @@ prisma.config.ts                 # config de la CLI de Prisma 7: carga .env* y u
 scripts/staff-add.ts             # npm run staff:add (tsx --conditions=react-server, ADR-0015)
 scripts/lighthouse.ts            # npm run lighthouse (F5-03): Lighthouse mobile en las páginas públicas, mediana de 3 corridas
 scripts/encrypt-inquiries.ts     # npm run inquiries:encrypt (ADR-0017): sin --confirm solo cuenta
+scripts/purge-inquiries.ts       # npm run inquiries:purge (F5-05): sin --confirm solo cuenta
 prisma/
   schema.prisma
   migrations/
@@ -404,7 +408,7 @@ model StaffMember {
 - **Funciones en `public`:** los roles de la Data API (`anon`, `authenticated`) no pueden ejecutar funciones `SECURITY DEFINER`. La de Supabase `rls_auto_enable()` (activa RLS en tablas nuevas) se conserva, sin `EXECUTE` para esos roles (migración `20261127120000_revoke_rls_auto_enable`, verificado en `rls.test.ts`).
 - Alta de staff: script `npm run staff:add -- --email x --name y` que vincula un usuario creado en Supabase Auth (el registro público está deshabilitado en Supabase). Busca al usuario en `auth.users` por email con la conexión de Prisma (sin service role key) y guarda el email de Auth. Es idempotente: si ya era staff, lo reactiva y actualiza el nombre. Si el usuario de Auth se borró y se volvió a crear con el mismo email, vincula el staff existente al usuario nuevo y conserva su `id`; si el usuario viejo sigue existiendo, no cambia nada. La baja es `active = false` (ADR-0015).
 - **Cifrado** (F5-02, ADR-0017): `message` e `internalNotes` se guardan cifrados con AES-256-GCM a nivel de aplicación (`enc:v1:<id de clave>:<iv>:<cifrado>`), atados a su fila y columna. Por eso son `text` y el id de la consulta lo genera la app. Nombre, email y teléfono quedan en claro (búsqueda y aviso al estudio). No es cifrado extremo a extremo.
-- Retención: las consultas en `CLOSED` o `DISCARDED` con más de 24 meses se eliminan (script manual en v1; cron en v2). Documentado en la política de privacidad.
+- Retención (F5-05): una consulta en `CLOSED` o `DISCARDED` se elimina, con su historial, cuando pasaron más de 24 meses (`config/retention.ts`) **desde que se cerró o se descartó**: el último cambio a ese estado en el historial, o su última modificación si no lo hay. Las abiertas nunca se borran; las creadas hace más de 24 meses solo se avisan para que el estudio las revise. Script manual `npm run inquiries:purge` (sin `--confirm` solo cuenta), una vez por mes; cron en v2. Documentado en la política de privacidad (versión 1.2).
 
 ---
 
@@ -682,3 +686,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 27/11/2026 | 1.36 | F5-02 (Security Advisor de Supabase). §7: los roles de la Data API no ejecutan funciones `SECURITY DEFINER`; se revoca `EXECUTE` sobre `rls_auto_enable()`, que crea Supabase. "Leaked password protection" queda como riesgo aceptado (plan gratuito). | [tu nombre] |
 | 27/11/2026 | 1.37 | F5-03. §6.2: `scripts/lighthouse.ts` (`npm run lighthouse`, sin dependencias nuevas). §13: MT-12 cubre todas las páginas públicas. El widget de Turnstile se carga recién en el paso 2 del formulario. La letra del navegador al 150 % no desborda en ningún ancho; el 200 % se exige desde 768 px (en celulares, WCAG 1.4.4 se cumple con el zoom). | [tu nombre] |
 | 27/11/2026 | 1.38 | F5-04 (ADR-0018). NFR-OBS-01: catálogo tipado de eventos, `request.error` para los errores no capturados, `digest` en las páginas de error y avisos opcionales a Sentry sin SDK. §9: `SENTRY_DSN` (opcional). §15: la pregunta de Sentry queda resuelta. §6.2: `instrumentation.ts`, `log-events.ts`, `error-reporting.ts`, `error-digest.ts`, `ErrorReporter` y `SentryErrorReporter`. | [tu nombre] |
+| 27/11/2026 | 1.39 | F5-05. §7: los 24 meses de retención se cuentan desde el cierre o el descarte (decisión del dueño); las consultas abiertas viejas solo se avisan; script `npm run inquiries:purge`. Política de privacidad 1.2 (retención desde el cierre y copias de seguridad del proveedor). §6.2: `config/retention.ts`, `retention.ts`, `retention-repository.ts` y `scripts/purge-inquiries.ts`. | [tu nombre] |

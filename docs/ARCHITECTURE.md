@@ -86,6 +86,12 @@ Al cargar `next.config.ts` (en `next dev`, `next build` y `next start`) se valid
 - **Si un servicio se cae** ([ADR 0013](adr/0013-ports-sin-excepciones-y-caidas-de-servicios.md)): el rate limit deja pasar y lo registra en el log, Turnstile rechaza, y el mail no afecta a la consulta ya guardada.
 - **Privacidad:** Upstash solo recibe hashes (`RateLimiter` rechaza otras claves), sin analytics ni telemetría. A Turnstile se le manda la IP solo para verificar, y no se guarda.
 
+### Retención de datos (F5-05)
+
+- **Regla** (`features/inquiries/retention.ts`, pura): una consulta Cerrada o Descartada vence cuando pasaron más de `RETENTION_MONTHS` (24, `config/retention.ts`) **desde su cierre**, que sale del historial (el último `STATUS_CHANGED` a su estado actual) o, si no hay, de su última modificación. Las abiertas nunca vencen; las creadas antes de la fecha de corte solo se cuentan.
+- **Base** (`retention-repository.ts`): solo lee ids, estados y fechas; borra por tandas de 100, y el historial se va con cada consulta (`ON DELETE CASCADE`).
+- **Script** `npm run inquiries:purge`: sin `--confirm` solo cuenta. Un test mantiene el plazo igual al de la política de privacidad.
+
 ### Observabilidad (F5-04)
 
 - **Logger** (`src/lib/logger.ts`): una línea JSON por evento, con `level`, `event`, `timestamp` y solo los campos de su lista blanca: ids, `errorCode`, `errorName` (nunca el mensaje), `digest`, `route` (patrón, nunca la URL real), `routeType` y `durationMs`. Nada de nombres, emails, teléfonos, mensajes ni IPs (NFR-SEC-06).

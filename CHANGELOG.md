@@ -4,6 +4,14 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-05 · Retención de datos
+
+- **Agregado:** `npm run inquiries:purge` (`scripts/purge-inquiries.ts`). Borra, con su historial, las consultas cerradas o descartadas hace más de 24 meses **desde el cierre** (decisión del dueño). Sin `--confirm` solo cuenta; muestra el proyecto y la fecha de corte, nunca datos de las consultas. Avisa cuántas consultas siguen abiertas desde antes de la fecha de corte, sin borrarlas.
+- **Agregado:** la regla pura (`features/inquiries/retention.ts`), su repository (`retention-repository.ts`) y el plazo en `src/config/retention.ts`.
+- **Cambiado:** política de privacidad **1.2**, vigente desde el 27/11/2026: la retención se cuenta desde que la consulta se cierra o se descarta, y se aclara que las copias de seguridad del proveedor pueden conservarla unos días más. Las consultas anteriores conservan la versión que aceptaron.
+- **Agregado:** tests de la regla (fecha de corte con fines de mes y bisiestos, cierre desde el historial, una consulta vieja cerrada ayer no se borra, abiertas solo contadas, paginado y tandas), de los argumentos (un error de tipeo nunca borra) y contra dev, que borran solo sus propias filas. Un test mantiene el plazo igual al texto de la política.
+- **Documentado:** README ("Retención de datos"), ARCHITECTURE, TESTING (caso manual **MT-32**), `SECURITY_REVIEW.md` (R6 mitigado) y SPEC v1.39.
+
 ### Corrección F5-04 · Reportes a Sentry visibles
 
 - **Corregido:** si Sentry rechazaba o no recibía un reporte, no quedaba ningún rastro, y en MT-31 no se pudo saber por qué no llegaba nada. Ahora:
