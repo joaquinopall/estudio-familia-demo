@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 import { type Request, expect, test } from "@playwright/test";
 
 import { adminPanelContent } from "../../src/content/admin-panel";
+import { DEV_SERVICES_SKIP_REASON, hasDevServices } from "./support/services";
 
 const copy = adminPanelContent;
 const RUN = randomUUID().slice(0, 8);
@@ -22,6 +23,8 @@ const CLIENT_IP = `2001:db8:${RUN.slice(0, 4)}:${RUN.slice(4, 8)}::c5f`;
 const WRONG_CREDENTIALS = "El email o la contrase";
 
 test.describe("CSRF: Server Actions only from our own origin (SPEC §10.2)", () => {
+  test.skip(!hasDevServices(), DEV_SERVICES_SKIP_REASON);
+
   test("a login action replayed from another site is rejected before it runs", async ({
     page,
     baseURL,

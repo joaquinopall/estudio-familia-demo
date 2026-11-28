@@ -12,6 +12,7 @@ import { expect, test } from "@playwright/test";
 
 import { adminPanelContent } from "../../src/content/admin-panel";
 import { collectCspViolations } from "./support/csp";
+import { DEV_SERVICES_SKIP_REASON, hasDevServices } from "./support/services";
 
 const copy = adminPanelContent;
 const RUN = randomUUID().slice(0, 8);
@@ -51,6 +52,7 @@ test.describe("admin login page", () => {
   });
 
   test("wrong credentials: generic message, focused, and the email is kept", async ({ page }) => {
+    test.skip(!hasDevServices(), DEV_SERVICES_SKIP_REASON);
     await page.setExtraHTTPHeaders({ "x-forwarded-for": CLIENT_IP });
     await page.goto("/admin/login");
 
@@ -70,6 +72,7 @@ test.describe("admin login page", () => {
   test("carries next in the form, and keeps it after wrong credentials (F4-06)", async ({
     page,
   }) => {
+    test.skip(!hasDevServices(), DEV_SERVICES_SKIP_REASON);
     const detail = "/admin/consultas/7f3a9b21-4c5d-4e6f-8a7b-9c0d1e2f3a4b";
     await page.setExtraHTTPHeaders({ "x-forwarded-for": `${CLIENT_IP.slice(0, -1)}4` });
     await page.goto(`/admin/login?next=${encodeURIComponent(detail)}`);

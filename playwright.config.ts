@@ -6,6 +6,8 @@ const isCI = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Only the specs: tests/e2e/support/**/*.test.ts are Vitest unit tests of the helpers.
+  testMatch: "**/*.spec.ts",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,

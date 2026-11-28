@@ -15,10 +15,10 @@ import { collectCspViolations } from "./support/csp";
 import {
   deleteInquiriesByMarker,
   deleteStaleE2eInquiries,
-  e2eEnv,
   findInquiryByMarker,
   usesTurnstileTestKey,
 } from "./support/db";
+import { DEV_SERVICES_SKIP_REASON, hasDevServices } from "./support/services";
 
 const RUN = randomUUID().slice(0, 8);
 const marker = (scenario: string) => `E2E-${RUN}-${scenario}`;
@@ -33,7 +33,7 @@ const clientIp = (scenario: number) =>
   `2001:db8:${RUN.slice(0, 4)}:${RUN.slice(4, 8)}::${scenario}`;
 
 test.describe("inquiry submission (US-03)", () => {
-  test.skip(!e2eEnv.databaseUrl, "Needs DATABASE_URL (Supabase dev) in .env.local.");
+  test.skip(!hasDevServices(), DEV_SERVICES_SKIP_REASON);
   test.skip(
     !usesTurnstileTestKey(),
     "Needs Turnstile's passing test site key: the e2e never solve a real challenge.",

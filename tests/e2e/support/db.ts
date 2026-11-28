@@ -20,6 +20,7 @@ loadEnvConfig(process.cwd(), false, { info() {}, error: console.error });
 
 export const e2eEnv = {
   databaseUrl: process.env.DATABASE_URL,
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   turnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   /** Test user of the panel e2e (F4-07): created by hand in Supabase dev, never in Vercel. */
   staffEmail: process.env.E2E_STAFF_EMAIL?.trim().toLowerCase(),
