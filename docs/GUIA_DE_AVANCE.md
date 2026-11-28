@@ -21,10 +21,10 @@ Esta guía es **tuya**: la usás para dirigir a la IA, revisar lo que hace y mar
 | Fase | Peso | Avance | Estado |
 |---|---|---|---|
 | F1 — Fundaciones | 0–20% | 9 / 9 | ✅ |
-| F2 — Sitio público y contenido | 20–40% | 0 / 8 | ⬜ |
-| F3 — Formulario y backend de consultas | 40–60% | 0 / 9 | ⬜ |
-| F4 — Panel admin | 60–80% | 3 / 8 | 🟨 |
-| F5 — Calidad, seguridad y lanzamiento | 80–100% | 6 / 9 | 🟨 |
+| F2 — Sitio público y contenido | 20–40% | 8 / 8 | ✅ |
+| F3 — Formulario y backend de consultas | 40–60% | 9 / 9 | ✅ |
+| F4 — Panel admin | 60–80% | 8 / 8 | ✅ |
+| F5 — Calidad, seguridad y lanzamiento | 80–100% | 7 / 9 | 🟨 |
 
 Estados: ⬜ sin empezar · 🟨 en curso · ✅ cerrada.
 
@@ -107,81 +107,81 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 
 ## FASE 2 — Sitio público y contenido (20% → 40%)
 
-- [ ] **F2-01 · Contenido como datos** (IA) · FR-02, FR-03
-  - [ ] `practice-areas.ts` (5 áreas con slug, título, resumen, secciones, preguntas frecuentes y metadata) y `faqs.ts`, tipados.
-  - [ ] Textos en borrador según §11.3 y §11.4 (sin promesas de resultado y en lenguaje simple).
-  - [ ] Tests que validan la integridad del contenido (slugs únicos, campos obligatorios).
+- [X] **F2-01 · Contenido como datos** (IA) · FR-02, FR-03
+  - [X] `practice-areas.ts` (5 áreas con slug, título, resumen, secciones, preguntas frecuentes y metadata) y `faqs.ts`, tipados.
+  - [X] Textos en borrador según §11.3 y §11.4 (sin promesas de resultado y en lenguaje simple).
+  - [X] Tests que validan la integridad del contenido (slugs únicos, campos obligatorios).
   - Verificás: leés los textos como si fueras un consultante. ¿Se entienden? ¿Generan confianza?
 
-- [ ] **F2-02 · Inicio** (IA + `/claude-design`) · US-01
-  - [ ] Hero, áreas, "Cómo trabajamos", señales de confianza, preguntas destacadas y CTA final.
-  - [ ] Cumple US-01 CA1 a CA3.
+- [X] **F2-02 · Inicio** (IA + `/claude-design`) · US-01
+  - [X] Hero, áreas, "Cómo trabajamos", señales de confianza, preguntas destacadas y CTA final.
+  - [X] Cumple US-01 CA1 a CA3.
 
-- [ ] **F2-03 · Áreas de práctica** (IA) · US-02, FR-01
-  - [ ] `/areas` y `/areas/[slug]` con `generateStaticParams`, CTA con el área preseleccionada y 404 si el slug no existe.
+- [X] **F2-03 · Áreas de práctica** (IA) · US-02, FR-01
+  - [X] `/areas` y `/areas/[slug]` con `generateStaticParams`, CTA con el área preseleccionada y 404 si el slug no existe.
 
-- [ ] **F2-04 · Nosotros, Preguntas frecuentes y Privacidad** (IA) · US-07 CA1
-  - [ ] Política de privacidad (Ley 25.326) versionada en `content/legal/privacy.ts`. La revisás vos como estudiante de derecho.
+- [X] **F2-04 · Nosotros, Preguntas frecuentes y Privacidad** (IA) · US-07 CA1
+  - [X] Política de privacidad (Ley 25.326) versionada en `content/legal/privacy.ts`. La revisás vos como estudiante de derecho.
 
-- [ ] **F2-05 · Contacto (sin formulario funcional todavía)** (IA)
-  - [ ] Datos, horarios, mapa (link o embed liviano) y WhatsApp. Lugar reservado para el formulario.
+- [X] **F2-05 · Contacto (sin formulario funcional todavía)** (IA)
+  - [X] Datos, horarios, mapa (link o embed liviano) y WhatsApp. Lugar reservado para el formulario.
 
-- [ ] **F2-06 · SEO técnico** (IA) · FR-14, NFR-SEO-01
-  - [ ] Metadata por página, OG image, `sitemap.ts`, `robots.ts` y JSON-LD con helper seguro (con tests).
+- [X] **F2-06 · SEO técnico** (IA) · FR-14, NFR-SEO-01
+  - [X] Metadata por página, OG image, `sitemap.ts`, `robots.ts` y JSON-LD con helper seguro (con tests).
   - Verificás: probás los datos estructurados en el Rich Results Test de Google con la URL de preview.
 
-- [ ] **F2-07 · Pulido visual y accesibilidad** (Vos con `/claude-design` + IA)
-  - [ ] Pasada de diseño completa en mobile y desktop.
-  - [ ] axe sin errores críticos; Lighthouse mobile ≥ 90 en inicio y en un área.
+- [X] **F2-07 · Pulido visual y accesibilidad** (Vos con `/claude-design` + IA)
+  - [X] Pasada de diseño completa en mobile y desktop.
+  - [X] axe sin errores críticos; Lighthouse mobile ≥ 90 en inicio y en un área.
 
-- [ ] **F2-08 · Cierre de fase** (Vos)
-  - [ ] Tests (unit y e2e de navegación) en verde. Docs actualizados (README, TESTING con MT-01, MT-11, MT-13 y MT-14).
-  - [ ] **F2 ✅ — 40%**.
+- [X] **F2-08 · Cierre de fase** (Vos)
+  - [X] Tests (unit y e2e de navegación) en verde. Docs actualizados (README, TESTING con MT-01, MT-11, MT-13 y MT-14).
+  - [X] **F2 ✅ — 40%**.
 
 ---
 
 ## FASE 3 — Formulario y backend de consultas (40% → 60%)
 
-- [ ] **F3-01 · Supabase y Prisma** (Vos + IA) · ADR-0002, SPEC §7, §9
-  - [ ] (Vos) Proyectos Supabase **dev** y **prod** creados; variables en `.env.local` y en Vercel (preview → dev, production → prod).
-  - [ ] (IA) Prisma configurado (cliente singleton en `lib/db.ts`, pooler en runtime y conexión directa para migraciones).
-  - [ ] Schema de §7 y primera migración aplicada en dev.
-  - [ ] Migración SQL que habilita RLS en las 3 tablas.
+- [X] **F3-01 · Supabase y Prisma** (Vos + IA) · ADR-0002, SPEC §7, §9
+  - [X] (Vos) Proyectos Supabase **dev** y **prod** creados; variables en `.env.local` y en Vercel (preview → dev, production → prod).
+  - [X] (IA) Prisma configurado (cliente singleton en `lib/db.ts`, pooler en runtime y conexión directa para migraciones).
+  - [X] Schema de §7 y primera migración aplicada en dev.
+  - [X] Migración SQL que habilita RLS en las 3 tablas.
   - Verificás: en Supabase, Table Editor → las tablas existen y el candado de RLS está activo. Con la anon key, una consulta a la tabla vía API devuelve vacío o error.
 
-- [ ] **F3-02 · Schemas y tipos** (IA) · SPEC §8
-  - [ ] `inquirySchema` y los demás schemas con tests de cada regla y mensaje.
-  - [ ] `safeToContact` (SPEC US-03 CA6): regla condicional y tests. Como es un dato nuevo, subir la versión de la política de privacidad.
-  - [ ] `emailIsPrivate` (SPEC US-03 CA7): obligatorio, sin valor por defecto, y regla de "medio seguro" con tests de cada combinación. Incluirlo en la misma versión nueva de la política, que además tiene que decir que el acuse es solo para emails privados.
+- [X] **F3-02 · Schemas y tipos** (IA) · SPEC §8
+  - [X] `inquirySchema` y los demás schemas con tests de cada regla y mensaje.
+  - [X] `safeToContact` (SPEC US-03 CA6): regla condicional y tests. Como es un dato nuevo, subir la versión de la política de privacidad.
+  - [X] `emailIsPrivate` (SPEC US-03 CA7): obligatorio, sin valor por defecto, y regla de "medio seguro" con tests de cada combinación. Incluirlo en la misma versión nueva de la política, que además tiene que decir que el acuse es solo para emails privados.
 
-- [ ] **F3-03 · Ports y adapters** (IA) · NFR-ESC-02
-  - [ ] Interfaces `EmailSender`, `CaptchaVerifier`, `RateLimiter` y `Clock`, con sus adapters (Resend, Turnstile, Upstash) y fakes para tests.
-  - [ ] (Vos) Cuentas de Resend, Cloudflare Turnstile y Upstash creadas; variables cargadas.
+- [X] **F3-03 · Ports y adapters** (IA) · NFR-ESC-02
+  - [X] Interfaces `EmailSender`, `CaptchaVerifier`, `RateLimiter` y `Clock`, con sus adapters (Resend, Turnstile, Upstash) y fakes para tests.
+  - [X] (Vos) Cuentas de Resend, Cloudflare Turnstile y Upstash creadas; variables cargadas.
 
-- [ ] **F3-04 · Repository y service de consultas** (IA)
-  - [ ] `createInquiry` con transacción (consulta + evento `CREATED`) y referencia (FR-09). Tests con fakes.
+- [X] **F3-04 · Repository y service de consultas** (IA)
+  - [X] `createInquiry` con transacción (consulta + evento `CREATED`) y referencia (FR-09). Tests con fakes.
 
-- [ ] **F3-05 · Server Action `submitInquiry`** (IA) · FR-04, FR-06, FR-08
-  - [ ] Orden anti-abuso de FR-06, `ActionResult` y mails con `after()`.
-  - [ ] Tests de integración: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot y fallo de mail.
+- [X] **F3-05 · Server Action `submitInquiry`** (IA) · FR-04, FR-06, FR-08
+  - [X] Orden anti-abuso de FR-06, `ActionResult` y mails con `after()`.
+  - [X] Tests de integración: OK, VALIDATION, RATE_LIMITED, CAPTCHA_FAILED, honeypot y fallo de mail.
 
-- [ ] **F3-06 · Mails** (IA) · US-05, ADR-0005
-  - [ ] Plantillas React Email: aviso al estudio (sin el mensaje completo) y acuse al consultante. Preview local.
-  - [ ] Acuse solo si el email es privado, con remitente, asunto, texto y firma neutros (US-03 CA5). Aviso al estudio con `safeToContact`, `emailIsPrivate` y "No iniciar contacto" destacados (US-05 CA1). Tests de los dos.
+- [X] **F3-06 · Mails** (IA) · US-05, ADR-0005
+  - [X] Plantillas React Email: aviso al estudio (sin el mensaje completo) y acuse al consultante. Preview local.
+  - [X] Acuse solo si el email es privado, con remitente, asunto, texto y firma neutros (US-03 CA5). Aviso al estudio con `safeToContact`, `emailIsPrivate` y "No iniciar contacto" destacados (US-05 CA1). Tests de los dos.
 
-- [ ] **F3-07 · Formulario de 2 pasos** (IA + `/claude-design`) · US-03
-  - [ ] Componente cliente con `useActionState`, Turnstile, errores accesibles, sin pérdida de datos y confirmación con referencia.
-  - [ ] Preselección de área por query param.
-  - [ ] "¿Es seguro que te contactemos por ese medio?" al elegir teléfono o WhatsApp (US-03 CA6). Revisar el orden de `/contacto` ahora que el formulario funciona.
-  - [ ] "¿Este email es privado (solo lo leés vos)?" (US-03 CA7). Sin medio seguro, la confirmación muestra la referencia y no promete contacto (US-03 CA3).
-  - [ ] Tests de componente.
+- [X] **F3-07 · Formulario de 2 pasos** (IA + `/claude-design`) · US-03
+  - [X] Componente cliente con `useActionState`, Turnstile, errores accesibles, sin pérdida de datos y confirmación con referencia.
+  - [X] Preselección de área por query param.
+  - [X] "¿Es seguro que te contactemos por ese medio?" al elegir teléfono o WhatsApp (US-03 CA6). Revisar el orden de `/contacto` ahora que el formulario funciona.
+  - [X] "¿Este email es privado (solo lo leés vos)?" (US-03 CA7). Sin medio seguro, la confirmación muestra la referencia y no promete contacto (US-03 CA3).
+  - [X] Tests de componente.
 
-- [ ] **F3-08 · E2E del envío** (IA)
-  - [ ] Playwright: envío completo con las claves de prueba de Turnstile, con limpieza de los datos `E2E-`.
+- [X] **F3-08 · E2E del envío** (IA)
+  - [X] Playwright: envío completo con las claves de prueba de Turnstile, con limpieza de los datos `E2E-`.
 
-- [ ] **F3-09 · Cierre de fase** (Vos)
-  - [ ] Hiciste MT-02 a MT-06 y MT-15 a mano en el preview.
-  - [ ] **F3 ✅ — 60%**.
+- [X] **F3-09 · Cierre de fase** (Vos)
+  - [X] Hiciste MT-02 a MT-06 y MT-15 a mano en el preview.
+  - [X] **F3 ✅ — 60%**.
 
 ---
 
@@ -197,21 +197,21 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 - [X] **F4-03 · Login** (IA + `/claude-design`)
   - [X] Página de login accesible, mensajes genéricos y `noindex`.
 
-- [ ] **F4-04 · Listado** (IA) · US-06 CA2
-  - [ ] Tabla paginada en el servidor, filtros (estado, área y urgencia), búsqueda y filtros en la URL (se pueden compartir). Badges de estado y urgencia.
+- [X] **F4-04 · Listado** (IA) · US-06 CA2
+  - [X] Tabla paginada en el servidor, filtros (estado, área y urgencia), búsqueda y filtros en la URL (se pueden compartir). Badges de estado y urgencia.
 
-- [ ] **F4-05 · Detalle y acciones** (IA) · US-06 CA3, FR-11, FR-12
-  - [ ] Detalle, cambio de estado, notas e historial. Actions con `requireStaff()` y tests (incluido FORBIDDEN).
+- [X] **F4-05 · Detalle y acciones** (IA) · US-06 CA3, FR-11, FR-12
+  - [X] Detalle, cambio de estado, notas e historial. Actions con `requireStaff()` y tests (incluido FORBIDDEN).
 
-- [ ] **F4-06 · Link del mail al detalle** (IA)
-  - [ ] El mail al estudio lleva a `/admin/consultas/[id]` (pasando por el login si hace falta y volviendo después).
+- [X] **F4-06 · Link del mail al detalle** (IA)
+  - [X] El mail al estudio lleva a `/admin/consultas/[id]` (pasando por el login si hace falta y volviendo después).
 
-- [ ] **F4-07 · E2E del admin** (IA)
-  - [ ] Login, filtrar, cambiar estado, ver historial y acceso denegado.
+- [X] **F4-07 · E2E del admin** (IA)
+  - [X] Login, filtrar, cambiar estado, ver historial y acceso denegado.
 
-- [ ] **F4-08 · Cierre de fase** (Vos)
-  - [ ] Hiciste MT-07 a MT-10. Docs al día.
-  - [ ] **F4 ✅ — 80%**.
+- [X] **F4-08 · Cierre de fase** (Vos)
+  - [X] Hiciste MT-07 a MT-10. Docs al día.
+  - [X] **F4 ✅ — 80%**.
 
 ---
 
@@ -235,8 +235,8 @@ Al cerrar esta fase el proyecto tiene la estructura, las herramientas, la CI, la
 - [X] **F5-06 · E2E en CI** (IA)
   - [X] Playwright corriendo en GitHub Actions contra el preview o con un servidor local y la DB de dev.
 
-- [ ] **F5-07 · Guía de tests manuales completa** (IA + Vos)
-  - [ ] `docs/TESTING.md` con MT-01 a MT-15 detallados. **Los ejecutás todos** y registrás el resultado y la fecha.
+- [X] **F5-07 · Guía de tests manuales completa** (IA + Vos)
+  - [X] `docs/TESTING.md` con MT-01 a MT-15 detallados. **Los ejecutás todos** y registrás el resultado y la fecha.
 
 - [ ] **F5-08 · Lanzamiento de la demo** (Vos)
   - [ ] Dominio o subdominio configurado, dominio de mail verificado en Resend y migraciones en prod.
