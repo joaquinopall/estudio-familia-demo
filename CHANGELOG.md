@@ -4,6 +4,16 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-07 · Guía de tests manuales completa (parte 1: la guía)
+
+- **Cambiado:** `docs/TESTING.md`, la guía manual:
+  - los 32 casos ordenados por número (antes iban en el orden en que se crearon);
+  - un **tablero de resultados** con la última ejecución de cada caso y lo que falta en producción, en lugar del índice;
+  - "Cómo correr la guía completa": los casos pendientes en 3 sesiones (sitio público, formulario y mails, panel), con dónde se corren, qué preparar y el tiempo aproximado;
+  - "Ejecuciones pendientes" queda solo con lo de producción (F5-08).
+- **Corregido:** casos desactualizados frente a la app: Turnstile en el paso 2 (MT-02, MT-19), política 1.2 (MT-18), el código de la página de error y un paso que usaba `process.env` (MT-21), el dominio del link del mail (MT-06, MT-27), el "Cargando…" del panel (MT-10), y referencias a tareas ya cerradas (MT-03, MT-13).
+- **Agregado:** `src/__tests__/testing-guide.test.ts`. Cada caso del tablero tiene su sección y viceversa, en orden, con la estructura de la plantilla, y están todos los casos mínimos de SPEC §13.
+
 ### F5-06 · E2E en la CI
 
 - **Agregado:** job `e2e` en `.github/workflows/ci.yml`, en paralelo con `verify`: instala Chromium, corre `npm run test:db` y `npm run test:e2e` contra un build local y los servicios de **dev**, y si falla sube el reporte de Playwright y `e2e-server.log` (7 días). Una sola corrida a la vez (`concurrency: e2e-dev-database`), porque todas comparten la base de dev.
