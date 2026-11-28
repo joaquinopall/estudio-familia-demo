@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versión | 1.39 (27/11/2026) |
+| Versión | 1.40 (28/11/2026) |
 | Dueño del spec | [tu nombre] |
 | Estado | Aprobado para empezar Fase 1 |
 | Referenciado desde | `CLAUDE.md` |
@@ -575,7 +575,7 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 
 - Cobertura objetivo: ≥ 80% en `src/features/**`.
 - Los e2e que escriben en la DB usan el proyecto Supabase **dev** y datos marcados con `E2E-` en el nombre o el email (el mensaje va cifrado, ADR-0017) que el propio test limpia (también los de más de un día que haya dejado una corrida cortada). Mandan los mails a las direcciones de prueba de Resend (`delivered+…@resend.dev`), nunca a una casilla real, y se saltean si la clave de Turnstile no es la de prueba. Playwright nunca reusa un servidor abierto.
-- CI (GitHub Actions) en cada PR: install → lint → typecheck → unit e integración → build → `npm audit`. Los e2e corren en local y contra la URL de preview de Vercel (Fase 5: también en CI).
+- CI (GitHub Actions) en cada PR: job `verify` (install → lint → typecheck → unit e integración → build → `npm audit`) y, desde F5-06, job `e2e` (`test:db` y los e2e contra un build local y los servicios de dev, con secrets solo de dev; sin secrets, como en los PRs de Dependabot, se saltean los specs que los necesitan; ADR-0019). El preview de Vercel se verifica a mano.
 
 **Casos manuales mínimos** (la IA los detalla en `docs/TESTING.md`):
 
@@ -687,3 +687,4 @@ Matrícula de cada profesional (en la demo, marcada como ficticia), dirección f
 | 27/11/2026 | 1.37 | F5-03. §6.2: `scripts/lighthouse.ts` (`npm run lighthouse`, sin dependencias nuevas). §13: MT-12 cubre todas las páginas públicas. El widget de Turnstile se carga recién en el paso 2 del formulario. La letra del navegador al 150 % no desborda en ningún ancho; el 200 % se exige desde 768 px (en celulares, WCAG 1.4.4 se cumple con el zoom). | [tu nombre] |
 | 27/11/2026 | 1.38 | F5-04 (ADR-0018). NFR-OBS-01: catálogo tipado de eventos, `request.error` para los errores no capturados, `digest` en las páginas de error y avisos opcionales a Sentry sin SDK. §9: `SENTRY_DSN` (opcional). §15: la pregunta de Sentry queda resuelta. §6.2: `instrumentation.ts`, `log-events.ts`, `error-reporting.ts`, `error-digest.ts`, `ErrorReporter` y `SentryErrorReporter`. | [tu nombre] |
 | 27/11/2026 | 1.39 | F5-05. §7: los 24 meses de retención se cuentan desde el cierre o el descarte (decisión del dueño); las consultas abiertas viejas solo se avisan; script `npm run inquiries:purge`. Política de privacidad 1.2 (retención desde el cierre y copias de seguridad del proveedor). §6.2: `config/retention.ts`, `retention.ts`, `retention-repository.ts` y `scripts/purge-inquiries.ts`. | [tu nombre] |
+| 28/11/2026 | 1.40 | F5-06 (ADR-0019). §13: los e2e y `test:db` corren en la CI (job `e2e`) con secrets solo de dev y un usuario de prueba propio; los PRs de Dependabot no reciben secrets y saltean los specs de servicios. | [tu nombre] |

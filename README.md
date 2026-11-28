@@ -284,10 +284,25 @@ Cada evento es una línea JSON sin datos personales: `level`, `event` y solo ids
 
 ## Calidad y CI
 
-- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) en cada PR y push a `main`: `npm ci` → lint → typecheck → format:check → test → build → `npm audit`. El check `CI / verify` es obligatorio para mergear.
+- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) en cada PR y push a `main`, con dos jobs en paralelo:
+  - `CI / verify`: `npm ci` → lint → typecheck → format:check → test → build → `npm audit`.
+  - `CI / e2e` (F5-06): `npm run test:db` y `npm run test:e2e` contra un build local y los servicios de **dev** ([ADR 0019](docs/adr/0019-e2e-en-la-ci-con-servicios-de-dev.md)). Si falla, deja el reporte de Playwright y el log del servidor como artifact.
+
+  Los dos checks son obligatorios para mergear.
+
 - **Audit:** bloquea vulnerabilidades altas en dependencias de producción; el audit completo es informativo. Ver [ADR 0008](docs/adr/0008-politica-de-npm-audit-en-ci.md).
 - **Dependabot** ([`.github/dependabot.yml`](.github/dependabot.yml)): los lunes, npm y GitHub Actions; minor/patch agrupadas, major por separado. Las major se revisan antes de mergear.
-- Los e2e todavía corren solo en local (en CI desde la tarea F5-06).
+- **Secrets del job `e2e`** (GitHub → Settings → Secrets and variables → Actions → New repository secret). Solo de dev:
+
+  | Secret                         | Valor                                                                                                                                                                          |
+  | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+  | `E2E_DATABASE_URL`             | La `DATABASE_URL` de Supabase **dev** (pooler). Nunca la de producción.                                                                                                        |
+  | `E2E_SUPABASE_URL`             | La URL del proyecto **dev** (`https://<project-ref>.supabase.co`).                                                                                                             |
+  | `E2E_SUPABASE_PUBLISHABLE_KEY` | La publishable key de **dev**.                                                                                                                                                 |
+  | `E2E_STAFF_EMAIL`              | El email de un usuario de prueba **solo para la CI**, creado en Supabase dev (Authentication → Users → Add user, con Auto Confirm). No es tu usuario ni el de tus e2e locales. |
+  | `E2E_STAFF_PASSWORD`           | Su contraseña (12 caracteres o más).                                                                                                                                           |
+
+  Sin ellos (por ejemplo, en un PR de Dependabot, a propósito) la suite corre igual y saltea los specs que necesitan la base o Supabase. Resend y Upstash quedan ficticios: la CI no manda mails.
 
 ## Deploy (Vercel)
 

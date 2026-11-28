@@ -30,6 +30,7 @@ Reglas:
 | [0016](0016-csp-aplicada-con-unsafe-inline.md) | CSP aplicada, con `'unsafe-inline'` y la barra de Vercel solo en Preview | Aceptada |
 | [0017](0017-cifrado-de-campos-a-nivel-de-aplicacion.md) | Cifrado del mensaje y de las notas a nivel de aplicación | Aceptada |
 | [0018](0018-observabilidad-con-sentry-sin-sdk.md) | Observabilidad: catálogo de eventos, errores no capturados y avisos con Sentry sin SDK | Aceptada |
+| [0019](0019-e2e-en-la-ci-con-servicios-de-dev.md) | E2E en la CI con los servicios de dev, y sin secrets para Dependabot | Aceptada |
 
 ## Plantilla
 

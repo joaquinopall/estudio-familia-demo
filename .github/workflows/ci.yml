@@ -1,5 +1,5 @@
 # CI (SPEC §13, NFR-MANT-02, NFR-SEC-08).
-# Required check for merging into main: "CI / verify".
+# Required checks for merging into main: "CI / verify" and "CI / e2e" (F5-06).
 name: CI
 
 on:
@@ -76,3 +76,86 @@ jobs:
       - name: Audit all dependencies (informational)
         continue-on-error: true
         run: npm audit --audit-level=high
+
+  # End-to-end and database tests (F5-06, ADR-0019), against a local production build like
+  # `npm run test:e2e` on a developer's machine, and the DEVELOPMENT services (never prod).
+  #
+  # The dev services come from the repository's E2E_* secrets. Without them (Dependabot PRs,
+  # which never get secrets on purpose: a new dependency must not be able to read them) every
+  # URL falls back to the reserved .invalid domain: the specs that need the database or
+  # Supabase skip themselves and the rest of the suite still runs.
+  # Resend and Upstash stay fictitious even with secrets: CI never sends an email, and a rate
+  # limiter that does not answer lets requests through (ADR-0013).
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # One e2e run at a time across the repository: they all share the dev database.
+    concurrency:
+      group: e2e-dev-database
+      cancel-in-progress: false
+    env:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL || 'https://ci-project.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ci_fake' }}
+      DATABASE_URL: ${{ secrets.E2E_DATABASE_URL || 'postgresql://ci:ci@db.invalid:6543/postgres' }}
+      # A test user of Supabase dev only for CI, so a local run never deactivates it mid-test.
+      E2E_STAFF_EMAIL: ${{ secrets.E2E_STAFF_EMAIL }}
+      E2E_STAFF_PASSWORD: ${{ secrets.E2E_STAFF_PASSWORD }}
+      HAS_DEV_SERVICES: ${{ secrets.E2E_DATABASE_URL != '' && secrets.E2E_SUPABASE_URL != '' }}
+      RESEND_API_KEY: re_ci_fake
+      EMAIL_FROM: "Estudio <onboarding@resend.dev>"
+      FIRM_NOTIFICATION_EMAIL: ci@example.com
+      UPSTASH_REDIS_REST_URL: https://ci.upstash.invalid
+      UPSTASH_REDIS_REST_TOKEN: ci-fake-token
+      IP_HASH_SALT: ci-fake-salt-not-a-secret-0123456789
+      # 32 zero bytes: the E2E- rows are encrypted and read with it, then deleted (ADR-0017).
+      FIELD_ENCRYPTION_KEYS: "ci:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Dev services
+        run: |
+          if [ "$HAS_DEV_SERVICES" = "true" ]; then
+            echo "Dev services available: the full suite runs."
+          else
+            echo "::notice::No E2E_* secrets (e.g. a Dependabot PR): the specs that need the dev database or Supabase are skipped."
+          fi
+
+      # Repositories against Supabase dev (SPEC §13): only with the dev database.
+      - name: Database tests
+        if: env.HAS_DEV_SERVICES == 'true'
+        run: npm run test:db
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      # Only on failure, for 7 days. The server log has no personal data (NFR-SEC-06) and the
+      # report only shows E2E- test rows.
+      - name: Upload the Playwright report and the server log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report
+          path: |
+            playwright-report/
+            test-results/
+            e2e-server.log
+          retention-days: 7
+          if-no-files-found: ignore

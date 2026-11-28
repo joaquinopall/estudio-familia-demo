@@ -30,6 +30,7 @@ import {
 } from "./support/admin";
 import { collectCspViolations } from "./support/csp";
 import { deleteInquiriesByMarker, deleteStaleE2eInquiries } from "./support/db";
+import { DEV_SERVICES_SKIP_REASON, hasDevServices } from "./support/services";
 
 const copy = adminPanelContent;
 const RUN = randomUUID().slice(0, 8);
@@ -91,6 +92,7 @@ async function signInTo(page: Page, scenario: number, next: string) {
 
 test.describe("admin panel with a session (F4-07)", () => {
   test.describe.configure({ mode: "serial" });
+  test.skip(!hasDevServices(), DEV_SERVICES_SKIP_REASON);
   test.skip(
     !hasStaffCredentials(),
     "Needs DATABASE_URL, E2E_STAFF_EMAIL and E2E_STAFF_PASSWORD (Supabase dev) in .env.local.",

@@ -4,6 +4,15 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-06 · E2E en la CI
+
+- **Agregado:** job `e2e` en `.github/workflows/ci.yml`, en paralelo con `verify`: instala Chromium, corre `npm run test:db` y `npm run test:e2e` contra un build local y los servicios de **dev**, y si falla sube el reporte de Playwright y `e2e-server.log` (7 días). Una sola corrida a la vez (`concurrency: e2e-dev-database`), porque todas comparten la base de dev.
+- **Agregado:** secrets `E2E_*` solo de dev, con un usuario de prueba propio de la CI ([ADR 0019](docs/adr/0019-e2e-en-la-ci-con-servicios-de-dev.md)). Resend y Upstash quedan ficticios: la CI no manda mails.
+- **Agregado:** `tests/e2e/support/services.ts` (`hasDevServices()`). Sin secrets (PRs de Dependabot, a propósito) se saltean los specs que usan la base o Supabase (envío, panel, CSRF y las credenciales incorrectas del login) y corre el resto. Comprobado en local con las URLs ficticias: 306 pasan, 12 salteados, 0 fallan.
+- **Cambiado:** Playwright corre solo los `*.spec.ts`; Vitest suma los tests de los helpers de `tests/e2e/support`.
+- **Documentado:** README ("Calidad y CI", con la tabla de secrets), TESTING ("En la CI"), ADR 0019 y SPEC v1.40.
+- **Pendiente (vos):** crear el usuario de prueba de la CI en Supabase dev, cargar los 5 secrets y, después del merge, sumar "CI / e2e" como check obligatorio de `main`.
+
 ### F5-05 · Retención de datos
 
 - **Agregado:** `npm run inquiries:purge` (`scripts/purge-inquiries.ts`). Borra, con su historial, las consultas cerradas o descartadas hace más de 24 meses **desde el cierre** (decisión del dueño). Sin `--confirm` solo cuenta; muestra el proyecto y la fecha de corte, nunca datos de las consultas. Avisa cuántas consultas siguen abiertas desde antes de la fecha de corte, sin borrarlas.

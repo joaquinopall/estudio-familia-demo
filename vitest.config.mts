@@ -46,8 +46,13 @@ export default defineConfig({
           },
           environment: "jsdom",
           setupFiles: ["./vitest.setup.ts"],
-          include: ["src/**/*.test.{ts,tsx}", "prisma/**/*.test.ts"],
-          exclude: ["node_modules/**", "tests/e2e/**", "src/**/*.db.test.ts"],
+          include: [
+            "src/**/*.test.{ts,tsx}",
+            "prisma/**/*.test.ts",
+            // Pure helpers of the e2e (F5-06); the Playwright specs are *.spec.ts.
+            "tests/e2e/support/**/*.test.ts",
+          ],
+          exclude: ["node_modules/**", "tests/e2e/**/*.spec.ts", "src/**/*.db.test.ts"],
         },
       },
       {
