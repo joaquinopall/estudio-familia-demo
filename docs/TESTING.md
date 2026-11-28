@@ -178,7 +178,7 @@ Lo que falta correr en otro entorno, hoy solo producción (F5-08). Cuando se eje
 
 Los casos ya ejecutados no hace falta repetirlos hasta el lanzamiento. Los demás se corren en **3 sesiones**, según dónde se prueban; cada una se registra por separado, así que no hace falta hacer todo junto. Al terminar cada caso, anotá el resultado en su tabla (o pasáselo a la IA para que lo cargue) y actualizá su fila en el tablero.
 
-**Sesión 1 · Sitio público** (60–75 min): MT-01, 11, 13, 14, 16, 17, 18, 19, 20, 21 y 22.
+**Sesión 1 · Sitio público** (60–75 min): MT-01, 11, 13, 14, 16, 17, 18, 19, 20, 21 y 22. **Hecha el 28/11/2026: todo ✅.**
 
 - **Dónde:** el preview de Vercel, con tu sesión de Vercel iniciada, en el celular (MT-01, 14, 22) y en la computadora con DevTools. MT-13 (pasos 1 a 4) y MT-21 (paso 4) se corren en local.
 - **Preparar:** el celular con WhatsApp; para MT-11 y las partes "solo con teclado", no usar el mouse; para MT-20, el preview tiene que ser público o usá la pestaña "Código" de los validadores.
@@ -201,7 +201,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | ID | Caso | Sesión | Última ejecución | Falta en producción |
 | --- | --- | --- | --- | --- |
-| [MT-01](#mt-01--navegar-todas-las-páginas-en-un-celular-real) | Navegar todas las páginas en un celular real | 1 | — | — |
+| [MT-01](#mt-01--navegar-todas-las-páginas-en-un-celular-real) | Navegar todas las páginas en un celular real | — | ✅ 28/11/2026 · preview | — |
 | [MT-02](#mt-02--enviar-una-consulta-completa) | Enviar una consulta completa | 2 | — | — |
 | [MT-03](#mt-03--errores-de-validación-de-cada-campo) | Errores de validación de cada campo | 2 | — | — |
 | [MT-04](#mt-04--exceder-el-rate-limit) | Exceder el rate limit | 2 | — | — |
@@ -211,18 +211,18 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 | [MT-08](#mt-08--entrar-a-admin-sin-sesión) | Entrar a `/admin` sin sesión | 3 | — | — |
 | [MT-09](#mt-09--usuario-autenticado-que-no-es-staff) | Usuario autenticado que no es staff | 3 | — | — |
 | [MT-10](#mt-10--cambio-de-estado-notas-e-historial) | Cambio de estado, notas e historial | 3 | — | — |
-| [MT-11](#mt-11--navegación-completa-solo-con-teclado) | Navegación completa solo con teclado | 1 | — | — |
+| [MT-11](#mt-11--navegación-completa-solo-con-teclado) | Navegación completa solo con teclado | — | ✅ 28/11/2026 · preview | — |
 | [MT-12](#mt-12--lighthouse-mobile-en-todas-las-páginas-públicas) | Lighthouse mobile en todas las páginas públicas | — | ✅ 27/11/2026 · local | — |
-| [MT-13](#mt-13--banner-de-modo-demo) | Banner de modo demo | 1 | — | F5-08 (paso 5) |
-| [MT-14](#mt-14--botón-de-whatsapp) | Botón de WhatsApp | 1 | — | — |
+| [MT-13](#mt-13--banner-de-modo-demo) | Banner de modo demo | — | ✅ 28/11/2026 · local y preview | F5-08 (paso 5) |
+| [MT-14](#mt-14--botón-de-whatsapp) | Botón de WhatsApp | — | ✅ 28/11/2026 · preview | — |
 | [MT-15](#mt-15--error-de-mail-simulado-la-consulta-se-guarda-igual) | Error de mail simulado (la consulta se guarda igual) | 2 | — | — |
-| [MT-16](#mt-16--inicio-responsive-360-a-1440-px) | Inicio responsive (360 a 1440 px) | 1 | — | — |
-| [MT-17](#mt-17--áreas-de-práctica-navegación-cta-y-404) | Áreas de práctica: navegación, CTA y 404 | 1 | — | — |
-| [MT-18](#mt-18--nosotros-preguntas-frecuentes-y-privacidad) | Nosotros, Preguntas frecuentes y Privacidad | 1 | — | — |
-| [MT-19](#mt-19--contacto-formulario-canales-y-mapa) | Contacto: formulario, canales y mapa | 1 | — | — |
-| [MT-20](#mt-20--seo-técnico-y-datos-estructurados) | SEO técnico y datos estructurados | 1 | — | — |
-| [MT-21](#mt-21--páginas-404-y-de-error) | Páginas 404 y de error | 1 | — | — |
-| [MT-22](#mt-22--ayuda-ante-peligro-y-plazos) | Ayuda ante peligro y plazos | 1 | — | — |
+| [MT-16](#mt-16--inicio-responsive-360-a-1440-px) | Inicio responsive (360 a 1440 px) | — | ✅ 28/11/2026 · preview | — |
+| [MT-17](#mt-17--áreas-de-práctica-navegación-cta-y-404) | Áreas de práctica: navegación, CTA y 404 | — | ✅ 28/11/2026 · preview | — |
+| [MT-18](#mt-18--nosotros-preguntas-frecuentes-y-privacidad) | Nosotros, Preguntas frecuentes y Privacidad | — | ✅ 28/11/2026 · preview | — |
+| [MT-19](#mt-19--contacto-formulario-canales-y-mapa) | Contacto: formulario, canales y mapa | — | ✅ 28/11/2026 · preview | — |
+| [MT-20](#mt-20--seo-técnico-y-datos-estructurados) | SEO técnico y datos estructurados | — | ✅ 28/11/2026 · preview | — |
+| [MT-21](#mt-21--páginas-404-y-de-error) | Páginas 404 y de error | — | ✅ 28/11/2026 · preview y local | — |
+| [MT-22](#mt-22--ayuda-ante-peligro-y-plazos) | Ayuda ante peligro y plazos | — | ✅ 28/11/2026 · preview | — |
 | [MT-23](#mt-23--base-de-datos-tablas-y-rls-en-supabase) | Base de datos: tablas y RLS en Supabase | — | ✅ 27/11/2026 · dev | F5-08 |
 | [MT-24](#mt-24--configuración-de-supabase-auth-registro-y-contraseñas) | Configuración de Supabase Auth (registro y contraseñas) | — | ✅ 27/11/2026 · dev | F5-08 |
 | [MT-25](#mt-25--alta-de-staff-con-npm-run-staffadd) | Alta de staff con `npm run staff:add` | — | ✅ 25/11/2026 · dev | F5-08 |
@@ -262,7 +262,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, celular real | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-02 — Enviar una consulta completa
 
@@ -569,7 +569,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, computadora, solo teclado | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-12 — Lighthouse mobile en todas las páginas públicas
 
@@ -623,7 +623,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Local (`npm run build && npm run start`, pasos 1 a 4) y preview de Vercel (paso 5) | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). La parte de producción del paso 5 queda para F5-08. |
 
 ### MT-14 — Botón de WhatsApp
 
@@ -647,7 +647,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, celular real con WhatsApp y computadora | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-15 — Error de mail simulado (la consulta se guarda igual)
 
@@ -695,7 +695,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, DevTools en modo dispositivo | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-17 — Áreas de práctica: navegación, CTA y 404
 
@@ -723,7 +723,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, DevTools a 360 y 1440 px | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-18 — Nosotros, Preguntas frecuentes y Privacidad
 
@@ -751,7 +751,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, DevTools a 360 y 1440 px | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). Política de privacidad 1.2. |
 
 ### MT-19 — Contacto: formulario, canales y mapa
 
@@ -777,7 +777,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, DevTools a 360 y 1440 px | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-20 — SEO técnico y datos estructurados
 
@@ -803,7 +803,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel y validadores externos | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-21 — Páginas 404 y de error
 
@@ -826,7 +826,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel (pasos 1 a 3) y local con build de producción (paso 4) | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-22 — Ayuda ante peligro y plazos
 
@@ -852,7 +852,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 
 | Fecha | Entorno | Resultado | Notas |
 | ----- | ------- | --------- | ----- |
-|       |         |           |       |
+| 28/11/2026 | Preview de Vercel, celular real | ✅ pasa | Todos los pasos, informados por el dueño (sesión 1 de F5-07). |
 
 ### MT-23 — Base de datos: tablas y RLS en Supabase
 
