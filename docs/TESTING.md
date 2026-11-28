@@ -606,7 +606,7 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 **Pasos**
 
 1. Con `NEXT_PUBLIC_DEMO_MODE=true`, corré `npm run build && npm run start` y abrí `http://localhost:3000`.
-2. Revisá el banner en desktop y en ancho de celular (375 px).
+2. Revisá el banner en desktop y en ancho de celular (375 px). Abrí también `/contacto` y mirá arriba del formulario.
 3. Cambiá a `NEXT_PUBLIC_DEMO_MODE=false`, repetí el build y abrí el inicio. Después borrá la línea y repetí.
 4. Poné un valor inválido (`NEXT_PUBLIC_DEMO_MODE=si`) y corré `npm run build`.
 5. Abrí el preview de la demo en Vercel (y producción, en F5-08) y mirá el código fuente (Ctrl+U).
@@ -614,7 +614,8 @@ Una fila por caso: la última ejecución registrada en su tabla y lo que falta c
 **Resultado esperado**
 
 - Paso 1–2: arriba de todo se ve "**Sitio de demostración — estudio ficticio.**". Desde 640 px sigue con "Los nombres, matrículas y datos de contacto no son reales."; en celulares se muestra solo la primera oración, sin cortarse.
-- Paso 3: con `false` el banner no aparece; sin la línea **sí** aparece, y la página lleva `noindex, nofollow` (ADR-0011).
+- Paso 2: en `/contacto`, arriba del formulario, el aviso "Este es un sitio de demostración" pide no escribir datos reales (F5-08).
+- Paso 3: con `false` el banner y el aviso del formulario no aparecen; sin la línea **sí** aparecen, y la página lleva `noindex, nofollow` (ADR-0011).
 - Paso 4: el build falla con `NEXT_PUBLIC_DEMO_MODE: debe ser "true" o "false"`.
 - Paso 5: los dos muestran el banner y tienen `<meta name="robots" content="noindex, nofollow"/>`.
 - Al terminar, volvé a dejar `NEXT_PUBLIC_DEMO_MODE=true`.

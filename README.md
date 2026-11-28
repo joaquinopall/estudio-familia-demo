@@ -100,6 +100,7 @@ Reglas:
 | `npm run lighthouse`        | Lighthouse mobile en las 11 páginas públicas contra un servidor levantado (`npm run build && npm run start`), 3 corridas por página y la mediana. Falla si alguna categoría baja de 90. `-- --seo` exige también SEO (build con `NEXT_PUBLIC_DEMO_MODE=false`). Medí con `npm run dev` frenado. Ver MT-12 en [`docs/TESTING.md`](docs/TESTING.md) |
 | `npm run inquiries:encrypt` | Cifra los mensajes y notas que estén en claro y recifra con la clave actual los de una clave vieja. Sin `-- --confirm` solo cuenta. Ver [Cifrado del mensaje y de las notas](#cifrado-del-mensaje-y-de-las-notas)                                                                                                                                 |
 | `npm run inquiries:purge`   | Borra las consultas cerradas o descartadas hace más de 24 meses, con su historial (política de privacidad). Sin `-- --confirm` solo cuenta. Ver [Retención de datos](#retención-de-datos)                                                                                                                                                         |
+| `npm run demo:seed`         | Solo con el modo demo: carga 8 consultas de ejemplo ("[Ejemplo] …", cifradas) para que el panel de la demo no esté vacío. Sin argumentos solo cuenta; `-- --confirm` las carga (si no estaban) y `-- --remove` las borra. Ver [`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md)                                                                        |
 | `npm run staff:add`         | Da de alta (o reactiva) un usuario de Supabase Auth como staff: `npm run staff:add -- --email x --name "Nombre"`. Ver [Panel admin](#panel-admin-supabase-auth)                                                                                                                                                                                   |
 
 Cómo correr y escribir tests, y la guía de tests manuales: [`docs/TESTING.md`](docs/TESTING.md).
@@ -116,7 +117,7 @@ Postgres de Supabase con Prisma 7 ([ADR 0002](docs/adr/0002-supabase-con-prisma-
 - **Cambiar el modelo:** editá `prisma/schema.prisma` y corré `npm run db:migrate -- --name <cambio>`. Commiteá la carpeta de la migración. Si agregás una tabla, activale RLS en la misma migración: `prisma/__tests__/rls.test.ts` falla si falta.
 - **SQL a mano** (como RLS): `npm run db:migrate -- --create-only --name <cambio>`, editá el `migration.sql` y volvé a correr `npm run db:migrate`.
 - **Nunca** `prisma db push` ni `prisma migrate reset` contra una base compartida (CLAUDE.md §5).
-- **RLS:** todas las tablas de `public`, incluida `_prisma_migrations`, tienen RLS activado y sin políticas: la API de Supabase no las puede leer (NFR-SEC-03). Cómo verificarlo: MT-23 en [`docs/TESTING.md`](docs/TESTING.md). **Pendiente de ejecutar** con la clave pública: en F4-01 (dev) y en F5-08 (prod).
+- **RLS:** todas las tablas de `public`, incluida `_prisma_migrations`, tienen RLS activado y sin políticas: la API de Supabase no las puede leer (NFR-SEC-03). Cómo verificarlo: MT-23 en [`docs/TESTING.md`](docs/TESTING.md) (dev ✅ 27/11/2026; prod en el lanzamiento, [`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md)).
 - **Código:** solo los repositories usan `getDb()` (`src/lib/db.ts`). El cliente no se conecta hasta la primera consulta, así que el build y los tests no tocan la base.
 - **Cliente generado:** vive en `src/generated/prisma` (fuera de git). Si `typecheck` no encuentra `@/generated/prisma/client`, corré `npm run db:generate`.
 
@@ -181,17 +182,18 @@ src/
   components/
     ui/                componentes de shadcn/ui (generados)
     layout/            Header, MobileMenu, NavLinks, SafetyNotice, Footer, SkipLink, DemoBanner, WhatsAppButton, CtaLink, PublicShell, 404 y error
-  config/              site.config.ts: todos los datos del estudio; rate-limits.ts: límites anti-abuso
+  config/              site.config.ts: todos los datos del estudio; rate-limits.ts: límites anti-abuso; retention.ts: plazo de retención
   content/             contenido del sitio como datos
   features/            código por feature: inquiries, auth (Fases 3 y 4)
   generated/prisma/    cliente de Prisma generado (no se commitea)
   lib/                 env, db (Prisma), supabase (Auth), ports y adapters, ActionResult, logger, headers de seguridad, SEO, utilidades
   proxy.ts             proxy de Next (ex middleware): sesión y redirect de /admin. Tiene que estar en src/, al lado de app/
+  instrumentation.ts   errores no capturados (request.error) y avisos a Sentry (ADR 0018)
 prisma/                schema.prisma, migraciones, test de RLS y CA de Supabase (certs/)
 prisma.config.ts       configuración de la CLI de Prisma (URL de migraciones)
-scripts/               scripts de operación (staff-add.ts), corren con tsx
+scripts/               scripts de operación, corren con tsx: staff-add, encrypt-inquiries, purge-inquiries, demo-seed y lighthouse
 tests/e2e/             Playwright
-docs/                  SPEC, guía de avance, arquitectura, ADR, testing
+docs/                  SPEC, guía de avance, arquitectura, ADR, testing, revisión de seguridad y lanzamiento
 ```
 
 Arquitectura, capas y flujos: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Decisiones: [`docs/adr/`](docs/adr/README.md).
@@ -221,7 +223,7 @@ La demo tiene **dos interruptores** y hay que apagar los dos: `isFictitious` y `
 
 1. **Datos:** reemplazá todo [`src/config/site.config.ts`](src/config/site.config.ts). Es fácil olvidar `description`, la formación de cada profesional, `geo`, `mapsUrl`, el código postal y `openingHours`.
 2. **`isFictitious: false`:** saca el aviso de Privacidad y la etiqueta de la imagen para compartir.
-3. **`NEXT_PUBLIC_DEMO_MODE=false`** en Production, con `NEXT_PUBLIC_SITE_URL` del dominio final, y redeploy: saca el banner y el `noindex`. Dejá el modo demo encendido en Preview.
+3. **`NEXT_PUBLIC_DEMO_MODE=false`** en Production, con `NEXT_PUBLIC_SITE_URL` del dominio final, y redeploy: saca el banner, el `noindex` y el aviso "no escribas datos reales" del formulario. Dejá el modo demo encendido en Preview.
 4. **Jurisdicción y teléfonos de ayuda:** cambiar `jurisdiction` no alcanza. La OVD (Lavalle 1250) es de CABA y el 137 no cubre todo el país. Verificá en las fuentes oficiales y editalos en [`src/content/urgent-help.ts`](src/content/urgent-help.ts), el único lugar donde están: de ahí salen la franja de ayuda y la pregunta sobre violencia de "Cuidado personal". Si cambian, actualizá también SPEC §11.5 y `src/content/__tests__/urgent-help.test.ts`, que fija los números verificados.
 5. **Contenido legal:** que el estudio revise áreas, preguntas frecuentes, aviso de plazos, política de privacidad (con su versión y fecha) y las normas de publicidad de su colegio (SPEC §11.4).
 6. **Ícono:** poné la inicial del estudio en `monogram`. La pestaña y el ícono de inicio del celular se generan con ella y los colores de la marca.
@@ -307,13 +309,10 @@ Cada evento es una línea JSON sin datos personales: `level`, `event` y solo ids
 ## Deploy (Vercel)
 
 - **Producción** se despliega desde `main`; cada PR genera un **preview**.
-- Cargá las variables en Vercel → Settings → Environment Variables, en **Production y Preview**. Si falta una obligatoria, el build falla con el mensaje de la validación (útil para diagnosticar un deploy rojo).
-- Node 24 se toma de `engines` en `package.json`.
-- **Base de datos:** `DATABASE_URL` va en Preview con la URL de Supabase **dev** y en Production con la de **prod**. `DIRECT_URL` no se carga en Vercel: las migraciones no corren en el deploy.
-- **Desde F3-05, todas las variables obligatorias tienen que estar en Preview y Production** antes de mergear: si falta una, el build de Vercel falla y la nombra.
-- **Supabase Auth (desde F4-01):** `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` del proyecto **dev** en Preview y del de **prod** en Production. Son valores de build: si los cambiás, volvé a deployar.
-- **Turnstile:** en Preview, las claves de prueba de `.env.example`; en Production, las reales (ADR-0013). Resend y Upstash pueden compartir cuenta entre Preview y Production en la demo; para un estudio real, conviene separarlos.
-- **Migraciones de producción:** se aplican a mano antes de mergear cambios de schema, con aprobación y un export previo de la base (SPEC §14): `DIRECT_URL="<url de prod>" npm run db:deploy`. La variable del shell gana sobre `.env.local`.
+- **El paso a paso del lanzamiento** (base de prod, dominio, Resend, Turnstile, Upstash, variables, staff y datos de ejemplo), con los comandos y cómo verificar cada paso, está en [`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md).
+- **Variables:** Vercel → Settings → Environment Variables. **Preview** usa los servicios de **dev** (Supabase, claves de prueba de Turnstile) y **Production** los de **prod**, con las claves reales de Turnstile (ADR-0013). Todas las obligatorias tienen que estar en los dos entornos: si falta una, el build falla y la nombra. Son valores de build: si cambiás una, volvé a deployar.
+- **`DIRECT_URL` no se carga en Vercel:** las migraciones no corren en el deploy. Las de producción se aplican a mano, con un export previo de la base, **antes** de mergear un cambio de schema (SPEC §14): `set DIRECT_URL=<url de prod>&& npm run db:deploy`. La variable de la terminal gana sobre `.env.local`.
+- **Node 24** se toma de `engines` en `package.json`.
 
 ## Flujo de trabajo
 
@@ -326,12 +325,14 @@ El proyecto sigue **spec-driven development**: [`docs/SPEC.md`](docs/SPEC.md) es
 
 ## Documentación
 
-| Documento                                          | Para qué                                            |
-| -------------------------------------------------- | --------------------------------------------------- |
-| [`docs/SPEC.md`](docs/SPEC.md)                     | Requisitos, arquitectura, datos, seguridad y diseño |
-| [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md) | Fases, tareas y avance                              |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)     | Capas, flujos y decisiones vigentes                 |
-| [`docs/adr/`](docs/adr/README.md)                  | Registro de decisiones de arquitectura              |
-| [`docs/TESTING.md`](docs/TESTING.md)               | Cómo correr los tests y guía de tests manuales      |
-| [`CHANGELOG.md`](CHANGELOG.md)                     | Cambios por tarea                                   |
-| [`CLAUDE.md`](CLAUDE.md)                           | Instrucciones de trabajo para la IA                 |
+| Documento                                            | Para qué                                                 |
+| ---------------------------------------------------- | -------------------------------------------------------- |
+| [`docs/SPEC.md`](docs/SPEC.md)                       | Requisitos, arquitectura, datos, seguridad y diseño      |
+| [`docs/GUIA_DE_AVANCE.md`](docs/GUIA_DE_AVANCE.md)   | Fases, tareas y avance                                   |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)       | Capas, flujos y decisiones vigentes                      |
+| [`docs/adr/`](docs/adr/README.md)                    | Registro de decisiones de arquitectura                   |
+| [`docs/TESTING.md`](docs/TESTING.md)                 | Cómo correr los tests y guía de tests manuales           |
+| [`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md)         | Paso a paso para poner el sitio en producción            |
+| [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md) | Revisión de seguridad con evidencia, hallazgos y riesgos |
+| [`CHANGELOG.md`](CHANGELOG.md)                       | Cambios por tarea                                        |
+| [`CLAUDE.md`](CLAUDE.md)                             | Instrucciones de trabajo para la IA                      |

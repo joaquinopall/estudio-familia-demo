@@ -4,6 +4,18 @@ Cambios del proyecto, una entrada por tarea de [`docs/GUIA_DE_AVANCE.md`](docs/G
 
 ## [Sin publicar]
 
+### F5-08 · Lanzamiento de la demo (parte de la IA)
+
+- **Agregado:** en modo demo, el formulario de contacto avisa "Este es un sitio de demostración: no escribas datos reales". El formulario de la demo funciona, y alguien que llega desde un buscador podría contar un caso real. Un estudio real (modo demo apagado) nunca lo ve. FR-15.
+- **Agregado:** `npm run demo:seed`, con 8 consultas de ejemplo para que el panel de la demo no esté vacío: todas las áreas, urgencias, estados y canales, un "No iniciar contacto", notas e historial.
+  - Están marcadas como ficticias ("[Ejemplo] …", `@example.com`, teléfonos `0000`) y se cargan por el repository real, así que quedan cifradas con la clave del entorno.
+  - Sin argumentos solo cuenta; es idempotente; `--remove` las borra.
+  - **Se niega a correr si el modo demo está apagado.**
+  - Probado en dev de punta a punta (8 cargadas con su historial, la segunda corrida no duplica, `--remove` las borra).
+- **Agregado:** [`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md), el paso a paso del lanzamiento con los comandos para cmd y cómo verificar cada paso: base de prod, dominio, Resend, Turnstile, Upstash, variables, deploy, staff, datos de ejemplo y pruebas en producción. Incluye las diferencias para un estudio cliente.
+- **Cambiado:** README (deploy, scripts, documentos y "Pasar a un estudio real"), TESTING (MT-13 revisa el aviso del formulario) y SPEC v1.41.
+- **Pendiente (dueño):** el dominio y los pasos 1 a 10 del runbook.
+
 ### F5-07 · Guía de tests manuales completa (parte 2: las ejecuciones)
 
 - **Ejecutados:** los 22 casos que faltaban, en 3 sesiones el 28/11/2026, todos ✅ (informados por el dueño): sitio público (MT-01, 11, 13, 14, 16 a 22), formulario y mails (MT-02 a 06, MT-15) y panel (MT-07 a 10, 26, 27). MT-25 se registró con su ejecución del 25/11/2026. **Los 32 casos tienen una ejecución ✅**; solo falta lo de producción, en F5-08.
