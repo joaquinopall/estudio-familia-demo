@@ -30,9 +30,10 @@ export const AAIP_AUTHORITY_NOTICE =
 
 export const privacyPolicy = {
   // 1.1: safe contact (safeToContact, emailIsPrivate) and receipt only to a private email.
-  version: "1.1",
+  // 1.2: retention counted from closing, and the provider's backups (F5-05).
+  version: "1.2",
   /** ISO date (YYYY-MM-DD). */
-  effectiveDate: "2026-11-24",
+  effectiveDate: "2026-11-27",
   breadcrumbs: [homeBreadcrumb, { label: "Política de privacidad", href: "/privacidad" }],
   title: "Política de privacidad",
   lead: "Te contamos qué datos recolectamos cuando nos escribís, para qué los usamos, con quién los compartimos y cómo podés ejercer tus derechos, conforme a la Ley 25.326 de Protección de los Datos Personales.",
@@ -105,7 +106,7 @@ export const privacyPolicy = {
       id: "conservacion",
       title: "Cuánto tiempo los guardamos",
       paragraphs: [
-        "Guardamos tus datos mientras tu consulta esté en curso. Las consultas cerradas o descartadas se eliminan cuando tienen más de 24 meses.",
+        "Guardamos tus datos mientras tu consulta esté en curso. Cuando la cerramos o la descartamos, la eliminamos a los 24 meses de ese momento. Las copias de seguridad de nuestro proveedor de base de datos pueden conservarla unos días más, hasta que se renuevan.",
         "Si iniciamos una relación profesional, los datos vinculados a tu caso se conservan según las obligaciones legales y profesionales que correspondan.",
       ],
     },
